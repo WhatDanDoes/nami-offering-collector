@@ -1,0 +1,19 @@
+{
+  "name": "ethereum-interfacing-experimentation",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "ganache-cli": "^6.12.2"
+  },
+  "dependencies": {
+    "@ethereumjs/tx": "^3.3.0",
+    "dotenv": "^10.0.0",
+    "web3": "^1.5.2"
+  }
+}
