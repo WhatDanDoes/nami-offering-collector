@@ -9,9 +9,27 @@
     <link rel='stylesheet' href='/stylesheets/style.css' />
   </head>
   <body>
+    <header>
+      <nav>
+        <ul>
+          <li id="authenticate"></li>
+        </ul>
+      </nav>
+    </header>
     <main>
       <h1><%= title %></h1>
       <p>Welcome to <%= title %></p>
     </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function(event) {
+        var login = document.getElementById('authenticate');
+        if (window.web3) {
+          login.innerHTML = 'Install the Metamask browser plugin';
+        }
+        else {
+          login.innerHTML = 'Authenticate with Metamask';
+        }
+      });
+    </script>
   </body>
 </html>
