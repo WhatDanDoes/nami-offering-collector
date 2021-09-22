@@ -10,8 +10,6 @@ npm install
 cp .env.example .env
 ```
 
-The `.env` stuff won't work out of the box. You'll need an ETH address and a blockchain API access point at a minimum (I'm using [alchemy](https://www.alchemy.com/) for the moment). The var names should be self explanatory.
-
 Run Ganache:
 
 ```
