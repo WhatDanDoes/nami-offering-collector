@@ -1,3 +1,7 @@
 *.sw*
 node_modules
 .env
+
+# synpress
+**/tests/e2e/videos/
+**/tests/e2e/screenshots/
