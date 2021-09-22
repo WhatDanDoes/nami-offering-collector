@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "start": "node ./bin/www",
-    "test": "npx jasmine"
+    "test": "NODE_ENV=test npx jasmine"
   },
   "dependencies": {
     "cookie-parser": "~1.4.4",
