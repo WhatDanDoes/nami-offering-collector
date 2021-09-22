@@ -1,19 +1,16 @@
 {
-  "name": "ethereum-interfacing-experimentation",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "name": "metamask-offering-collector",
+  "version": "0.0.0",
+  "private": true,
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "author": "",
-  "license": "ISC",
-  "devDependencies": {
-    "ganache-cli": "^6.12.2"
+    "start": "node ./bin/www"
   },
   "dependencies": {
-    "@ethereumjs/tx": "^3.3.0",
-    "dotenv": "^10.0.0",
-    "web3": "^1.5.2"
+    "cookie-parser": "~1.4.4",
+    "debug": "~2.6.9",
+    "ejs": "~2.6.1",
+    "express": "~4.16.1",
+    "http-errors": "~1.6.3",
+    "morgan": "~1.9.1"
   }
 }
