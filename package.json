@@ -16,6 +16,8 @@
     "morgan": "~1.9.1"
   },
   "devDependencies": {
+    "dappeteer": "^1.0.0",
+    "ganache-cli": "^6.12.2",
     "jasmine": "^3.9.0",
     "puppeteer": "^10.4.0"
   }
