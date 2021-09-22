@@ -1,30 +1,34 @@
 const puppeteer = require('puppeteer');
+const dappeteer = require('dappeteer');
 const app = require('../app');
 
 describe('landing page', () => {
+
+  jasmine.DEFAULT_TIMEOUT_INTERVAL = 60000;
 
   const URL = 'http://localhost:3001';
 
   let browser, page;
 
-  beforeEach(async () => {
-    browser = await puppeteer.launch();
-    page = await browser.newPage();
-    await page.goto(URL);
-  });
-
-  afterEach(async () => {
-    await browser.close();
-  });
-
-  it('displays the configured app title', async () => {
-    expect(process.env.TITLE).toBeDefined();
-    const el = await page.$('title');
-    const title = await el.evaluate(e => e.textContent);
-    expect(title).toEqual(process.env.TITLE);
-  });
-
   describe('metamask not installed', () => {
+
+    beforeEach(async () => {
+      browser = await puppeteer.launch();
+      page = await browser.newPage();
+      await page.goto(URL);
+    });
+
+    afterEach(async () => {
+      await browser.close();
+    });
+
+    it('displays the configured app title', async () => {
+      expect(process.env.TITLE).toBeDefined();
+      const el = await page.$('title');
+      const title = await el.evaluate(e => e.textContent);
+      expect(title).toEqual(process.env.TITLE);
+    });
+
     it('displays a warning in the navbar', async () => {
       const el = await page.$('header nav ul li');
       const warning = await el.evaluate(e => e.textContent);
@@ -33,6 +37,26 @@ describe('landing page', () => {
   });
 
   describe('metamask installed', () => {
+    let metamask;
+
+    beforeEach(async () => {
+
+      browser = await dappeteer.launch(puppeteer)
+      metamask = await dappeteer.getMetamask(browser)
+
+      await metamask.createAccount();
+      metamask.addNetwork('127.0.0.1:8545');
+      await metamask.switchNetwork('localhost');
+
+      //browser = await puppeteer.launch();
+      page = await browser.newPage();
+      await page.goto(URL);
+    });
+
+    afterEach(async () => {
+      await browser.close();
+    });
+
     it('displays a message to authenticate with metamask', async () => {
       const el = await page.$('header nav ul li');
       const warning = await el.evaluate(e => e.textContent);
