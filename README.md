@@ -14,6 +14,12 @@ cp .env.example .env
 
 This app has a lot of moving parts, which are reflected in the tests themselves. There are two seperate test sets found in the `spec/` and `tests/` directorys. The former depend upon Jasmine and Puppeteer while the latter use [Synpress](https://github.com/Synthetixio/synpress), which is a rather brittle marriage between Cypress, Puppeteer, and Metamask. I hope to simplify and consolidate these tests as I further develop my personal blockchain development workflow.
 
+For both test sets, start a MongoDB development server:
+
+```
+docker run --name dev-mongo -p 27017:27017 -d mongo
+```
+
 ## `spec/`
 
 These are the Jasmine/Puppeteer tests, which perform some basic behavioural tests for when Metamask is not installed or disabled. It also performs database unit tests.
