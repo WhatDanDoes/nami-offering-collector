@@ -1,0 +1,28 @@
+{
+  "development": {
+    "username": "metamask_offering_collector",
+    "password": "secret",
+    "database": "metamask_offering_collector_development",
+    "host": "localhost"
+  },
+  "test": {
+    "username": "metamask_offering_collector",
+    "password": "secret",
+    "database": "metamask_offering_collector_test",
+    "host": "localhost"
+  },
+  "staging": {
+    "username": "metamask_offering_collector",
+    "password": "secret",
+    "database": "metamask_offering_collector_staging",
+    "host": "mongo",
+    "dialect": "mongodb"
+  },
+  "production": {
+    "username": "metamask_offering_collector",
+    "password": "secret",
+    "database": "metamask_offering_collector_production",
+    "host": "mongo",
+    "dialect": "mongodb"
+  }
+}
