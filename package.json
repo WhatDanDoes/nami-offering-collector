@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "start": "node app.js",
-    "test-server": "NODE_ENV=test npm start",
-    "test": "npx synpress run"
+    "test-server": "NODE_ENV=test nodemon app.js",
+    "test": "npx jasmine"
   },
   "dependencies": {
     "cookie-parser": "~1.4.4",
@@ -21,6 +21,7 @@
     "dappeteer": "^1.0.0",
     "ganache-cli": "^6.12.2",
     "jasmine": "^3.9.0",
+    "nodemon": "^2.0.12",
     "puppeteer": "^10.4.0"
   }
 }
