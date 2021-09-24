@@ -80,6 +80,71 @@ describe('Agent', () => {
         });
       });
     });
+
+    describe('name', () => {
+
+      it('is optional', done => {
+        expect(_profile.name).toBeUndefined();
+        Agent.create({..._profile, name: 'Wallet or agent name' }).then(obj => {
+          expect(obj.name).toEqual('Wallet or agent name');
+          done();
+        }).catch(error => {
+          done.fail(error);
+        });
+      });
+
+       it('has 255 characters max', done => {
+        Agent.create({..._profile, name: 'a'.repeat(256) }).then(obj => {
+          done.fail('This should not have saved');
+        }).catch(error => {
+          expect(Object.keys(error.errors).length).toEqual(1);
+          expect(error.errors['name'].message).toEqual('Name too long');
+          done();
+        });
+      });
+    });
+
+    describe('nonce', () => {
+
+      it('is required and automatically set', done => {
+        Agent.create({..._profile, nonce: undefined }).then(obj => {
+          expect(obj.nonce).toBeDefined();
+          done();
+        }).catch(error => {
+          done.fail(error);
+        });
+      });
+
+      it('does not accept non-parsable biging strings', done => {
+        Agent.create({..._profile, nonce: 'this is not a bigint string' }).then(obj => {
+          done.fail('This should not have saved');
+        }).catch(error => {
+          expect(Object.keys(error.errors).length).toEqual(1);
+          expect(error.errors['nonce'].message).toEqual('Invalid nonce. Must be BigInt parsable');
+          done();
+        });
+      });
+
+      it('is a bigint parsable string', done => {
+        expect(_profile.nonce).toBeUndefined();
+        agent.save().then(obj => {
+          expect(typeof obj.nonce).toEqual('string');
+          expect(typeof BigInt(obj.nonce)).toEqual('bigint');
+          done();
+        }).catch(error => {
+          done.fail(error);
+        });
+      });
+
+      it('is manually set-able', done => {
+        Agent.create({..._profile, nonce: BigInt(9007199254740991) }).then(obj => {
+          expect(obj.nonce).toEqual('9007199254740991');
+          done();
+        }).catch(error => {
+          done.fail(error);
+        });
+      });
+    });
   });
 });
 
