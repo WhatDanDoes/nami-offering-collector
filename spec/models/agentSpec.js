@@ -115,7 +115,7 @@ describe('Agent', () => {
         });
       });
 
-      it('does not accept non-parsable biging strings', done => {
+      it('does not accept non-parsable bigint strings', done => {
         Agent.create({..._profile, nonce: 'this is not a bigint string' }).then(obj => {
           done.fail('This should not have saved');
         }).catch(error => {
