@@ -5,3 +5,4 @@ node_modules
 # synpress
 **/tests/e2e/videos/
 **/tests/e2e/screenshots/
+**/cypress
