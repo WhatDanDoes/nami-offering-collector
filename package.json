@@ -26,6 +26,7 @@
     "ganache-cli": "^6.12.2",
     "jasmine": "^3.9.0",
     "nodemon": "^2.0.12",
-    "puppeteer": "^10.4.0"
+    "puppeteer": "^10.4.0",
+    "supertest": "^6.1.6"
   }
 }
