@@ -55,7 +55,7 @@ describe('landing page', () => {
 //    });
 //
     it('displays a message to authenticate with metamask', async () => {
-      cy.get('header nav ul li').contains('Authenticate with Metamask');
+      cy.get('header nav ul li').contains('Confirm your identity with Metamask');
 
 //      const el = await page.$('header nav ul li');
 //      const warning = await el.evaluate(e => e.textContent);
