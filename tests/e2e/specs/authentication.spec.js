@@ -26,6 +26,46 @@ context('authentication', function() {
       });
     });
   });
+
+  describe('not logged in', () => {
+    beforeEach(() => {
+      cy.visit('/');
+    });
+
+    context('first visit', () => {
+      it('shows the home page', () => {
+        cy.get('main h1').contains('Metamask Offering Collector');
+      });
+
+      /**
+       * If I can find the public address, that means I can connect Metamask
+       */
+      it('displays the confirm-identity button', () => {
+        cy.get('#connect-metamask').contains('Confirm your identity with Metamask');
+      });
+
+      it('does not display the logout button', () => {
+        cy.get('#logout-button').should('not.exist');
+      });
+    });
+  });
+
+  describe('logged in', () => {
+    beforeEach(() => {
+      cy.visit('/');
+      cy.contains('Confirm your identity with Metamask').click();
+      cy.wait(300);
+    });
+
+    it('lands in the right place', () => {
+      cy.url().should('match', /\//);
+    });
+
+    it('does not display the login link', () => {
+      cy.get('#connect-metamask').contains('Disconnect Metamask');
+    });
+
+  });
 });
 
 export {}

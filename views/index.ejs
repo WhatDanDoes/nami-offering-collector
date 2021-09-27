@@ -11,23 +11,38 @@
   <body>
     <header>
       <nav>
+        <a href="/"><img alt="Logo" src="https://via.placeholder.com/200x70?text=Logo" height="70"></a>
         <ul>
-          <li id="authenticate"></li>
+          <li id="connect-metamask"></li>
         </ul>
       </nav>
     </header>
     <main>
       <h1><%= title %></h1>
-      <p>Welcome to <%= title %></p>
+      <p>Proverbs 3:9-10</p>
     </main>
     <script>
+      /**
+       * 2021-9-27 Adapted from https://docs.metamask.io/guide/create-dapp.html
+       */
       document.addEventListener('DOMContentLoaded', function(event) {
-        var login = document.getElementById('authenticate');
-        if (window.web3) {
-          login.innerHTML = 'Authenticate with Metamask';
+        const connectMetamask = document.getElementById('connect-metamask');
+
+        //Created check function to see if the MetaMask extension is installed
+        const isMetaMaskInstalled = () => {
+          //Have to check the ethereum binding on the window object to see if it's installed
+          const { ethereum } = window;
+          return Boolean(ethereum && ethereum.isMetaMask);
+        };
+
+        if (isMetaMaskInstalled()) {
+          connectMetamask.innerHTML = `<form action="/identify" method="post">` +
+                                        `<input type="hidden" name="publicAddress" value="">` +
+                                        `<button type="submit">Confirm your identity with Metamask</button>` +
+                                      `</form>`;
         }
         else {
-          login.innerHTML = 'Install the Metamask browser plugin';
+          connectMetamask.innerHTML = 'Click here to install the Metamask browser plugin';
         }
       });
     </script>
