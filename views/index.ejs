@@ -36,10 +36,29 @@
         };
 
         if (isMetaMaskInstalled()) {
-          connectMetamask.innerHTML = `<form action="/identify" method="post">` +
-                                        `<input type="hidden" name="publicAddress" value="">` +
-                                        `<button type="submit">Confirm your identity with Metamask</button>` +
-                                      `</form>`;
+          const data = { publicAddress: 'ethereum' };
+
+          handleIdentification = () => {
+            fetch('/identify', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(data),
+            })
+            .then(response => response.json())
+            .then(data => {
+              console.log('Success:', data);
+            })
+            .catch((error) => {
+              console.error('Error:', error);
+            });
+          };
+
+          connectMetamask.innerHTML = '<button id="connect-metamask-button" type="submit">Confirm your identity with Metamask</button>';
+
+          document.getElementById('connect-metamask-button').addEventListener('click', handleIdentification);
+
         }
         else {
           connectMetamask.innerHTML = 'Click here to install the Metamask browser plugin';

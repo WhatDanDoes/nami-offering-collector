@@ -8,15 +8,48 @@ router.get('/', function(req, res, next) {
 });
 
 /**
- * This is where the nonce gets sent
- *
+ * This is where the nonce gets created and sent
  */
 router.post('/identify', (req, res) => {
-  const nonce = Math.floor(Math.random() * 1000000).toString();
-  models.Agent.findOneAndUpdate({ publicAddress: req.body.publicAddress }, { nonce: nonce }, { upsert: true, new: true, runValidators: true }).then(agent => {
-    res.status(201).json({ nonce: agent.nonce });
+  models.Agent.findOne({ where: { publicAddress: req.body.publicAddress } }).then(agent => {
+    if (agent) {
+      const nonce = Math.floor(Math.random() * 1000000).toString();
+      models.Agent.findOneAndUpdate({ publicAddress: req.body.publicAddress }, { nonce: nonce }).then(agent => {
+        res.status(201).json({ nonce: agent.nonce });
+      }).catch(err => {
+        res.status(500).json(err);
+      });
+    }
+    else {
+      models.Agent.create({ publicAddress: req.body.publicAddress }).then(agent => {
+        res.status(201).json({ nonce: agent.nonce });
+      }).catch(err => {
+        if (err.errors['publicAddress']) {
+          res.status(400).json({ message: err.errors['publicAddress'].message });
+        }
+        else {
+          res.status(400).json({ message: err.message });
+        }
+      });
+    }
   }).catch(err => {
     res.status(500).json(err);
+  });
+});
+
+/**
+ * Logout
+ */
+router.delete('/identify', (req, res) => {
+  for (let cookie in req.cookies) {
+    res.cookie(cookie, '', {expires: new Date(0)});
+  }
+
+  // Tests suggest this doesn't do anything.
+  // I.e., the client still has a cookie (see above)
+  req.session.destroy(err => {
+    if (err) console.error(err);
+    res.redirect('/');
   });
 });
 

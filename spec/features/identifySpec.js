@@ -41,7 +41,7 @@ describe('/identify', () => {
               done();
             });
         });
-    
+
         it('creates a new Agent record', done => {
           models.Agent.find({}).then(agents => {
             expect(agents.length).toEqual(0);
@@ -100,7 +100,7 @@ describe('/identify', () => {
               done();
             });
         });
-    
+
         it('sets a new nonce in existing Agent record', done => {
           models.Agent.find({}).then(agents => {
             expect(agents.length).toEqual(1);
@@ -133,28 +133,77 @@ describe('/identify', () => {
           });
         });
       });
- 
-  
+
+
 //      it('displays the configured app title', async () => {
 //        expect(process.env.TITLE).toBeDefined();
 //        const el = await page.$('title');
 //        const title = await el.evaluate(e => e.textContent);
 //        expect(title).toEqual(process.env.TITLE);
 //      });
-//  
+//
 //      it('displays a warning in the navbar', async () => {
 //        const el = await page.$('header nav ul li#connect-metamask');
-//  
+//
 //        const warning = await el.evaluate(e => e.textContent);
 //        expect(warning).toEqual('Click here to install the Metamask browser plugin');
 //      });
     });
+
+    describe('failure', () => {
+
+      describe('invalid ethereum address', () => {
+
+        it('returns an error', done => {
+          request(app)
+            .post('/identify')
+            .send({ publicAddress: 'invalid ethereum address' })
+            .set('Accept', 'application/json')
+            .expect('Content-Type', /json/)
+            .expect(400)
+            .end((err, res) => {
+              if (err) return done.fail(err);
+              expect(res.body.message).toEqual('Invalid public address');
+              done();
+            });
+        });
+
+        it('does not create a new Agent record', done => {
+          models.Agent.find({}).then(agents => {
+            expect(agents.length).toEqual(0);
+
+            request(app)
+              .post('/identify')
+              .send({ publicAddress: 'invalid ethereum address' })
+              .set('Accept', 'application/json')
+              .expect('Content-Type', /json/)
+              .expect(400)
+              .end((err, res) => {
+                if (err) return done.fail(err);
+
+                models.Agent.find({}).then(agents => {
+                  expect(agents.length).toEqual(0);
+
+                  done();
+                }).catch(err => {
+                  done.fail(err);
+                });
+              });
+
+          }).catch(err => {
+            done.fail(err);
+          });
+        });
+      });
+    });
   });
 
   describe('DELETE', () => {
+    let session;
+
     beforeEach(done => {
-      request(app)
-        .post('/identify')
+      session = request(app);
+      session.post('/identify')
         .send({ publicAddress: _publicAddress })
         .set('Accept', 'application/json')
         .expect('Content-Type', /json/)
@@ -165,7 +214,17 @@ describe('/identify', () => {
         });
     });
 
-
+    it('redirects home and clears the session', done => {
+      expect(session.cookies.length).toEqual(1);
+      session
+        .delete('/identify')
+        .expect(302)
+        .end(function(err, res) {
+          if (err) return done.fail(err);
+          expect(session.cookies.length).toEqual(0);
+          done();
+        });
+    });
   });
 });
 
