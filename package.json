@@ -27,6 +27,6 @@
     "jasmine": "^3.9.0",
     "nodemon": "^2.0.12",
     "puppeteer": "^10.4.0",
-    "supertest": "^6.1.6"
+    "supertest-session": "^4.1.0"
   }
 }
