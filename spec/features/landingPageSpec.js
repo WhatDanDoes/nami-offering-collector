@@ -30,6 +30,11 @@ describe('landing page', () => {
     });
 
     it('displays a warning in the navbar', async () => {
+      page.on("pageerror", function(err) {
+          theTempValue = err.toString();
+          console.log("Page error: " + theTempValue);
+      });
+
       const el = await page.$('header nav ul li#connect-metamask');
 
       const warning = await el.evaluate(e => e.textContent);

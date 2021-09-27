@@ -28,36 +28,43 @@
       document.addEventListener('DOMContentLoaded', function(event) {
         const connectMetamask = document.getElementById('connect-metamask');
 
-        //Created check function to see if the MetaMask extension is installed
+        // Created check function to see if the MetaMask extension is installed
         const isMetaMaskInstalled = () => {
-          //Have to check the ethereum binding on the window object to see if it's installed
+          // Have to check the ethereum binding on the window object to see if it's installed
           const { ethereum } = window;
           return Boolean(ethereum && ethereum.isMetaMask);
         };
 
         if (isMetaMaskInstalled()) {
-          const data = { publicAddress: 'ethereum' };
+          ethereum.request({ method: 'eth_requestAccounts' }).then(accounts => {;
+            const account = accounts[0];
 
-          handleIdentification = () => {
-            fetch('/identify', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify(data),
-            })
-            .then(response => response.json())
-            .then(data => {
-              console.log('Success:', data);
-            })
-            .catch((error) => {
-              console.error('Error:', error);
-            });
-          };
+            const data = { publicAddress: 'ethereum' };
 
-          connectMetamask.innerHTML = '<button id="connect-metamask-button" type="submit">Confirm your identity with Metamask</button>';
+            handleIdentification = () => {
+              fetch('/identify', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data),
+              })
+              .then(response => response.json())
+              .then(data => {
+                console.log('Success:', data);
+              })
+              .catch((error) => {
+                console.error('Error:', error);
+              });
+            };
 
-          document.getElementById('connect-metamask-button').addEventListener('click', handleIdentification);
+            connectMetamask.innerHTML = '<button id="connect-metamask-button" type="submit">Confirm your identity with Metamask</button>';
+
+            document.getElementById('connect-metamask-button').addEventListener('click', handleIdentification);
+          }).catch(err => {
+            console.error('Something dreadful happened when accessing your account');
+            console.error(err);
+          });
 
         }
         else {
