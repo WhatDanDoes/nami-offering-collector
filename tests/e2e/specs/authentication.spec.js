@@ -50,6 +50,16 @@ context('authentication', function() {
     });
   });
 
+  describe('connect to metamask', () => {
+
+    it('disables the connect button when identifying', () => {
+      cy.visit('/');
+      cy.get('#connect-metamask-button').should('not.be.disabled');
+      cy.contains('Confirm your identity with Metamask').click();
+      cy.get('#connect-metamask-button').should('be.disabled');
+    });
+  });
+
   describe('logged in', () => {
     beforeEach(() => {
       cy.visit('/');

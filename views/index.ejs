@@ -36,35 +36,38 @@
         };
 
         if (isMetaMaskInstalled()) {
-          ethereum.request({ method: 'eth_requestAccounts' }).then(accounts => {;
-            const account = accounts[0];
-
-            const data = { publicAddress: 'ethereum' };
-
             handleIdentification = () => {
-              fetch('/identify', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(data),
-              })
-              .then(response => response.json())
-              .then(data => {
-                console.log('Success:', data);
-              })
-              .catch((error) => {
-                console.error('Error:', error);
+              ethereum.request({ method: 'eth_requestAccounts' }).then(accounts => {;
+                document.getElementById("connect-metamask-button").disabled = true;
+
+                const account = accounts[0];
+
+                const data = { publicAddress: account };
+
+                fetch('/identify', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify(data),
+                })
+                .then(response => response.json())
+                .then(data => {
+                  console.log('Success:', data);
+                })
+                .catch((error) => {
+                  console.error('Error:', error);
+                });
+              }).catch(err => {
+                console.error('Something dreadful happened when accessing your account');
+                console.error(err);
               });
             };
 
             connectMetamask.innerHTML = '<button id="connect-metamask-button" type="submit">Confirm your identity with Metamask</button>';
 
             document.getElementById('connect-metamask-button').addEventListener('click', handleIdentification);
-          }).catch(err => {
-            console.error('Something dreadful happened when accessing your account');
-            console.error(err);
-          });
+
 
         }
         else {
