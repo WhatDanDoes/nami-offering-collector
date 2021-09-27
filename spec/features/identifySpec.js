@@ -133,21 +133,6 @@ describe('/identify', () => {
           });
         });
       });
-
-
-//      it('displays the configured app title', async () => {
-//        expect(process.env.TITLE).toBeDefined();
-//        const el = await page.$('title');
-//        const title = await el.evaluate(e => e.textContent);
-//        expect(title).toEqual(process.env.TITLE);
-//      });
-//
-//      it('displays a warning in the navbar', async () => {
-//        const el = await page.$('header nav ul li#connect-metamask');
-//
-//        const warning = await el.evaluate(e => e.textContent);
-//        expect(warning).toEqual('Click here to install the Metamask browser plugin');
-//      });
     });
 
     describe('failure', () => {
