@@ -36,39 +36,39 @@
         };
 
         if (isMetaMaskInstalled()) {
-            handleIdentification = () => {
-              ethereum.request({ method: 'eth_requestAccounts' }).then(accounts => {;
-                document.getElementById("connect-metamask-button").disabled = true;
+          handleIdentification = () => {
+            document.getElementById("connect-metamask-button").disabled = true;
+            ethereum.request({ method: 'eth_requestAccounts' }).then(accounts => {;
 
-                const account = accounts[0];
+              const account = accounts[0];
 
-                const data = { publicAddress: account };
+              const data = { publicAddress: account };
 
-                fetch('/identify', {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                  },
-                  body: JSON.stringify(data),
-                })
-                .then(response => response.json())
-                .then(data => {
-                  console.log('Success:', data);
-                })
-                .catch((error) => {
-                  console.error('Error:', error);
-                });
-              }).catch(err => {
-                console.error('Something dreadful happened when accessing your account');
-                console.error(err);
+              fetch('/identify', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data),
+              })
+              .then(response => response.json())
+              .then(data => {
+                console.log('Success:', data);
+
+                connectMetamask.innerHTML = '<a href="/disconnect"><button id="disconnect-metamask-button" type="submit">Disconnect Metamask</button></a>';
+              })
+              .catch((error) => {
+                console.error('Error:', error);
               });
-            };
+            }).catch(err => {
+              console.error('Something dreadful happened when accessing your account');
+              console.error(err);
+            });
+          };
 
-            connectMetamask.innerHTML = '<button id="connect-metamask-button" type="submit">Confirm your identity with Metamask</button>';
+          connectMetamask.innerHTML = '<button id="connect-metamask-button" type="submit">Confirm your identity with Metamask</button>';
 
-            document.getElementById('connect-metamask-button').addEventListener('click', handleIdentification);
-
-
+          document.getElementById('connect-metamask-button').addEventListener('click', handleIdentification);
         }
         else {
           connectMetamask.innerHTML = 'Click here to install the Metamask browser plugin';
