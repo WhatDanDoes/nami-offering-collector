@@ -79,6 +79,18 @@ describe('Agent', () => {
           done();
         });
       });
+
+      it('cannot be blank', done => {
+        Agent.create({..._profile, publicAddress: '' }).then(obj => {
+          done.fail('This should not have saved');
+        }).catch(error => {
+          expect(Object.keys(error.errors).length).toEqual(1);
+          expect(error.errors['publicAddress'].message).toEqual('Public address required');
+          done();
+        });
+      });
+
+
     });
 
     describe('name', () => {
