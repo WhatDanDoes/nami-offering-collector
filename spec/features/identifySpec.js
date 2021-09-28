@@ -183,7 +183,7 @@ describe('/identify', () => {
     });
   });
 
-  describe('DELETE', () => {
+  describe('GET /disconnect', () => {
     let session;
 
     beforeEach(done => {
@@ -202,7 +202,7 @@ describe('/identify', () => {
     it('redirects home and clears the session', done => {
       expect(session.cookies.length).toEqual(1);
       session
-        .delete('/identify')
+        .get('/disconnect')
         .expect(302)
         .end(function(err, res) {
           if (err) return done.fail(err);
