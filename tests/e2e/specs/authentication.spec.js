@@ -74,19 +74,10 @@ context('authentication', function() {
       cy.contains('Confirm your identity with Metamask').click();
     });
 
-    it('lands in the right place', () => {
-      cy.url().should('match', /\//);
-    });
-
-    it('does not display the login link', () => {
-      cy.get('#connect-metamask').contains('Disconnect Metamask');
-    });
-
-
-    describe('logging out', () => {
+    context('signature request rejected', () => {
       beforeEach(() => {
-        cy.visit('/');
-        cy.contains('Disconnect Metamask').click();
+        //cy.task('rejectMetamaskSignatureRequest');
+        cy.rejectMetamaskSignatureRequest();
       });
 
       it('lands in the right place', () => {
@@ -95,6 +86,37 @@ context('authentication', function() {
 
       it('displays the login link', () => {
         cy.get('#connect-metamask').contains('Confirm your identity with Metamask');
+      });
+    });
+
+
+    context('signature request accepted', () => {
+      beforeEach(() => {
+        //cy.task('confirmMetamaskSignatureRequest');
+        cy.confirmMetamaskSignatureRequest();
+      });
+
+      it('lands in the right place', () => {
+        cy.url().should('match', /\//);
+      });
+
+      it('does not display the login link', () => {
+        cy.get('#connect-metamask').contains('Disconnect Metamask');
+      });
+
+      describe('logging out', () => {
+        beforeEach(() => {
+          cy.visit('/');
+          cy.contains('Disconnect Metamask').click();
+        });
+
+        it('lands in the right place', () => {
+          cy.url().should('match', /\//);
+        });
+
+        it('displays the login link', () => {
+          cy.get('#connect-metamask').contains('Confirm your identity with Metamask');
+        });
       });
     });
   });
