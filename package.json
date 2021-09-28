@@ -21,7 +21,7 @@
     "morgan": "~1.9.1"
   },
   "devDependencies": {
-    "@synthetixio/synpress": "^0.9.14",
+    "@synthetixio/synpress": "^0.9.25-beta.12",
     "dappeteer": "^1.0.0",
     "ganache-cli": "^6.12.2",
     "jasmine": "^3.9.0",
