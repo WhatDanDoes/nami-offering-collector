@@ -44,6 +44,7 @@
 
               const data = { publicAddress: account };
 
+              // Get nonce for signing
               fetch('/identify', {
                 method: 'POST',
                 headers: {
@@ -52,13 +53,30 @@
                 body: JSON.stringify(data),
               })
               .then(response => response.json())
-              .then(data => {
-                console.log('Success:', data);
+              // Sign message
+              .then(({ publicAddress, message }) => {
+                console.log('Sign this nonce:', message[1].value, '\nWith this public address:', publicAddress);
 
-                connectMetamask.innerHTML = '<a href="/disconnect"><button id="disconnect-metamask-button" type="submit">Disconnect Metamask</button></a>';
+                return new Promise((resolve, reject) => {
+                  ethereum.request({ method: 'eth_signTypedData', params: [message, publicAddress] }).then(signed => {;
+                    console.log('Signed');
+                    console.log(signed);
+                    resolve({ publicAddress, message });
+                  }).catch(err => {
+                    console.error('Error:', err);
+                  });
+                });
               })
-              .catch((error) => {
-                console.error('Error:', error);
+              // Identify
+              .then(({ publicAddress, message }) => {
+                return new Promise((resolve, reject) => {
+                  resolve({ publicAddress, message });
+                });
+              })
+              .then(({ publicAddress, message }) => {
+                connectMetamask.innerHTML = '<a href="/disconnect"><button id="disconnect-metamask-button" type="submit">Disconnect Metamask</button></a>';
+              }).catch(err => {
+                console.error('Error:', err);
               });
             }).catch(err => {
               console.error('Something dreadful happened when accessing your account');

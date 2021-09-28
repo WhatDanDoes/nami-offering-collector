@@ -1,3 +1,4 @@
+const fs = require('fs');
 const request = require('supertest-session');
 const app = require('../../app');
 const models = require('../../models');
@@ -10,10 +11,9 @@ describe('/identify', () => {
 
   describe('POST', () => {
 
+    let signingMessage;
     beforeEach(async () => {
-//      browser = await puppeteer.launch();
-//      page = await browser.newPage();
-//      await page.goto(URL);
+      signingMessage = fs.readFileSync('./message.txt', 'utf8');
     });
 
     afterEach(done => {
@@ -28,7 +28,7 @@ describe('/identify', () => {
 
       describe('first onboarding', () => {
 
-        it('returns publicAddress and a nonce for signing', done => {
+        it('returns a public address and message with nonce for signing', done => {
           request(app)
             .post('/identify')
             .send({ publicAddress: _publicAddress })
@@ -37,8 +37,14 @@ describe('/identify', () => {
             .expect(201)
             .end((err, res) => {
               if (err) return done.fail(err);
-              expect(typeof BigInt(res.body.nonce)).toEqual('bigint');
+
+              expect(res.body.message.length).toEqual(2);
+              expect(res.body.message[0].name).toEqual('Message');
+              expect(res.body.message[0].value).toEqual(signingMessage);
+              expect(res.body.message[1].name).toEqual('nonce');
+              expect(typeof BigInt(res.body.message[1].value)).toEqual('bigint');
               expect(res.body.publicAddress).toEqual(_publicAddress);
+
               done();
             });
         });
@@ -60,7 +66,8 @@ describe('/identify', () => {
                   expect(agents.length).toEqual(1);
                   expect(agents[0].publicAddress).toEqual(_publicAddress);
 
-                  expect(typeof BigInt(res.body.nonce)).toEqual('bigint');
+                  expect(typeof BigInt(agents[0].nonce)).toEqual('bigint');
+                  expect(agents[0].nonce).toEqual(res.body.message[1].value);
                   done();
                 }).catch(err => {
                   done.fail(err);
@@ -88,7 +95,7 @@ describe('/identify', () => {
             });
         });
 
-        it('returns a publicAddress and nonce for signing', done => {
+        it('returns a public address and message with nonce for signing', done => {
           request(app)
             .post('/identify')
             .send({ publicAddress: _publicAddress })
@@ -97,8 +104,14 @@ describe('/identify', () => {
             .expect(201)
             .end((err, res) => {
               if (err) return done.fail(err);
-              expect(typeof BigInt(res.body.nonce)).toEqual('bigint');
+
+              expect(res.body.message.length).toEqual(2);
+              expect(res.body.message[0].name).toEqual('Message');
+              expect(res.body.message[0].value).toEqual(signingMessage);
+              expect(res.body.message[1].name).toEqual('nonce');
+              expect(typeof BigInt(res.body.message[1].value)).toEqual('bigint');
               expect(res.body.publicAddress).toEqual(_publicAddress);
+
               done();
             });
         });
@@ -118,13 +131,12 @@ describe('/identify', () => {
               .end((err, res) => {
                 if (err) return done.fail(err);
 
-
                 models.Agent.find({}).then(agents => {
                   expect(agents.length).toEqual(1);
                   expect(agents[0].publicAddress).toEqual(_publicAddress);
                   expect(typeof BigInt(agents[0].nonce)).toEqual('bigint');
                   expect(agents[0].nonce).not.toEqual(nonce);
-                  expect(agents[0].nonce).toEqual(res.body.nonce);
+                  expect(agents[0].nonce).toEqual(res.body.message[1].value);
 
                   done();
                 }).catch(err => {

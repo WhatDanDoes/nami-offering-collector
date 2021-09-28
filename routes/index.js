@@ -1,3 +1,4 @@
+const fs = require('fs');
 const express = require('express');
 const router = express.Router();
 const models = require('../models');
@@ -13,27 +14,53 @@ router.get('/', function(req, res, next) {
 router.post('/identify', (req, res) => {
   models.Agent.findOne({ where: { publicAddress: req.body.publicAddress } }).then(agent => {
 
-    if (agent) {
-      const nonce = Math.floor(Math.random() * 1000000).toString();
-      agent.nonce = nonce;
-      agent.save({ validateBeforeSave: false }).then(agent => {
-        res.status(201).json({ nonce: agent.nonce, publicAddress: agent.publicAddress });
-      }).catch(err => {
-        res.status(500).json(err);
-      });
-    }
-    else {
-      models.Agent.create({ publicAddress: req.body.publicAddress }).then(agent => {
-        res.status(201).json({ nonce: agent.nonce, publicAddress: agent.publicAddress });
-      }).catch(err => {
-        if (err.errors['publicAddress']) {
-          res.status(400).json({ message: err.errors['publicAddress'].message });
+    fs.readFile('./message.txt', 'utf8', (err, text) => {
+      if (err) return res.status(500).json({ message: err.message });
+
+      const signingMessage = [
+        {
+          type: 'string',
+          name: 'Message',
+          value: text
         }
-        else {
-          res.status(400).json({ message: err.message });
-        }
-      });
-    }
+      ];
+
+      if (agent) {
+        const nonce = Math.floor(Math.random() * 1000000).toString();
+        agent.nonce = nonce;
+        agent.save({ validateBeforeSave: false }).then(agent => {
+
+          signingMessage.push({
+            type: 'string',
+            name: 'nonce',
+            value: agent.nonce
+          });
+
+          res.status(201).json({ message: signingMessage, publicAddress: agent.publicAddress });
+        }).catch(err => {
+          res.status(500).json(err);
+        });
+      }
+      else {
+        models.Agent.create({ publicAddress: req.body.publicAddress }).then(agent => {
+
+          signingMessage.push({
+            type: 'string',
+            name: 'nonce',
+            value: agent.nonce
+          });
+
+          res.status(201).json({ message: signingMessage, publicAddress: agent.publicAddress });
+        }).catch(err => {
+          if (err.errors['publicAddress']) {
+            res.status(400).json({ message: err.errors['publicAddress'].message });
+          }
+          else {
+            res.status(400).json({ message: err.message });
+          }
+        });
+      }
+    });
   }).catch(err => {
     res.status(500).json(err);
   });
