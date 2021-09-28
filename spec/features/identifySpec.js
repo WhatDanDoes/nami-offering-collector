@@ -1,15 +1,18 @@
 const fs = require('fs');
+const ethers = require('ethers');
 const request = require('supertest-session');
 const app = require('../../app');
 const models = require('../../models');
 
-describe('/identify', () => {
+describe('identify', () => {
 
   jasmine.DEFAULT_TIMEOUT_INTERVAL = 10000;
 
-  const _publicAddress = '0xc5425573eE45B1fF67aAf1fB0982E64e772769A7';
+  // These were provided by ganache-cli
+  const _publicAddress = '0x034F8c5c8381Bf45511d071875333Eba143Bd10e';
+  const _privateAddress = '0xb30b64470fe770bbe8e9ff6478e550ce99e7f38d8e07ec2dbe27e8ff45742cf6';
 
-  describe('POST', () => {
+  describe('POST /introduce', () => {
 
     let signingMessage;
     beforeEach(async () => {
@@ -30,7 +33,7 @@ describe('/identify', () => {
 
         it('returns a public address and message with nonce for signing', done => {
           request(app)
-            .post('/identify')
+            .post('/introduce')
             .send({ publicAddress: _publicAddress })
             .set('Accept', 'application/json')
             .expect('Content-Type', /json/)
@@ -54,7 +57,7 @@ describe('/identify', () => {
             expect(agents.length).toEqual(0);
 
             request(app)
-              .post('/identify')
+              .post('/introduce')
               .send({ publicAddress: _publicAddress })
               .set('Accept', 'application/json')
               .expect('Content-Type', /json/)
@@ -84,7 +87,7 @@ describe('/identify', () => {
 
         beforeEach(done => {
           request(app)
-            .post('/identify')
+            .post('/introduce')
             .send({ publicAddress: _publicAddress })
             .set('Accept', 'application/json')
             .expect('Content-Type', /json/)
@@ -97,7 +100,7 @@ describe('/identify', () => {
 
         it('returns a public address and message with nonce for signing', done => {
           request(app)
-            .post('/identify')
+            .post('/introduce')
             .send({ publicAddress: _publicAddress })
             .set('Accept', 'application/json')
             .expect('Content-Type', /json/)
@@ -123,7 +126,7 @@ describe('/identify', () => {
             const nonce = agents[0].nonce;
 
             request(app)
-              .post('/identify')
+              .post('/introduce')
               .send({ publicAddress: _publicAddress })
               .set('Accept', 'application/json')
               .expect('Content-Type', /json/)
@@ -149,6 +152,101 @@ describe('/identify', () => {
           });
         });
       });
+
+      describe('POST /prove', () => {
+
+        let publicAddress, message;
+        beforeEach(done => {
+          request(app)
+            .post('/introduce')
+            .send({ publicAddress: _publicAddress })
+            .set('Accept', 'application/json')
+            .expect('Content-Type', /json/)
+            .expect(201)
+            .end((err, res) => {
+              if (err) return done.fail(err);
+              ({ publicAddress, message } = res.body);
+              done();
+            });
+        });
+
+        describe('success', () => {
+
+          it('returns 201 status with message', done => {
+            const signer = new ethers.Wallet(_privateAddress);
+            signer.signMessage(JSON.stringify(message)).then(signed => {
+              request(app)
+                .post('/prove')
+                .send({ publicAddress: _publicAddress, signature: signed })
+                .set('Accept', 'application/json')
+                .expect('Content-Type', /json/)
+                .expect(201)
+                .end((err, res) => {
+                  if (err) return done.fail(err);
+                  expect(res.body.message).toEqual('Welcome!');
+                  done();
+                });
+            }).catch(err => {
+              done.fail(err);
+            });
+          });
+        });
+
+        describe('failure', () => {
+
+          describe('bad private key', () => {
+
+            it('returns 401 status with message', done => {
+              // Bad private key obtained from ganache-cli
+              const signer = new ethers.Wallet('0x0fb6b6f3f49a79f5b49bd71386cc5016762a07340d903a5590a9433253779d8b');
+              signer.signMessage(JSON.stringify(message)).then(signed => {
+
+                request(app)
+                  .post('/prove')
+                  .send({ publicAddress: _publicAddress, signature: signed })
+                  .set('Accept', 'application/json')
+                  .expect('Content-Type', /json/)
+                  .expect(401)
+                  .end((err, res) => {
+                    if (err) return done.fail(err);
+                    expect(res.body.message).toEqual('Signature verification failed');
+                    done();
+                  });
+
+              }).catch(err => {
+                done.fail(err);
+              });
+            });
+          });
+
+          describe('incorrect nonce', () => {
+
+            it('returns 401 status with message', done => {
+              const _msgBadNonce = [...message];
+              _msgBadNonce[1].nonce = Math.floor(Math.random() * 1000000).toString();
+
+              const signer = new ethers.Wallet(_privateAddress);
+              signer.signMessage(JSON.stringify(_msgBadNonce)).then(signed => {
+
+                request(app)
+                  .post('/prove')
+                  .send({ publicAddress: _publicAddress, signature: signed })
+                  .set('Accept', 'application/json')
+                  .expect('Content-Type', /json/)
+                  .expect(401)
+                  .end((err, res) => {
+                    if (err) return done.fail(err);
+                    expect(res.body.message).toEqual('Signature verification failed');
+                    done();
+                  });
+
+              }).catch(err => {
+                done.fail(err);
+              });
+            });
+          });
+        });
+      });
     });
 
     describe('failure', () => {
@@ -157,7 +255,7 @@ describe('/identify', () => {
 
         it('returns an error', done => {
           request(app)
-            .post('/identify')
+            .post('/introduce')
             .send({ publicAddress: 'invalid ethereum address' })
             .set('Accept', 'application/json')
             .expect('Content-Type', /json/)
@@ -174,7 +272,7 @@ describe('/identify', () => {
             expect(agents.length).toEqual(0);
 
             request(app)
-              .post('/identify')
+              .post('/introduce')
               .send({ publicAddress: 'invalid ethereum address' })
               .set('Accept', 'application/json')
               .expect('Content-Type', /json/)
@@ -204,7 +302,7 @@ describe('/identify', () => {
 
     beforeEach(done => {
       session = request(app);
-      session.post('/identify')
+      session.post('/introduce')
         .send({ publicAddress: _publicAddress })
         .set('Accept', 'application/json')
         .expect('Content-Type', /json/)

@@ -3,6 +3,9 @@ const express = require('express');
 const router = express.Router();
 const models = require('../models');
 
+const sigUtil = require('eth-sig-util');
+const ethUtil = require('ethereumjs-util');
+
 /* GET home page. */
 router.get('/', function(req, res, next) {
   res.render('index', { title: process.env.TITLE });
@@ -11,7 +14,7 @@ router.get('/', function(req, res, next) {
 /**
  * This is where the nonce gets created and sent
  */
-router.post('/identify', (req, res) => {
+router.post('/introduce', (req, res) => {
   models.Agent.findOne({ where: { publicAddress: req.body.publicAddress } }).then(agent => {
 
     fs.readFile('./message.txt', 'utf8', (err, text) => {
@@ -60,6 +63,59 @@ router.post('/identify', (req, res) => {
           }
         });
       }
+    });
+  }).catch(err => {
+    res.status(500).json(err);
+  });
+});
+
+/**
+ * Takes signed message and verifies signatures
+ *
+ */
+router.post('/prove', (req, res) => {
+  models.Agent.findOne({ where: { publicAddress: req.body.publicAddress } }).then(agent => {
+
+    fs.readFile('./message.txt', 'utf8', (err, text) => {
+      if (err) return res.status(500).json({ message: err.message });
+
+      const message = [
+        {
+          type: 'string',
+          name: 'Message',
+          value: text
+        },
+        {
+          type: 'string',
+          name: 'nonce',
+          value: agent.nonce
+        }
+      ];
+
+      // 2021-9-28 https://www.toptal.com/ethereum/one-click-login-flows-a-metamask-tutorial
+      //
+      // We now are in possession of message, publicAddress and signature. We
+      // can perform an elliptic curve signature verification with ecrecover
+      const msgBuffer = ethUtil.toBuffer(JSON.stringify(message));
+      const msgHash = ethUtil.hashPersonalMessage(msgBuffer);
+      const signatureBuffer = ethUtil.toBuffer(req.body.signature);
+      const signatureParams = ethUtil.fromRpcSig(signatureBuffer);
+      const publicKey = ethUtil.ecrecover(
+        msgHash,
+        signatureParams.v,
+        signatureParams.r,
+        signatureParams.s
+      );
+      const addressBuffer = ethUtil.publicToAddress(publicKey);
+      const address = ethUtil.bufferToHex(addressBuffer);
+
+      if (address.toLowerCase() === agent.publicAddress.toLowerCase()) {
+        res.status(201).json({ message: 'Welcome!' });
+      }
+      else {
+        return res.status(401).json({ message: 'Signature verification failed' });
+      }
+
     });
   }).catch(err => {
     res.status(500).json(err);
