@@ -12,9 +12,11 @@ router.get('/', function(req, res, next) {
  */
 router.post('/identify', (req, res) => {
   models.Agent.findOne({ where: { publicAddress: req.body.publicAddress } }).then(agent => {
+
     if (agent) {
       const nonce = Math.floor(Math.random() * 1000000).toString();
-      models.Agent.findOneAndUpdate({ publicAddress: req.body.publicAddress }, { nonce: nonce }).then(agent => {
+      agent.nonce = nonce;
+      agent.save({ validateBeforeSave: false }).then(agent => {
         res.status(201).json({ nonce: agent.nonce });
       }).catch(err => {
         res.status(500).json(err);
@@ -40,7 +42,7 @@ router.post('/identify', (req, res) => {
 /**
  * Logout
  */
-router.delete('/identify', (req, res) => {
+router.get('/disconnect', (req, res) => {
   for (let cookie in req.cookies) {
     res.cookie(cookie, '', {expires: new Date(0)});
   }
