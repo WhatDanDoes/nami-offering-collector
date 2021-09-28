@@ -17,14 +17,14 @@ router.post('/identify', (req, res) => {
       const nonce = Math.floor(Math.random() * 1000000).toString();
       agent.nonce = nonce;
       agent.save({ validateBeforeSave: false }).then(agent => {
-        res.status(201).json({ nonce: agent.nonce });
+        res.status(201).json({ nonce: agent.nonce, publicAddress: agent.publicAddress });
       }).catch(err => {
         res.status(500).json(err);
       });
     }
     else {
       models.Agent.create({ publicAddress: req.body.publicAddress }).then(agent => {
-        res.status(201).json({ nonce: agent.nonce });
+        res.status(201).json({ nonce: agent.nonce, publicAddress: agent.publicAddress });
       }).catch(err => {
         if (err.errors['publicAddress']) {
           res.status(400).json({ message: err.errors['publicAddress'].message });
