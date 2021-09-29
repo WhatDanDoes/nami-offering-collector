@@ -92,10 +92,12 @@ router.post('/prove', (req, res) => {
         }
       ];
 
+      //
       // 2021-9-28 https://www.toptal.com/ethereum/one-click-login-flows-a-metamask-tutorial
       //
       // We now are in possession of message, publicAddress and signature. We
       // can perform an elliptic curve signature verification with ecrecover
+      //
       const msgBuffer = ethUtil.toBuffer(JSON.stringify(message));
       const msgHash = ethUtil.hashPersonalMessage(msgBuffer);
       const signatureBuffer = ethUtil.toBuffer(req.body.signature);
@@ -110,12 +112,16 @@ router.post('/prove', (req, res) => {
       const address = ethUtil.bufferToHex(addressBuffer);
 
       if (address.toLowerCase() === agent.publicAddress.toLowerCase()) {
-        res.status(201).json({ message: 'Welcome!' });
+        req.session.agent_id = agent._id;
+        req.session.save(err => {
+          if (err) return res.status(500).json({ message: 'Could not establish session' });
+
+          res.status(201).json({ message: 'Welcome!' });
+        });
       }
       else {
         return res.status(401).json({ message: 'Signature verification failed' });
       }
-
     });
   }).catch(err => {
     res.status(500).json(err);
@@ -130,7 +136,7 @@ router.get('/disconnect', (req, res) => {
     res.cookie(cookie, '', {expires: new Date(0)});
   }
 
-  // Tests suggest this doesn't do anything.
+  // Tests suggest this doesn't do anything even with `unset: 'destroy'`.
   // I.e., the client still has a cookie (see above)
   req.session.destroy(err => {
     if (err) console.error(err);

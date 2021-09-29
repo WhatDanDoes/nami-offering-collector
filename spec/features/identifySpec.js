@@ -1,3 +1,4 @@
+const _appName = require('../../package.json').name;
 const fs = require('fs');
 const ethers = require('ethers');
 const request = require('supertest-session');
@@ -25,6 +26,62 @@ describe('identify', () => {
     let signingMessage;
     beforeEach(async () => {
       signingMessage = fs.readFileSync('./message.txt', 'utf8');
+    });
+
+    it('starts a session', done => {
+      const session = request(app);
+      expect(session.cookies.length).toEqual(0);
+      session
+        .post('/introduce')
+        .send({ publicAddress: _publicAddress })
+        .set('Accept', 'application/json')
+        .expect('Content-Type', /json/)
+        .expect(201)
+        .end((err, res) => {
+          if (err) return done.fail(err);
+          expect(session.cookies.length).toEqual(1);
+          expect(session.cookies[0].name).toEqual(_appName);
+          expect(session.cookies[0].value).toBeDefined();
+          expect(typeof session.cookies[0].expiration_date).toEqual('number');
+          expect(session.cookies[0].expiration_date).not.toEqual(Infinity);
+          expect(session.cookies[0].path).toEqual('/');
+          expect(session.cookies[0].explicit_path).toBe(true);
+          expect(session.cookies[0].domain).toBeUndefined();
+          expect(session.cookies[0].explicit_domain).toBe(false);
+          expect(session.cookies[0].noscript).toBe(true);
+
+          //
+          // 2020-10-19
+          //
+          // The bulk of the above are defaults. These require manual
+          // testing, because in order for such a cookie to be put into the
+          // cookie jar, it would have to be HTTPS
+          //
+          // expect(session.cookies[0].secure).toBe(true);
+          // expect(session.cookies[0].sameSite).toEqual('none');
+          //
+          // These are test expectations. Production expetations are commented above
+          expect(session.cookies[0].secure).toBe(false);
+          expect(session.cookies[0].sameSite).toBeUndefined();
+
+          done();
+        });
+    });
+
+    it('sets maximum cookie age to one hour', done => {
+      const session = request(app);
+      session
+        .post('/introduce')
+        .send({ publicAddress: _publicAddress })
+        .set('Accept', 'application/json')
+        .expect('Content-Type', /json/)
+        .expect(201)
+        .end((err, res) => {
+          if (err) return done.fail(err);
+          expect(session.cookies.length).toEqual(1);
+          expect(session.cookies[0].expiration_date <= Date.now() + 1000 * 60 * 60).toBe(true);
+          done();
+        });
     });
 
     describe('success', () => {
@@ -155,9 +212,11 @@ describe('identify', () => {
 
       describe('POST /prove', () => {
 
-        let publicAddress, message;
+        let publicAddress, message, session;
+
         beforeEach(done => {
-          request(app)
+          session = request(app);
+          session
             .post('/introduce')
             .send({ publicAddress: _publicAddress })
             .set('Accept', 'application/json')
@@ -172,10 +231,40 @@ describe('identify', () => {
 
         describe('success', () => {
 
-          it('returns 201 status with message', done => {
+          let signed;
+          beforeEach(done => {
             const signer = new ethers.Wallet(_privateAddress);
-            signer.signMessage(JSON.stringify(message)).then(signed => {
-              request(app)
+            signer.signMessage(JSON.stringify(message)).then(result => {
+              signed = result;
+              done();
+            }).catch(err => {
+              done.fail(err);
+            });
+          });
+
+          it('returns 201 status with message', done => {
+            session
+              .post('/prove')
+              .send({ publicAddress: _publicAddress, signature: signed })
+              .set('Accept', 'application/json')
+              .expect('Content-Type', /json/)
+              .expect(201)
+              .end((err, res) => {
+                if (err) return done.fail(err);
+                expect(res.body.message).toEqual('Welcome!');
+                done();
+              });
+
+          });
+
+          it('attaches agent_id to the session', done => {
+            models.mongoose.connection.db.collection('sessions').find({}).toArray((err, sessions) => {
+              if (err) return done.fail(err);
+
+              expect(sessions.length).toEqual(1);
+              expect(JSON.parse(sessions[0].session).agent_id).toBeUndefined();
+
+              session
                 .post('/prove')
                 .send({ publicAddress: _publicAddress, signature: signed })
                 .set('Accept', 'application/json')
@@ -183,11 +272,25 @@ describe('identify', () => {
                 .expect(201)
                 .end((err, res) => {
                   if (err) return done.fail(err);
-                  expect(res.body.message).toEqual('Welcome!');
-                  done();
+
+                  models.mongoose.connection.db.collection('sessions').find({}).toArray((err, sessions) => {
+                    if (err) return done.fail(err);
+
+                    expect(sessions.length).toEqual(1);
+                    expect(JSON.parse(sessions[0].session).agent_id).toBeDefined();
+
+                    models.Agent.find({}).then(agents => {
+                      expect(agents.length).toEqual(1);
+                      expect(agents[0].publicAddress).toEqual(_publicAddress);
+
+                      expect(JSON.parse(sessions[0].session).agent_id).toEqual(agents[0]._id.toString());
+
+                      done();
+                    }).catch(err => {
+                      done.fail(err);
+                    });
+                  });
                 });
-            }).catch(err => {
-              done.fail(err);
             });
           });
         });

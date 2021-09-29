@@ -34,6 +34,9 @@ const sessionConfig = {
   name: appName,
   secret: 'remember to set this to something configurable',
   resave: false,
+  cookie: {
+    maxAge: 1000 * 60 * 60,
+  },
   saveUninitialized: true,
   store: MongoStore.create({ mongoUrl: 'mongodb://' + config.host + ':27017/' + config.database })
 };

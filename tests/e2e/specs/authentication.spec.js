@@ -102,6 +102,16 @@ context('authentication', function() {
         cy.get('#connect-metamask').contains('Disconnect Metamask');
       });
 
+      it('maintains authenticated state upon app navigation', () => {
+        cy.get('#home-link').click();
+        cy.get('#connect-metamask').contains('Disconnect Metamask');
+      });
+
+      it('maintains authenticated state upon reload', () => {
+        cy.reload();
+        cy.get('#connect-metamask').contains('Disconnect Metamask');
+      });
+
       describe('logging out', () => {
         beforeEach(() => {
           cy.visit('/');
