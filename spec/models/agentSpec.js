@@ -7,15 +7,6 @@ describe('Agent', () => {
     publicAddress: '0x0eDB511d9434452D24a3Eeb47E3d02Fda903A73a',
   };
 
-  // Is there a better way to smoke the database?
-  beforeAll(done => {
-    db.mongoose.connection.db.dropDatabase().then(result => {
-      done();
-    }).catch(err => {
-      done.fail(err);
-    });
-  });
-
   let agent;
   beforeEach(() => {
     agent = new Agent(_profile);

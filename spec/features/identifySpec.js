@@ -12,19 +12,19 @@ describe('identify', () => {
   const _publicAddress = '0x034F8c5c8381Bf45511d071875333Eba143Bd10e';
   const _privateAddress = '0xb30b64470fe770bbe8e9ff6478e550ce99e7f38d8e07ec2dbe27e8ff45742cf6';
 
+  afterEach(done => {
+    models.mongoose.connection.db.dropDatabase().then((err, result) => {
+      done();
+    }).catch(function(err) {
+      done.fail(err);
+    });
+  });
+
   describe('POST /introduce', () => {
 
     let signingMessage;
     beforeEach(async () => {
       signingMessage = fs.readFileSync('./message.txt', 'utf8');
-    });
-
-    afterEach(done => {
-      models.mongoose.connection.db.dropDatabase().then((err, result) => {
-        done();
-      }).catch(function(err) {
-        done.fail(err);
-      });
     });
 
     describe('success', () => {

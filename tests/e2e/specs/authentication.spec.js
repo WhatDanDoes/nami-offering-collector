@@ -76,7 +76,6 @@ context('authentication', function() {
 
     context('signature request rejected', () => {
       beforeEach(() => {
-        //cy.task('rejectMetamaskSignatureRequest');
         cy.rejectMetamaskSignatureRequest();
       });
 
@@ -92,7 +91,6 @@ context('authentication', function() {
 
     context('signature request accepted', () => {
       beforeEach(() => {
-        //cy.task('confirmMetamaskSignatureRequest');
         cy.confirmMetamaskSignatureRequest();
       });
 
