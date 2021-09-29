@@ -19,12 +19,12 @@ module.exports = function(mongoose) {
         },
         {
           validator: async function(val) {
-            const count = await this.model('Agent').count({ publicAddress: val });
-            return !count;
+            const agentExists = await this.model('Agent').findOne({ where: { publicAddress: val } });
+            return !agentExists;
           },
           message: 'That public address is already registered'
         }
-      ]
+      ],
     },
     name: {
       type: String,

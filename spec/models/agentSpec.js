@@ -7,6 +7,15 @@ describe('Agent', () => {
     publicAddress: '0x0eDB511d9434452D24a3Eeb47E3d02Fda903A73a',
   };
 
+  // Is there a better way to smoke the database?
+  beforeAll(done => {
+    db.mongoose.connection.db.dropDatabase().then(result => {
+      done();
+    }).catch(err => {
+      done.fail(err);
+    });
+  });
+
   let agent;
   beforeEach(() => {
     agent = new Agent(_profile);
@@ -90,7 +99,84 @@ describe('Agent', () => {
         });
       });
 
+      it('trims whitespace', done => {
+        Agent.create({..._profile, publicAddress: `   ${_profile.publicAddress}   ` }).then(obj => {
+          expect(obj.publicAddress).toEqual(_profile.publicAddress);
+          done();
+        }).catch(error => {
+          done.fail(error);
+        });
+      });
 
+      describe('case insensitivity', () => {
+
+        it('won\'t save a lowercase duplicate', done => {
+          agent.save().then(obj => {
+            expect(obj.publicAddress).toEqual(_profile.publicAddress);
+
+            // Create lowercase dup
+            Agent.create({..._profile, publicAddress: _profile.publicAddress.toLowerCase() }).then(obj => {
+              done.fail('This should not have saved');
+            }).catch(error => {
+              expect(Object.keys(error.errors).length).toEqual(1);
+              expect(error.errors['publicAddress'].message).toEqual('That public address is already registered');
+              done();
+            });
+          }).catch(error => {
+            done.fail(error);
+          });
+        });
+
+        it('won\'t save an uppercase duplicate', done => {
+          agent.save().then(obj => {
+            expect(obj.publicAddress).toEqual(_profile.publicAddress);
+            expect(obj.publicAddress).not.toEqual(_profile.publicAddress.toUpperCase().replace(/^0X/, '0x'));
+
+            // Create uppercase dup
+            Agent.create({..._profile, publicAddress: _profile.publicAddress.toUpperCase().replace(/^0X/, '0x') }).then(obj => {
+              done.fail('This should not have saved');
+            }).catch(error => {
+              expect(Object.keys(error.errors).length).toEqual(1);
+              expect(error.errors['publicAddress'].message).toEqual('That public address is already registered');
+              done();
+            });
+          }).catch(error => {
+            done.fail(error);
+          });
+        });
+
+        it('matches on a lowercase search', done => {
+          agent.save().then(obj => {
+            expect(obj.publicAddress).toEqual(_profile.publicAddress);
+            expect(obj.publicAddress).not.toEqual(_profile.publicAddress.toLowerCase());
+
+            Agent.findOne({ where: { publicAddress: _profile.publicAddress.toLowerCase() } }).then(agent => {
+              expect(agent.publicAddress).toEqual(_profile.publicAddress);
+              done();
+            }).catch(error => {
+              done.fail(error);
+            });
+          }).catch(error => {
+            done.fail(error);
+          });
+        });
+
+        it('matches on an uppercase search', done => {
+          agent.save().then(obj => {
+            expect(obj.publicAddress).toEqual(_profile.publicAddress);
+            expect(obj.publicAddress).not.toEqual(_profile.publicAddress.toUpperCase().replace(/^0X/, '0x'));
+
+            Agent.findOne({ where: { publicAddress: _profile.publicAddress.toUpperCase().replace(/^0X/, '0x') } }).then(agent => {
+              expect(agent.publicAddress).toEqual(_profile.publicAddress);
+              done();
+            }).catch(error => {
+              done.fail(error);
+            });
+          }).catch(error => {
+            done.fail(error);
+          });
+        });
+      });
     });
 
     describe('name', () => {
