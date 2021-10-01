@@ -35,10 +35,19 @@ describe('landing page', () => {
       const warning = await el.evaluate(e => e.textContent);
       expect(warning).toEqual('Click here to install the Metamask browser plugin');
     });
+
+    it('does not display a .messages element', async () => {
+      let messages = await page.evaluate(() => {
+        return document.querySelector(".messages")
+      });
+
+      expect(messages).toBe(null);
+    });
   });
 
+
 // 2021-9-23 Going to leave this here for awhile.
-// Dappeteer seems like a better tool than Synpress, if it's every updated...
+// Dappeteer seems like a better tool than Synpress, if it's ever updated...
 //
 //  describe('metamask installed', () => {
 //    let metamask;
