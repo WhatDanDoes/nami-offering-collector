@@ -8,6 +8,7 @@ const ethUtil = require('ethereumjs-util');
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
+console.log("Going home");
   res.render('index', { title: process.env.TITLE });
 });
 
@@ -55,11 +56,22 @@ router.post('/introduce', (req, res) => {
 
           res.status(201).json({ message: signingMessage, publicAddress: agent.publicAddress });
         }).catch(err => {
-          if (err.errors['publicAddress']) {
-            res.status(400).json({ message: err.errors['publicAddress'].message });
+          if (req.headers['accept'] === 'application/json') {
+            if (err.errors['publicAddress']) {
+              res.status(400).json({ message: err.errors['publicAddress'].message });
+            }
+            else {
+              res.status(400).json({ message: err.message });
+            }
           }
           else {
-            res.status(400).json({ message: err.message });
+            if (err.errors['publicAddress']) {
+              req.flash('error', err.errors['publicAddress'].message);
+            }
+            else {
+              req.flash('error', err.message);
+            }
+            res.redirect('/');
           }
         });
       }
@@ -116,11 +128,21 @@ router.post('/prove', (req, res) => {
         req.session.save(err => {
           if (err) return res.status(500).json({ message: 'Could not establish session' });
 
-          res.status(201).json({ message: 'Welcome!' });
+          if (req.headers['accept'] === 'application/json') {
+            return res.status(201).json({ message: 'Welcome!' });
+          }
+
+          req.flash('info', 'Welcome!');
+          res.redirect('/');
         });
       }
       else {
-        return res.status(401).json({ message: 'Signature verification failed' });
+        if (req.headers['accept'] === 'application/json') {
+          return res.status(401).json({ message: 'Signature verification failed' });
+        }
+
+        req.flash('error', 'Signature verification failed');
+        res.redirect('/');
       }
     });
   }).catch(err => {
