@@ -102,6 +102,10 @@ context('authentication', function() {
         cy.get('#connect-metamask').contains('Disconnect Metamask');
       });
 
+      it('displays a friendly message', () => {
+        cy.contains(`Welcome!`);
+      });
+
       it('maintains authenticated state upon app navigation', () => {
         cy.get('#home-link').click();
         cy.get('#connect-metamask').contains('Disconnect Metamask');
