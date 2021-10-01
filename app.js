@@ -21,6 +21,11 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
+/**
+ * Flash messages
+ */
+const flash = require('connect-flash');
+app.use(flash());
 
 /**
  * Sessions
