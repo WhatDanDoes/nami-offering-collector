@@ -1,5 +1,6 @@
 const _appName = require('../../package.json').name;
 const fs = require('fs');
+const cheerio = require('cheerio');
 const ethers = require('ethers');
 const request = require('supertest-session');
 const app = require('../../app');
@@ -16,7 +17,7 @@ describe('identify', () => {
   afterEach(done => {
     models.mongoose.connection.db.dropDatabase().then((err, result) => {
       done();
-    }).catch(function(err) {
+    }).catch(err => {
       done.fail(err);
     });
   });
@@ -116,7 +117,7 @@ describe('identify', () => {
             request(app)
               .post('/introduce')
               .send({ publicAddress: _publicAddress })
-              .set('Accept', 'application/json')
+              .set('Content-Type', 'application/json')
               .expect('Content-Type', /json/)
               .expect(201)
               .end((err, res) => {
@@ -146,7 +147,7 @@ describe('identify', () => {
           request(app)
             .post('/introduce')
             .send({ publicAddress: _publicAddress })
-            .set('Accept', 'application/json')
+            .set('Content-Type', 'application/json')
             .expect('Content-Type', /json/)
             .expect(201)
             .end((err, res) => {
@@ -159,7 +160,7 @@ describe('identify', () => {
           request(app)
             .post('/introduce')
             .send({ publicAddress: _publicAddress })
-            .set('Accept', 'application/json')
+            .set('Content-Type', 'application/json')
             .expect('Content-Type', /json/)
             .expect(201)
             .end((err, res) => {
@@ -185,7 +186,7 @@ describe('identify', () => {
             request(app)
               .post('/introduce')
               .send({ publicAddress: _publicAddress })
-              .set('Accept', 'application/json')
+              .set('Content-Type', 'application/json')
               .expect('Content-Type', /json/)
               .expect(201)
               .end((err, res) => {
@@ -219,7 +220,7 @@ describe('identify', () => {
           session
             .post('/introduce')
             .send({ publicAddress: _publicAddress })
-            .set('Accept', 'application/json')
+            .set('Content-Type', 'application/json')
             .expect('Content-Type', /json/)
             .expect(201)
             .end((err, res) => {
@@ -248,6 +249,7 @@ describe('identify', () => {
               session
                 .post('/prove')
                 .send({ publicAddress: _publicAddress, signature: signed })
+                .set('Content-Type', 'application/json')
                 .set('Accept', 'application/json')
                 .expect('Content-Type', /json/)
                 .expect(201)
@@ -270,6 +272,7 @@ describe('identify', () => {
                   .post('/prove')
                   .send({ publicAddress: _publicAddress, signature: signed })
                   .set('Accept', 'application/json')
+                  .set('Content-Type', 'application/json')
                   .expect('Content-Type', /json/)
                   .expect(201)
                   .end((err, res) => {
@@ -299,9 +302,10 @@ describe('identify', () => {
 
           describe('browser', () => {
 
-            fit('returns a redirect to home with message', done => {
+            it('returns a redirect to home with message', done => {
               session
                 .post('/prove')
+                .set('Content-Type', 'application/json')
                 .send({ publicAddress: _publicAddress, signature: signed })
                 .expect(302)
                 .expect('Location', /\/$/)
@@ -313,7 +317,9 @@ describe('identify', () => {
                     .get(res.header['location'])
                     .expect(200)
                     .end((err, res) => {
-                      expect(res.text).toContain('Welcome!');
+
+                      const $ = cheerio.load(res.text);
+                      expect($('.messages .alert.alert-success').text()).toContain('Welcome!');
                       done();
                     });
                 });
@@ -328,6 +334,7 @@ describe('identify', () => {
 
                 session
                   .post('/prove')
+                  .set('Accept', 'text/html')
                   .send({ publicAddress: _publicAddress, signature: signed })
                   .expect(302)
                   .expect('Location', /\/$/)
@@ -380,12 +387,14 @@ describe('identify', () => {
                 request(app)
                   .post('/prove')
                   .send({ publicAddress: _publicAddress, signature: signed })
+                  .set('Content-Type', 'application/json')
                   .set('Accept', 'application/json')
                   .expect('Content-Type', /json/)
                   .expect(401)
                   .end((err, res) => {
                     if (err) return done.fail(err);
-//                    expect(res.body).toEqual('Signature verification failed');
+
+                    expect(res.body.message).toEqual('Signature verification failed');
                     done();
                   });
               });
@@ -394,14 +403,24 @@ describe('identify', () => {
             describe('browser', () => {
 
               it('returns 302 status with message', done => {
-                request(app)
+                session = request(app);
+                session
                   .post('/prove')
                   .send({ publicAddress: _publicAddress, signature: signed })
                   .expect(302)
                   .end((err, res) => {
                     if (err) return done.fail(err);
-//                    expect(res.body.message).toEqual('Signature verification failed');
-                    done();
+
+                    // Follow redirect
+                    session
+                      .get(res.header['location'])
+                      .expect(200)
+                      .end((err, res) => {
+
+                        const $ = cheerio.load(res.text);
+                        expect($('.messages .alert.alert-error').text()).toContain('Signature verification failed');
+                        done();
+                      });
                   });
               });
             });
@@ -421,6 +440,7 @@ describe('identify', () => {
                   request(app)
                     .post('/prove')
                     .send({ publicAddress: _publicAddress, signature: signed })
+                    .set('Content-Type', 'application/json')
                     .set('Accept', 'application/json')
                     .expect('Content-Type', /json/)
                     .expect(401)
@@ -445,16 +465,25 @@ describe('identify', () => {
                 const signer = new ethers.Wallet(_privateAddress);
                 signer.signMessage(JSON.stringify(_msgBadNonce)).then(signed => {
 
-                  request(app)
+                  session = request(app)
+                  session
                     .post('/prove')
                     .send({ publicAddress: _publicAddress, signature: signed })
                     .expect(302)
                     .end((err, res) => {
                       if (err) return done.fail(err);
-//                      expect(res.body.message).toEqual('Signature verification failed');
-                      done();
-                    });
 
+                      // Follow redirect
+                      session
+                        .get(res.header['location'])
+                        .expect(200)
+                        .end((err, res) => {
+
+                          const $ = cheerio.load(res.text);
+                          expect($('.messages .alert.alert-error').text()).toContain('Signature verification failed');
+                          done();
+                        });
+                    });
                 }).catch(err => {
                   done.fail(err);
                 });
@@ -475,6 +504,7 @@ describe('identify', () => {
             request(app)
               .post('/introduce')
               .send({ publicAddress: 'invalid ethereum address' })
+              .set('Content-Type', 'application/json')
               .set('Accept', 'application/json')
               .expect('Content-Type', /json/)
               .expect(400)
@@ -492,6 +522,7 @@ describe('identify', () => {
               request(app)
                 .post('/introduce')
                 .send({ publicAddress: 'invalid ethereum address' })
+                .set('Content-Type', 'application/json')
                 .set('Accept', 'application/json')
                 .expect('Content-Type', /json/)
                 .expect(400)
@@ -521,14 +552,24 @@ describe('identify', () => {
         describe('browser', () => {
 
           it('redirects', done => {
-            request(app)
+            session = request(app)
+            session
               .post('/introduce')
               .send({ publicAddress: 'invalid ethereum address' })
               .expect(302)
               .end((err, res) => {
                 if (err) return done.fail(err);
-//                expect(res.body.message).toEqual('Invalid public address');
-                done();
+
+                // Follow redirect
+                session
+                  .get(res.header['location'])
+                  .expect(200)
+                  .end((err, res) => {
+
+                    const $ = cheerio.load(res.text);
+                    expect($('.messages .alert.alert-error').text()).toContain('Invalid public address');
+                    done();
+                  });
               });
           });
 
@@ -568,7 +609,7 @@ describe('identify', () => {
       session = request(app);
       session.post('/introduce')
         .send({ publicAddress: _publicAddress })
-        .set('Accept', 'application/json')
+        .set('Content-Type', 'application/json')
         .expect('Content-Type', /json/)
         .expect(201)
         .end((err, res) => {
@@ -577,12 +618,34 @@ describe('identify', () => {
         });
     });
 
-    it('redirects home and clears the session', done => {
+    it('redirects home without a message', done => {
       expect(session.cookies.length).toEqual(1);
       session
         .get('/disconnect')
         .expect(302)
-        .end(function(err, res) {
+        .end((err, res) => {
+          if (err) return done.fail(err);
+
+          // Follow redirect
+          session
+            .get(res.header['location'])
+            .expect(200)
+            .end((err, res) => {
+
+              // 2021-10-1 https://github.com/cheeriojs/cheerio/issues/798#issuecomment-171882953
+              const $ = cheerio.load(res.text);
+              expect($('.messages').length).toEqual(0);
+              done();
+            });
+        });
+    });
+
+    it('clears the session', done => {
+      expect(session.cookies.length).toEqual(1);
+      session
+        .get('/disconnect')
+        .expect(302)
+        .end((err, res) => {
           if (err) return done.fail(err);
           expect(session.cookies.length).toEqual(0);
           done();
@@ -590,5 +653,3 @@ describe('identify', () => {
     });
   });
 });
-
-
