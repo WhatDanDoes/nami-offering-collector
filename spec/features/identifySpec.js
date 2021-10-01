@@ -242,28 +242,9 @@ describe('identify', () => {
             });
           });
 
-          it('returns 201 status with message', done => {
-            session
-              .post('/prove')
-              .send({ publicAddress: _publicAddress, signature: signed })
-              .set('Accept', 'application/json')
-              .expect('Content-Type', /json/)
-              .expect(201)
-              .end((err, res) => {
-                if (err) return done.fail(err);
-                expect(res.body.message).toEqual('Welcome!');
-                done();
-              });
+          describe('API', () => {
 
-          });
-
-          it('attaches agent_id to the session', done => {
-            models.mongoose.connection.db.collection('sessions').find({}).toArray((err, sessions) => {
-              if (err) return done.fail(err);
-
-              expect(sessions.length).toEqual(1);
-              expect(JSON.parse(sessions[0].session).agent_id).toBeUndefined();
-
+            it('returns 201 status with message', done => {
               session
                 .post('/prove')
                 .send({ publicAddress: _publicAddress, signature: signed })
@@ -272,25 +253,106 @@ describe('identify', () => {
                 .expect(201)
                 .end((err, res) => {
                   if (err) return done.fail(err);
+                  expect(res.body.message).toEqual('Welcome!');
+                  done();
+                });
 
-                  models.mongoose.connection.db.collection('sessions').find({}).toArray((err, sessions) => {
+            });
+
+            it('attaches agent_id to the session', done => {
+              models.mongoose.connection.db.collection('sessions').find({}).toArray((err, sessions) => {
+                if (err) return done.fail(err);
+
+                expect(sessions.length).toEqual(1);
+                expect(JSON.parse(sessions[0].session).agent_id).toBeUndefined();
+
+                session
+                  .post('/prove')
+                  .send({ publicAddress: _publicAddress, signature: signed })
+                  .set('Accept', 'application/json')
+                  .expect('Content-Type', /json/)
+                  .expect(201)
+                  .end((err, res) => {
                     if (err) return done.fail(err);
 
-                    expect(sessions.length).toEqual(1);
-                    expect(JSON.parse(sessions[0].session).agent_id).toBeDefined();
+                    models.mongoose.connection.db.collection('sessions').find({}).toArray((err, sessions) => {
+                      if (err) return done.fail(err);
 
-                    models.Agent.find({}).then(agents => {
-                      expect(agents.length).toEqual(1);
-                      expect(agents[0].publicAddress).toEqual(_publicAddress);
+                      expect(sessions.length).toEqual(1);
+                      expect(JSON.parse(sessions[0].session).agent_id).toBeDefined();
 
-                      expect(JSON.parse(sessions[0].session).agent_id).toEqual(agents[0]._id.toString());
+                      models.Agent.find({}).then(agents => {
+                        expect(agents.length).toEqual(1);
+                        expect(agents[0].publicAddress).toEqual(_publicAddress);
 
-                      done();
-                    }).catch(err => {
-                      done.fail(err);
+                        expect(JSON.parse(sessions[0].session).agent_id).toEqual(agents[0]._id.toString());
+
+                        done();
+                      }).catch(err => {
+                        done.fail(err);
+                      });
                     });
                   });
+              });
+            });
+          });
+
+          describe('browser', () => {
+
+            fit('returns a redirect to home with message', done => {
+              session
+                .post('/prove')
+                .send({ publicAddress: _publicAddress, signature: signed })
+                .expect(302)
+                .expect('Location', /\/$/)
+                .end((err, res) => {
+                  if (err) return done.fail(err);
+
+                  // Follow redirect
+                  session
+                    .get(res.header['location'])
+                    .expect(200)
+                    .end((err, res) => {
+                      expect(res.text).toContain('Welcome!');
+                      done();
+                    });
                 });
+            });
+
+            it('attaches agent_id to the session', done => {
+              models.mongoose.connection.db.collection('sessions').find({}).toArray((err, sessions) => {
+                if (err) return done.fail(err);
+
+                expect(sessions.length).toEqual(1);
+                expect(JSON.parse(sessions[0].session).agent_id).toBeUndefined();
+
+                session
+                  .post('/prove')
+                  .send({ publicAddress: _publicAddress, signature: signed })
+                  .expect(302)
+                  .expect('Location', /\/$/)
+                  .end((err, res) => {
+                    if (err) return done.fail(err);
+
+                    models.mongoose.connection.db.collection('sessions').find({}).toArray((err, sessions) => {
+                      if (err) return done.fail(err);
+
+                      expect(sessions.length).toEqual(1);
+                      expect(JSON.parse(sessions[0].session).agent_id).toBeDefined();
+
+                      models.Agent.find({}).then(agents => {
+                        expect(agents.length).toEqual(1);
+                        expect(agents[0].publicAddress).toEqual(_publicAddress);
+
+                        expect(JSON.parse(sessions[0].session).agent_id).toEqual(agents[0]._id.toString());
+
+                        done();
+                      }).catch(err => {
+                        done.fail(err);
+                      });
+                    });
+                  });
+              });
             });
           });
         });
@@ -299,11 +361,22 @@ describe('identify', () => {
 
           describe('bad private key', () => {
 
-            it('returns 401 status with message', done => {
+            let signed;
+
+            beforeEach(done => {
               // Bad private key obtained from ganache-cli
               const signer = new ethers.Wallet('0x0fb6b6f3f49a79f5b49bd71386cc5016762a07340d903a5590a9433253779d8b');
-              signer.signMessage(JSON.stringify(message)).then(signed => {
+              signer.signMessage(JSON.stringify(message)).then(result => {
+                signed = result;
+                done();
+              }).catch(err => {
+                done.fail(err);
+              });
+            });
 
+            describe('api', () => {
+
+              it('returns 401 status with message', done => {
                 request(app)
                   .post('/prove')
                   .send({ publicAddress: _publicAddress, signature: signed })
@@ -312,39 +385,79 @@ describe('identify', () => {
                   .expect(401)
                   .end((err, res) => {
                     if (err) return done.fail(err);
-                    expect(res.body.message).toEqual('Signature verification failed');
+//                    expect(res.body).toEqual('Signature verification failed');
                     done();
                   });
+              });
+            });
 
-              }).catch(err => {
-                done.fail(err);
+            describe('browser', () => {
+
+              it('returns 302 status with message', done => {
+                request(app)
+                  .post('/prove')
+                  .send({ publicAddress: _publicAddress, signature: signed })
+                  .expect(302)
+                  .end((err, res) => {
+                    if (err) return done.fail(err);
+//                    expect(res.body.message).toEqual('Signature verification failed');
+                    done();
+                  });
               });
             });
           });
 
           describe('incorrect nonce', () => {
 
-            it('returns 401 status with message', done => {
-              const _msgBadNonce = [...message];
-              _msgBadNonce[1].nonce = Math.floor(Math.random() * 1000000).toString();
+            describe('api', () => {
 
-              const signer = new ethers.Wallet(_privateAddress);
-              signer.signMessage(JSON.stringify(_msgBadNonce)).then(signed => {
+              it('returns 401 status with message', done => {
+                const _msgBadNonce = [...message];
+                _msgBadNonce[1].nonce = Math.floor(Math.random() * 1000000).toString();
 
-                request(app)
-                  .post('/prove')
-                  .send({ publicAddress: _publicAddress, signature: signed })
-                  .set('Accept', 'application/json')
-                  .expect('Content-Type', /json/)
-                  .expect(401)
-                  .end((err, res) => {
-                    if (err) return done.fail(err);
-                    expect(res.body.message).toEqual('Signature verification failed');
-                    done();
-                  });
+                const signer = new ethers.Wallet(_privateAddress);
+                signer.signMessage(JSON.stringify(_msgBadNonce)).then(signed => {
 
-              }).catch(err => {
-                done.fail(err);
+                  request(app)
+                    .post('/prove')
+                    .send({ publicAddress: _publicAddress, signature: signed })
+                    .set('Accept', 'application/json')
+                    .expect('Content-Type', /json/)
+                    .expect(401)
+                    .end((err, res) => {
+                      if (err) return done.fail(err);
+                      expect(res.body.message).toEqual('Signature verification failed');
+                      done();
+                    });
+
+                }).catch(err => {
+                  done.fail(err);
+                });
+              });
+            });
+
+            describe('browser', () => {
+
+              it('returns 302 status with message', done => {
+                const _msgBadNonce = [...message];
+                _msgBadNonce[1].nonce = Math.floor(Math.random() * 1000000).toString();
+
+                const signer = new ethers.Wallet(_privateAddress);
+                signer.signMessage(JSON.stringify(_msgBadNonce)).then(signed => {
+
+                  request(app)
+                    .post('/prove')
+                    .send({ publicAddress: _publicAddress, signature: signed })
+                    .expect(302)
+                    .end((err, res) => {
+                      if (err) return done.fail(err);
+//                      expect(res.body.message).toEqual('Signature verification failed');
+                      done();
+                    });
+
+                }).catch(err => {
+                  done.fail(err);
+                });
               });
             });
           });
@@ -356,24 +469,9 @@ describe('identify', () => {
 
       describe('invalid ethereum address', () => {
 
-        it('returns an error', done => {
-          request(app)
-            .post('/introduce')
-            .send({ publicAddress: 'invalid ethereum address' })
-            .set('Accept', 'application/json')
-            .expect('Content-Type', /json/)
-            .expect(400)
-            .end((err, res) => {
-              if (err) return done.fail(err);
-              expect(res.body.message).toEqual('Invalid public address');
-              done();
-            });
-        });
+        describe('api', () => {
 
-        it('does not create a new Agent record', done => {
-          models.Agent.find({}).then(agents => {
-            expect(agents.length).toEqual(0);
-
+          it('returns an error', done => {
             request(app)
               .post('/introduce')
               .send({ publicAddress: 'invalid ethereum address' })
@@ -382,18 +480,81 @@ describe('identify', () => {
               .expect(400)
               .end((err, res) => {
                 if (err) return done.fail(err);
-
-                models.Agent.find({}).then(agents => {
-                  expect(agents.length).toEqual(0);
-
-                  done();
-                }).catch(err => {
-                  done.fail(err);
-                });
+                expect(res.body.message).toEqual('Invalid public address');
+                done();
               });
+          });
 
-          }).catch(err => {
-            done.fail(err);
+          it('does not create a new Agent record', done => {
+            models.Agent.find({}).then(agents => {
+              expect(agents.length).toEqual(0);
+
+              request(app)
+                .post('/introduce')
+                .send({ publicAddress: 'invalid ethereum address' })
+                .set('Accept', 'application/json')
+                .expect('Content-Type', /json/)
+                .expect(400)
+                .end((err, res) => {
+                  if (err) return done.fail(err);
+
+                  models.Agent.find({}).then(agents => {
+                    expect(agents.length).toEqual(0);
+
+                    done();
+                  }).catch(err => {
+                    done.fail(err);
+                  });
+                });
+
+            }).catch(err => {
+              done.fail(err);
+            });
+          });
+        });
+
+        // 2021-10-1 This is kind of weird. My original plan was to implement
+        // the auth flow with client-side fetches. If that's the only way, then
+        // these tests don't make sense. If there is another way, then that
+        // would be the better option for session-managed authentication, as it
+        // is implemented here.
+        describe('browser', () => {
+
+          it('redirects', done => {
+            request(app)
+              .post('/introduce')
+              .send({ publicAddress: 'invalid ethereum address' })
+              .expect(302)
+              .end((err, res) => {
+                if (err) return done.fail(err);
+//                expect(res.body.message).toEqual('Invalid public address');
+                done();
+              });
+          });
+
+          it('does not create a new Agent record', done => {
+            models.Agent.find({}).then(agents => {
+              expect(agents.length).toEqual(0);
+
+              request(app)
+                .post('/introduce')
+                .send({ publicAddress: 'invalid ethereum address' })
+                .expect(302)
+                .end((err, res) => {
+                  if (err) return done.fail(err);
+
+                  models.Agent.find({}).then(agents => {
+                    expect(agents.length).toEqual(0);
+
+                    done();
+                  }).catch(err => {
+                    done.fail(err);
+                  });
+                });
+
+            }).catch(err => {
+              done.fail(err);
+            });
           });
         });
       });
