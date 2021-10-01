@@ -17,6 +17,7 @@
         </ul>
       </nav>
     </header>
+    <% include _partials/messages %>
     <main>
       <h1><%= title %></h1>
       <p>Proverbs 3:9-10</p>
@@ -58,10 +59,29 @@
                 console.log('Sign this nonce:', message[1].value, '\nWith this public address:', publicAddress);
 
                 return new Promise((resolve, reject) => {
-                  ethereum.request({ method: 'eth_signTypedData', params: [message, publicAddress] }).then(signed => {;
+                  ethereum.request({ method: 'eth_signTypedData', params: [message, publicAddress] }).then(signed => {
                     console.log('Signed');
                     console.log(signed);
-                    resolve({ publicAddress, message });
+
+                    const signedData = { publicAddress: publicAddress, signature: signed };
+
+                    // Prove address ownership
+                    fetch('/prove', {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                      },
+                      body: JSON.stringify(signedData),
+                    })
+                    .then(response => response.json())
+                    .then(({ message }) => {
+
+                      console.log(message);
+
+                    }).catch(err => {
+                      console.error('Error:', err);
+                    });
                   }).catch(err => {
                     console.error('Error:', err);
                   });
