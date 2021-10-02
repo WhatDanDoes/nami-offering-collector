@@ -26,7 +26,6 @@
     "@synthetixio/synpress": "^0.9.25-beta.12",
     "cheerio": "*",
     "dappeteer": "^1.0.0",
-    "ethers": "^5.4.7",
     "ganache-cli": "^6.12.2",
     "jasmine": "^3.9.0",
     "nodemon": "^2.0.12",

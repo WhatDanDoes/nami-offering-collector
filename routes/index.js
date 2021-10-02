@@ -4,7 +4,7 @@ const router = express.Router();
 const models = require('../models');
 
 const sigUtil = require('eth-sig-util');
-const ethUtil = require('ethereumjs-util');
+//const ethUtil = require('ethereumjs-util');
 
 /**
  * Ensures the message stays the same on signature verification
@@ -12,18 +12,36 @@ const ethUtil = require('ethereumjs-util');
 function getSigningMessage(nonce, done) {
   fs.readFile('./message.txt', 'utf8', (err, text) => {
     if (err) return done(err);
-    done(null, [
-      {
-        type: 'string',
-        name: 'Message',
-        value: text
+
+    done(null, {
+      domain: {
+        // Defining the chain aka Rinkeby testnet or Ethereum Main Net
+        //chainId: 1337,
+        // Give a user friendly name to the specific contract you are signing for.
+        //name: 'Metamask Offering Collector',
+        // If name isn't enough add verifying contract to make sure you are establishing contracts with the proper entity
+        //verifyingContract: '0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC',
+        // Just let's you know the latest version. Definitely make sure the field name is correct.
+        //version: '1',
       },
-      {
-        type: 'string',
-        name: 'nonce',
-        value: nonce,
-      }
-    ]);
+      message: {
+        message: text,
+        nonce: nonce
+      },
+      primaryType: 'Message',
+      types: {
+        EIP712Domain: [
+          //{ name: 'name', type: 'string' },
+          //{ name: 'version', type: 'string' },
+          //{ name: 'chainId', type: 'uint256' },
+          //{ name: 'verifyingContract', type: 'address' },
+        ],
+        Message: [
+          { name: 'message', type: 'string' },
+          { name: 'nonce', type: 'string' },
+        ],
+      },
+    });
   });
 };
 
@@ -45,7 +63,7 @@ router.post('/introduce', (req, res) => {
 
        getSigningMessage(nonce, (err, message) => {
          if (err) return res.status(500).json({ message: err.message });
-         res.status(201).json({ message: message, publicAddress: agent.publicAddress });
+         res.status(201).json({ typedData: message, publicAddress: agent.publicAddress });
        });
      }).catch(err => {
        res.status(500).json(err);
@@ -55,7 +73,7 @@ router.post('/introduce', (req, res) => {
      models.Agent.create({ publicAddress: req.body.publicAddress }).then(agent => {
        getSigningMessage(agent.nonce, (err, message) => {
          if (err) return res.status(500).json({ message: err.message });
-         res.status(201).json({ message: message, publicAddress: agent.publicAddress });
+         res.status(201).json({ typedData: message, publicAddress: agent.publicAddress });
        });
      }).catch(err => {
        if (req.headers['accept'] === 'application/json') {
@@ -91,48 +109,7 @@ router.post('/prove', (req, res) => {
     getSigningMessage(agent.nonce, (err, message) => {
       if (err) return res.status(500).json({ message: err.message });
 
-      //
-      // 2021-9-28 https://www.toptal.com/ethereum/one-click-login-flows-a-metamask-tutorial
-      //
-      // We now are in possession of message, publicAddress and signature. We
-      // can perform an elliptic curve signature verification with ecrecover
-      //
-      const msgBuffer = ethUtil.toBuffer(JSON.stringify(message));
-      const msgHash = ethUtil.hashPersonalMessage(msgBuffer);
-      //const msgBuffer = ethUtil.toBuffer(JSON.stringify(message));
-      //const msgHash = ethUtil.keccak256(msgBuffer);
-      const signatureBuffer = ethUtil.toBuffer(req.body.signature);
-      const signatureParams = ethUtil.fromRpcSig(signatureBuffer);
-      const publicKey = ethUtil.ecrecover(
-        msgHash,
-        signatureParams.v,
-        signatureParams.r,
-        signatureParams.s
-      );
-      const addressBuffer = ethUtil.publicToAddress(publicKey);
-      const address = ethUtil.bufferToHex(addressBuffer);
-console.log('HEEEEEEEEEEEEEEERE');
-console.log('address retrieved', address);
-console.log('actual address', agent.publicAddress);
-
-
-
-//      const msgHash = ethereumJsUtil.sha3(msg);
-//      const signatureBuffer = ethereumJsUtil.toBuffer(signature);
-//      const signatureParams = ethereumJsUtil.fromRpcSig(signatureBuffer);
-//      const publicKey = ethereumJsUtil.ecrecover(
-//        msgHash,
-//        signatureParams.v,
-//        signatureParams.r,
-//        signatureParams.s
-//      );
-//      const addressBuffer = ethereumJsUtil.publicToAddress(publicKey);
-//      const address = ethereumJsUtil.bufferToHex(addressBuffer);
-//
-//console.log('HEEEEEEEEEEEEEEERE');
-//console.log(address);
-//console.log(agent.publicAddress);
-
+      const address = sigUtil.recoverTypedSignature({ data: message, sig: req.body.signature, version: 'V1' });
 
       if (address.toLowerCase() === agent.publicAddress.toLowerCase()) {
         req.session.agent_id = agent._id;
