@@ -58,4 +58,8 @@ The following doesn't reset state properly sometimes (Synpress is _clunky_, reme
 NETWORK_NAME=localhost SECRET_WORDS='twelve secret recovery words etc...' npx synpress open --configFile tests/e2e/customConfig.json
 ```
 
+## 2021-10-4
 
+_Note until fixed:_
+
+Though [synpress](https://github.com/Synthetixio/synpress) is a wonderful tool, it is still very much a work in progress. The CSS selectors that enable signature verification have changed somewhere in the last week, and so were manually modified in `node_modules/@synthetixio/synpress/pages/metamask/notification-page.js`.
