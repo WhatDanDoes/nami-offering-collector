@@ -15,7 +15,7 @@
         <ul>
           <li id="connect-metamask">
             <% if (agent) { %>
-              <a href="/disconnect">
+              <a href="/auth/disconnect">
                 <button id="disconnect-metamask-button" type="submit">Disconnect Metamask</button>
               </a>
             <% } else { %>
@@ -54,7 +54,7 @@
               const data = { publicAddress: account };
 
               // Get nonce for signing
-              fetch('/introduce', {
+              fetch('/auth/introduce', {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',
@@ -74,7 +74,7 @@
                     const signedData = { publicAddress: publicAddress, signature: signed };
 
                     // Prove address ownership
-                    fetch('/prove', {
+                    fetch('/auth/prove', {
                       method: 'POST',
                       headers: {
                         'Content-Type': 'application/json',
@@ -91,7 +91,7 @@
                     .then(({ message }) => {
                       console.log(message);
 
-                      connectMetamask.innerHTML = '<a href="/disconnect"><button id="disconnect-metamask-button" type="submit">Disconnect Metamask</button></a>';
+                      connectMetamask.innerHTML = '<a href="/auth/disconnect"><button id="disconnect-metamask-button" type="submit">Disconnect Metamask</button></a>';
 
                       const messages = document.getElementById('messages');
                       const msgElement = document.createElement('aside');
