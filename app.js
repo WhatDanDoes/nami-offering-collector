@@ -55,6 +55,22 @@ if (process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'staging')
 app.use(session(sessionConfig));
 
 /**
+ * Check for existing session and attach `req.agent` if it exists
+ */
+const models = require('./models');
+app.use((req, res, next) => {
+  if (!req.session.agent_id) {
+    return next();
+  }
+  models.Agent.findById(req.session.agent_id).then(agent => {
+    req.agent = agent;
+    next();
+  }).catch(err => {
+    next(err);
+  });
+});
+
+/**
  * Routes
  */
 app.use('/', indexRouter);
