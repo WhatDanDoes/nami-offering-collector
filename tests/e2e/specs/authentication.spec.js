@@ -31,7 +31,7 @@ context('authentication', () => {
 
     context('first visit', () => {
       it('shows the home page', () => {
-        cy.get('main h1').contains('Metamask Offering Collector');
+        cy.get('header h1').contains('Metamask Offering Collector');
       });
 
       /**
