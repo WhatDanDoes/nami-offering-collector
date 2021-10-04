@@ -33,7 +33,7 @@ describe('landing page', () => {
       const el = await page.$('header nav ul li#connect-metamask');
 
       const warning = await el.evaluate(e => e.textContent);
-      expect(warning).toEqual('Click here to install the Metamask browser plugin');
+      expect(warning).toEqual('Install the Metamask browser plugin');
     });
 
     it('does not display a .messages element', async () => {
