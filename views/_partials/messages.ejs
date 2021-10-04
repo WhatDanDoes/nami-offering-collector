@@ -1,19 +1,19 @@
-<% if (Object.keys(messages).length) { %>
-  <article class="messages">
+<aside id="messages">
+  <% if (Object.keys(messages).length) { %>
     <% if (messages.success) { %>
-        <aside class="alert alert-success">
-          <%= messages.success %>
-        </aside>
+      <strong class="alert alert-success">
+        <%= messages.success %>
+      </strong>
     <% } %>
     <% if (messages.error) { %>
-        <aside class="alert alert-error">
-          <%= messages.error %>
-        </aside>
+      <strong class="alert alert-error">
+        <%= messages.error %>
+      </strong>
     <% } %>
     <% if (messages.info) { %>
-      <aside class="alert alert-info">
+      <strong class="alert alert-info">
         <%= messages.info %>
-      </aside>
+      </strong>
     <% } %>
-  </article>
-<% } %>
+  <% } %>
+</aside>
