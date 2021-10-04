@@ -1,7 +1,8 @@
 const _appName = require('../../package.json').name;
 const fs = require('fs');
 const cheerio = require('cheerio');
-const ethers = require('ethers');
+const sigUtil = require('eth-sig-util');
+const ethUtil = require('ethereumjs-util');
 const request = require('supertest-session');
 const app = require('../../app');
 const models = require('../../models');
@@ -98,12 +99,9 @@ describe('identify', () => {
             .expect(201)
             .end((err, res) => {
               if (err) return done.fail(err);
-
-              expect(res.body.message.length).toEqual(2);
-              expect(res.body.message[0].name).toEqual('Message');
-              expect(res.body.message[0].value).toEqual(signingMessage);
-              expect(res.body.message[1].name).toEqual('nonce');
-              expect(typeof BigInt(res.body.message[1].value)).toEqual('bigint');
+              expect(Object.keys(res.body.typedData.message).length).toEqual(2);
+              expect(res.body.typedData.message.message).toEqual(signingMessage);
+              expect(typeof BigInt(res.body.typedData.message.nonce)).toEqual('bigint');
               expect(res.body.publicAddress).toEqual(_publicAddress);
 
               done();
@@ -128,7 +126,7 @@ describe('identify', () => {
                   expect(agents[0].publicAddress).toEqual(_publicAddress);
 
                   expect(typeof BigInt(agents[0].nonce)).toEqual('bigint');
-                  expect(agents[0].nonce).toEqual(res.body.message[1].value);
+                  expect(agents[0].nonce).toEqual(res.body.typedData.message.nonce);
                   done();
                 }).catch(err => {
                   done.fail(err);
@@ -166,11 +164,9 @@ describe('identify', () => {
             .end((err, res) => {
               if (err) return done.fail(err);
 
-              expect(res.body.message.length).toEqual(2);
-              expect(res.body.message[0].name).toEqual('Message');
-              expect(res.body.message[0].value).toEqual(signingMessage);
-              expect(res.body.message[1].name).toEqual('nonce');
-              expect(typeof BigInt(res.body.message[1].value)).toEqual('bigint');
+              expect(Object.keys(res.body.typedData.message).length).toEqual(2);
+              expect(res.body.typedData.message.message).toEqual(signingMessage);
+              expect(typeof BigInt(res.body.typedData.message.nonce)).toEqual('bigint');
               expect(res.body.publicAddress).toEqual(_publicAddress);
 
               done();
@@ -197,7 +193,7 @@ describe('identify', () => {
                   expect(agents[0].publicAddress).toEqual(_publicAddress);
                   expect(typeof BigInt(agents[0].nonce)).toEqual('bigint');
                   expect(agents[0].nonce).not.toEqual(nonce);
-                  expect(agents[0].nonce).toEqual(res.body.message[1].value);
+                  expect(agents[0].nonce).toEqual(res.body.typedData.message.nonce);
 
                   done();
                 }).catch(err => {
@@ -213,7 +209,7 @@ describe('identify', () => {
 
       describe('POST /prove', () => {
 
-        let publicAddress, message, session;
+        let publicAddress, typedData, session;
 
         beforeEach(done => {
           session = request(app);
@@ -225,7 +221,7 @@ describe('identify', () => {
             .expect(201)
             .end((err, res) => {
               if (err) return done.fail(err);
-              ({ publicAddress, message } = res.body);
+              ({ publicAddress, typedData } = res.body);
               done();
             });
         });
@@ -233,14 +229,8 @@ describe('identify', () => {
         describe('success', () => {
 
           let signed;
-          beforeEach(done => {
-            const signer = new ethers.Wallet(_privateAddress);
-            signer.signMessage(JSON.stringify(message)).then(result => {
-              signed = result;
-              done();
-            }).catch(err => {
-              done.fail(err);
-            });
+          beforeEach(() => {
+            signed = sigUtil.signTypedData(ethUtil.toBuffer(_privateAddress), {privateKey: _privateAddress, data: typedData, version: 'V3' });
           });
 
           describe('API', () => {
@@ -319,7 +309,7 @@ describe('identify', () => {
                     .end((err, res) => {
 
                       const $ = cheerio.load(res.text);
-                      expect($('.messages .alert.alert-success').text()).toContain('Welcome!');
+                      expect($('#messages .alert.alert-success').text()).toContain('Welcome!');
                       done();
                     });
                 });
@@ -370,15 +360,10 @@ describe('identify', () => {
 
             let signed;
 
-            beforeEach(done => {
+            beforeEach(() => {
               // Bad private key obtained from ganache-cli
-              const signer = new ethers.Wallet('0x0fb6b6f3f49a79f5b49bd71386cc5016762a07340d903a5590a9433253779d8b');
-              signer.signMessage(JSON.stringify(message)).then(result => {
-                signed = result;
-                done();
-              }).catch(err => {
-                done.fail(err);
-              });
+              signed = sigUtil.signTypedData(ethUtil.toBuffer('0x0fb6b6f3f49a79f5b49bd71386cc5016762a07340d903a5590a9433253779d8b'),
+                { privateKey: '0x0fb6b6f3f49a79f5b49bd71386cc5016762a07340d903a5590a9433253779d8b', data: typedData, version: 'V3' });
             });
 
             describe('api', () => {
@@ -418,7 +403,7 @@ describe('identify', () => {
                       .end((err, res) => {
 
                         const $ = cheerio.load(res.text);
-                        expect($('.messages .alert.alert-error').text()).toContain('Signature verification failed');
+                        expect($('#messages .alert.alert-error').text()).toContain('Signature verification failed');
                         done();
                       });
                   });
@@ -431,62 +416,60 @@ describe('identify', () => {
             describe('api', () => {
 
               it('returns 401 status with message', done => {
-                const _msgBadNonce = [...message];
-                _msgBadNonce[1].nonce = Math.floor(Math.random() * 1000000).toString();
+                typedData.message.nonce = Math.floor(Math.random() * 1000000).toString();
 
-                const signer = new ethers.Wallet(_privateAddress);
-                signer.signMessage(JSON.stringify(_msgBadNonce)).then(signed => {
-
-                  request(app)
-                    .post('/prove')
-                    .send({ publicAddress: _publicAddress, signature: signed })
-                    .set('Content-Type', 'application/json')
-                    .set('Accept', 'application/json')
-                    .expect('Content-Type', /json/)
-                    .expect(401)
-                    .end((err, res) => {
-                      if (err) return done.fail(err);
-                      expect(res.body.message).toEqual('Signature verification failed');
-                      done();
-                    });
-
-                }).catch(err => {
-                  done.fail(err);
+                signed = sigUtil.signTypedData(ethUtil.toBuffer(_privateAddress), {
+                  privateKey: _privateAddress,
+                  data: typedData,
+                  version: 'V3'
                 });
+
+                request(app)
+                  .post('/prove')
+                  .send({ publicAddress: _publicAddress, signature: signed })
+                  .set('Content-Type', 'application/json')
+                  .set('Accept', 'application/json')
+                  .expect('Content-Type', /json/)
+                  .expect(401)
+                  .end((err, res) => {
+                    if (err) return done.fail(err);
+                    expect(res.body.message).toEqual('Signature verification failed');
+                    done();
+                  });
               });
             });
 
             describe('browser', () => {
 
               it('returns 302 status with message', done => {
-                const _msgBadNonce = [...message];
-                _msgBadNonce[1].nonce = Math.floor(Math.random() * 1000000).toString();
+                typedData.message.nonce = Math.floor(Math.random() * 1000000).toString();
 
-                const signer = new ethers.Wallet(_privateAddress);
-                signer.signMessage(JSON.stringify(_msgBadNonce)).then(signed => {
-
-                  session = request(app)
-                  session
-                    .post('/prove')
-                    .send({ publicAddress: _publicAddress, signature: signed })
-                    .expect(302)
-                    .end((err, res) => {
-                      if (err) return done.fail(err);
-
-                      // Follow redirect
-                      session
-                        .get(res.header['location'])
-                        .expect(200)
-                        .end((err, res) => {
-
-                          const $ = cheerio.load(res.text);
-                          expect($('.messages .alert.alert-error').text()).toContain('Signature verification failed');
-                          done();
-                        });
-                    });
-                }).catch(err => {
-                  done.fail(err);
+                signed = sigUtil.signTypedData(ethUtil.toBuffer(_privateAddress), {
+                  privateKey: _privateAddress,
+                  data: typedData,
+                  version: 'V3'
                 });
+
+
+                session = request(app)
+                session
+                  .post('/prove')
+                  .send({ publicAddress: _publicAddress, signature: signed })
+                  .expect(302)
+                  .end((err, res) => {
+                    if (err) return done.fail(err);
+
+                    // Follow redirect
+                    session
+                      .get(res.header['location'])
+                      .expect(200)
+                      .end((err, res) => {
+
+                        const $ = cheerio.load(res.text);
+                        expect($('#messages .alert.alert-error').text()).toContain('Signature verification failed');
+                        done();
+                      });
+                  });
               });
             });
           });
@@ -567,7 +550,7 @@ describe('identify', () => {
                   .end((err, res) => {
 
                     const $ = cheerio.load(res.text);
-                    expect($('.messages .alert.alert-error').text()).toContain('Invalid public address');
+                    expect($('#messages .alert.alert-error').text()).toContain('Invalid public address');
                     done();
                   });
               });
@@ -634,7 +617,7 @@ describe('identify', () => {
 
               // 2021-10-1 https://github.com/cheeriojs/cheerio/issues/798#issuecomment-171882953
               const $ = cheerio.load(res.text);
-              expect($('.messages').length).toEqual(0);
+              expect($('#messages strong').length).toEqual(0);
               done();
             });
         });
