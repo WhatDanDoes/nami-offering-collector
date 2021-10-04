@@ -1,7 +1,4 @@
-context('authentication', function() {
-
-  before(function() {
-  });
+context('authentication', () => {
 
   afterEach(() => {
     cy.task('dropDatabase');
