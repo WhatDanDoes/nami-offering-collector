@@ -11,7 +11,9 @@
   <body>
     <header>
       <nav>
-        <a id="home-link" href="/"><img alt="Logo" src="https://via.placeholder.com/200x70?text=Logo" height="70"></a>
+        <a id="home-link" href="/">
+          <img alt="Logo" src="/images/offering-plate.png" height="70">
+        </a>
         <ul>
           <li id="connect-metamask">
             <% if (agent) { %>
@@ -27,11 +29,39 @@
           </li>
         </ul>
       </nav>
-    </header>
-    <main>
       <% include _partials/messages %>
       <h1><%= title %></h1>
       <p>Proverbs 3:9-10</p>
+      <p>
+        A secure and anonymous way to tithe on your Ethereum earnings.
+      </p>
+    </header>
+    <main>
+      <section>
+        <aside>
+          <img src="/images/ethereum-logo.svg" height="70">
+          <h3>What is Ethereum?</h3>
+          <p>
+            Ethereum is a <em>blockchain</em> that allows you to interact with
+            <em>smart contracts</em>. This blockchain enables transactions with
+            a crypto currency called <em>eth</em>. Eth also pays for the upkeep of
+            the Ethereum world-wide distributed computer.
+          </p>
+        </aside>
+        <aside>
+          <img src="/images/metamask-fox.svg" height="70">
+          <h3>What is Metamask?</h2>
+          <p>
+            Metamask is a plugin for your browser, like Chrome or Firefox.
+            You can also download an app for your phone. Metamask allows you to
+            connect securely with your Ethereum account. You don't need logins or
+            email addresses to use this application. You simply verify
+            account ownership by clicking the button above.
+          </p>
+        </aside>
+      </section>
+
+
     </main>
     <script>
       /**
@@ -65,7 +95,7 @@
           };
         }
         else {
-          document.getElementById('connect-metamask').innerHTML = 'Click here to install the Metamask browser plugin';
+          document.getElementById('connect-metamask').innerHTML = 'Install the <a href="https://metamask.io/" target="_blank">Metamask</a> browser plugin';
         }
       });
     </script>
