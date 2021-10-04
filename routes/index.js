@@ -47,7 +47,7 @@ function getSigningMessage(nonce, done) {
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
-  res.render('index', { title: process.env.TITLE, messages: req.flash() });
+  res.render('index', { title: process.env.TITLE, messages: req.flash(), agent: req.agent });
 });
 
 /**

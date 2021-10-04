@@ -13,7 +13,15 @@
       <nav>
         <a id="home-link" href="/"><img alt="Logo" src="https://via.placeholder.com/200x70?text=Logo" height="70"></a>
         <ul>
-          <li id="connect-metamask"></li>
+          <li id="connect-metamask">
+            <% if (agent) { %>
+              <a href="/disconnect">
+                <button id="disconnect-metamask-button" type="submit">Disconnect Metamask</button>
+              </a>
+            <% } else { %>
+              <button id="connect-metamask-button" type="submit">Confirm your identity with Metamask</button>
+            <% } %>
+          </li>
         </ul>
       </nav>
     </header>
@@ -107,9 +115,10 @@
             });
           };
 
-          connectMetamask.innerHTML = '<button id="connect-metamask-button" type="submit">Confirm your identity with Metamask</button>';
-
-          document.getElementById('connect-metamask-button').addEventListener('click', handleIdentification);
+          const connectButton = document.getElementById('connect-metamask-button');
+          if (connectButton) {
+            connectButton.addEventListener('click', handleIdentification);
+          }
         }
         else {
           connectMetamask.innerHTML = 'Click here to install the Metamask browser plugin';
