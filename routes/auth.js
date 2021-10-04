@@ -50,45 +50,56 @@ function getSigningMessage(nonce, done) {
 router.post('/introduce', (req, res) => {
   models.Agent.findOne({ where: { publicAddress: req.body.publicAddress } }).then(agent => {
 
-   if (agent) {
-     const nonce = Math.floor(Math.random() * 1000000).toString();
-     agent.nonce = nonce;
-     agent.save({ validateBeforeSave: false }).then(agent => {
+    if (agent) {
+      const nonce = Math.floor(Math.random() * 1000000).toString();
+      agent.nonce = nonce;
+      agent.save({ validateBeforeSave: false }).then(agent => {
 
-       getSigningMessage(nonce, (err, message) => {
-         if (err) return res.status(500).json({ message: err.message });
-         res.status(201).json({ typedData: message, publicAddress: agent.publicAddress });
-       });
-     }).catch(err => {
-       res.status(500).json(err);
-     });
-   }
-   else {
-     models.Agent.create({ publicAddress: req.body.publicAddress }).then(agent => {
-       getSigningMessage(agent.nonce, (err, message) => {
-         if (err) return res.status(500).json({ message: err.message });
-         res.status(201).json({ typedData: message, publicAddress: agent.publicAddress });
-       });
-     }).catch(err => {
-       if (req.headers['accept'] === 'application/json') {
-         if (err.errors['publicAddress']) {
-           res.status(400).json({ message: err.errors['publicAddress'].message });
-         }
-         else {
-           res.status(400).json({ message: err.message });
-         }
-       }
-       else {
-         if (err.errors['publicAddress']) {
-           req.flash('error', err.errors['publicAddress'].message);
-         }
-         else {
-           req.flash('error', err.message);
-         }
-         res.redirect('/');
-       }
-     });
-   }
+        getSigningMessage(nonce, (err, message) => {
+          if (err) return res.status(500).json({ message: err.message });
+
+          if (req.headers['accept'] === 'application/json') {
+            return res.status(201).json({ typedData: message, publicAddress: agent.publicAddress });
+          }
+          // 2021-10-4 https://gist.github.com/danschumann/ae0b5bdcf2e1cd1f4b61
+          // You'd think stringifying JSON for this purpose would be simple....
+          res.status(201).render('sign', { publicAddress: agent.publicAddress, typedData: JSON.stringify(message).replace(/\\/g, '\\\\').replace(/"/g, '\\\"'), messages: req.flash() });
+
+        });
+      }).catch(err => {
+        res.status(500).json(err);
+      });
+    }
+    else {
+      models.Agent.create({ publicAddress: req.body.publicAddress }).then(agent => {
+        getSigningMessage(agent.nonce, (err, message) => {
+          if (err) return res.status(500).json({ message: err.message });
+
+          if (req.headers['accept'] === 'application/json') {
+            return res.status(201).json({ typedData: message, publicAddress: agent.publicAddress });
+          }
+          res.status(201).render('sign', { publicAddress: req.body.publicAddress, typedData: JSON.stringify(message).replace(/\\/g, '\\\\').replace(/"/g, '\\\"'), messages: req.flash() });
+        });
+      }).catch(err => {
+        if (req.headers['accept'] === 'application/json') {
+          if (err.errors['publicAddress']) {
+            res.status(400).json({ message: err.errors['publicAddress'].message });
+          }
+          else {
+            res.status(400).json({ message: err.message });
+          }
+        }
+        else {
+          if (err.errors['publicAddress']) {
+            req.flash('error', err.errors['publicAddress'].message);
+          }
+          else {
+            req.flash('error', err.message);
+          }
+          res.redirect('/');
+        }
+      });
+    }
   }).catch(err => {
     res.status(500).json(err);
   });

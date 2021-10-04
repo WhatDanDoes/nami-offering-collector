@@ -7,7 +7,7 @@ const request = require('supertest-session');
 const app = require('../../app');
 const models = require('../../models');
 
-describe('identify', () => {
+describe('auth', () => {
 
   jasmine.DEFAULT_TIMEOUT_INTERVAL = 10000;
 
@@ -30,7 +30,7 @@ describe('identify', () => {
       signingMessage = fs.readFileSync('./message.txt', 'utf8');
     });
 
-    it('starts a session', done => {
+    it('starts a session on API access', done => {
       const session = request(app);
       expect(session.cookies.length).toEqual(0);
       session
@@ -70,6 +70,47 @@ describe('identify', () => {
         });
     });
 
+    it('starts a session on browser access', done => {
+      const session = request(app);
+      expect(session.cookies.length).toEqual(0);
+      session
+        .post('/auth/introduce')
+        .send({ publicAddress: _publicAddress })
+        .set('Accept', 'text/html')
+        .expect('Content-Type', /html/)
+        .expect(201)
+        .end((err, res) => {
+          if (err) return done.fail(err);
+          expect(session.cookies.length).toEqual(1);
+          expect(session.cookies[0].name).toEqual(_appName);
+          expect(session.cookies[0].value).toBeDefined();
+          expect(typeof session.cookies[0].expiration_date).toEqual('number');
+          expect(session.cookies[0].expiration_date).not.toEqual(Infinity);
+          expect(session.cookies[0].path).toEqual('/');
+          expect(session.cookies[0].explicit_path).toBe(true);
+          expect(session.cookies[0].domain).toBeUndefined();
+          expect(session.cookies[0].explicit_domain).toBe(false);
+          expect(session.cookies[0].noscript).toBe(true);
+
+          //
+          // 2020-10-19
+          //
+          // The bulk of the above are defaults. These require manual
+          // testing, because in order for such a cookie to be put into the
+          // cookie jar, it would have to be HTTPS
+          //
+          // expect(session.cookies[0].secure).toBe(true);
+          // expect(session.cookies[0].sameSite).toEqual('none');
+          //
+          // These are test expectations. Production expetations are commented above
+          expect(session.cookies[0].secure).toBe(false);
+          expect(session.cookies[0].sameSite).toBeUndefined();
+
+          done();
+        });
+    });
+
+
     it('sets maximum cookie age to one hour', done => {
       const session = request(app);
       session
@@ -90,51 +131,102 @@ describe('identify', () => {
 
       describe('first onboarding', () => {
 
-        it('returns a public address and message with nonce for signing', done => {
-          request(app)
-            .post('/auth/introduce')
-            .send({ publicAddress: _publicAddress })
-            .set('Accept', 'application/json')
-            .expect('Content-Type', /json/)
-            .expect(201)
-            .end((err, res) => {
-              if (err) return done.fail(err);
-              expect(Object.keys(res.body.typedData.message).length).toEqual(2);
-              expect(res.body.typedData.message.message).toEqual(signingMessage);
-              expect(typeof BigInt(res.body.typedData.message.nonce)).toEqual('bigint');
-              expect(res.body.publicAddress).toEqual(_publicAddress);
+        describe('api', () => {
 
-              done();
-            });
-        });
-
-        it('creates a new Agent record', done => {
-          models.Agent.find({}).then(agents => {
-            expect(agents.length).toEqual(0);
-
+          it('returns a public address and message with nonce for signing', done => {
             request(app)
               .post('/auth/introduce')
               .send({ publicAddress: _publicAddress })
-              .set('Content-Type', 'application/json')
+              .set('Accept', 'application/json')
               .expect('Content-Type', /json/)
               .expect(201)
               .end((err, res) => {
                 if (err) return done.fail(err);
+                expect(Object.keys(res.body.typedData.message).length).toEqual(2);
+                expect(res.body.typedData.message.message).toEqual(signingMessage);
+                expect(typeof BigInt(res.body.typedData.message.nonce)).toEqual('bigint');
+                expect(res.body.publicAddress).toEqual(_publicAddress);
 
-                models.Agent.find({}).then(agents => {
-                  expect(agents.length).toEqual(1);
-                  expect(agents[0].publicAddress).toEqual(_publicAddress);
-
-                  expect(typeof BigInt(agents[0].nonce)).toEqual('bigint');
-                  expect(agents[0].nonce).toEqual(res.body.typedData.message.nonce);
-                  done();
-                }).catch(err => {
-                  done.fail(err);
-                });
+                done();
               });
+          });
 
-          }).catch(err => {
-            done.fail(err);
+          it('creates a new Agent record', done => {
+            models.Agent.find({}).then(agents => {
+              expect(agents.length).toEqual(0);
+
+              request(app)
+                .post('/auth/introduce')
+                .send({ publicAddress: _publicAddress })
+                .set('Accept', 'application/json')
+                .expect('Content-Type', /json/)
+                .expect(201)
+                .end((err, res) => {
+                  if (err) return done.fail(err);
+
+                  models.Agent.find({}).then(agents => {
+                    expect(agents.length).toEqual(1);
+                    expect(agents[0].publicAddress).toEqual(_publicAddress);
+
+                    expect(typeof BigInt(agents[0].nonce)).toEqual('bigint');
+                    expect(agents[0].nonce).toEqual(res.body.typedData.message.nonce);
+                    done();
+                  }).catch(err => {
+                    done.fail(err);
+                  });
+                });
+
+            }).catch(err => {
+              done.fail(err);
+            });
+          });
+        });
+
+        describe('browser', () => {
+
+          it('renders an instruction page with form-embedded public address', done => {
+            request(app)
+              .post('/auth/introduce')
+              .send({ publicAddress: _publicAddress })
+              .expect('Content-Type', /html/)
+              .expect(201)
+              .end((err, res) => {
+                if (err) return done.fail(err);
+
+                const $ = cheerio.load(res.text);
+                expect($('#signed-message-form input[name="publicAddress"]').attr('value')).toContain(_publicAddress);
+                expect($('#signed-message-form input[name="signature"]').attr('value')).toBeUndefined();
+
+                done();
+              });
+          });
+
+          it('creates a new Agent record', done => {
+            models.Agent.find({}).then(agents => {
+              expect(agents.length).toEqual(0);
+
+              request(app)
+                .post('/auth/introduce')
+                .send({ publicAddress: _publicAddress })
+                .expect('Content-Type', /html/)
+                .expect(201)
+                .end((err, res) => {
+                  if (err) return done.fail(err);
+
+                  models.Agent.find({}).then(agents => {
+                    expect(agents.length).toEqual(1);
+                    expect(agents[0].publicAddress).toEqual(_publicAddress);
+
+                    expect(typeof BigInt(agents[0].nonce)).toEqual('bigint');
+                    done();
+                  }).catch(err => {
+                    done.fail(err);
+                  });
+                });
+
+            }).catch(err => {
+              done.fail(err);
+            });
           });
         });
       });
@@ -145,7 +237,7 @@ describe('identify', () => {
           request(app)
             .post('/auth/introduce')
             .send({ publicAddress: _publicAddress })
-            .set('Content-Type', 'application/json')
+            .set('Accept', 'application/json')
             .expect('Content-Type', /json/)
             .expect(201)
             .end((err, res) => {
@@ -154,55 +246,110 @@ describe('identify', () => {
             });
         });
 
-        it('returns a public address and message with nonce for signing', done => {
-          request(app)
-            .post('/auth/introduce')
-            .send({ publicAddress: _publicAddress })
-            .set('Content-Type', 'application/json')
-            .expect('Content-Type', /json/)
-            .expect(201)
-            .end((err, res) => {
-              if (err) return done.fail(err);
+        describe('api', () => {
 
-              expect(Object.keys(res.body.typedData.message).length).toEqual(2);
-              expect(res.body.typedData.message.message).toEqual(signingMessage);
-              expect(typeof BigInt(res.body.typedData.message.nonce)).toEqual('bigint');
-              expect(res.body.publicAddress).toEqual(_publicAddress);
-
-              done();
-            });
-        });
-
-        it('sets a new nonce in existing Agent record', done => {
-          models.Agent.find({}).then(agents => {
-            expect(agents.length).toEqual(1);
-            expect(agents[0].publicAddress).toEqual(_publicAddress);
-            const nonce = agents[0].nonce;
-
+          it('returns a public address and message with nonce for signing', done => {
             request(app)
               .post('/auth/introduce')
               .send({ publicAddress: _publicAddress })
-              .set('Content-Type', 'application/json')
+              .set('Accept', 'application/json')
               .expect('Content-Type', /json/)
               .expect(201)
               .end((err, res) => {
                 if (err) return done.fail(err);
 
-                models.Agent.find({}).then(agents => {
-                  expect(agents.length).toEqual(1);
-                  expect(agents[0].publicAddress).toEqual(_publicAddress);
-                  expect(typeof BigInt(agents[0].nonce)).toEqual('bigint');
-                  expect(agents[0].nonce).not.toEqual(nonce);
-                  expect(agents[0].nonce).toEqual(res.body.typedData.message.nonce);
+                expect(Object.keys(res.body.typedData.message).length).toEqual(2);
+                expect(res.body.typedData.message.message).toEqual(signingMessage);
+                expect(typeof BigInt(res.body.typedData.message.nonce)).toEqual('bigint');
+                expect(res.body.publicAddress).toEqual(_publicAddress);
 
-                  done();
-                }).catch(err => {
-                  done.fail(err);
-                });
+                done();
               });
+          });
 
-          }).catch(err => {
-            done.fail(err);
+          it('sets a new nonce in existing Agent record', done => {
+            models.Agent.find({}).then(agents => {
+              expect(agents.length).toEqual(1);
+              expect(agents[0].publicAddress).toEqual(_publicAddress);
+              const nonce = agents[0].nonce;
+
+              request(app)
+                .post('/auth/introduce')
+                .send({ publicAddress: _publicAddress })
+                .set('Accept', 'application/json')
+                .expect('Content-Type', /json/)
+                .expect(201)
+                .end((err, res) => {
+                  if (err) return done.fail(err);
+
+                  models.Agent.find({}).then(agents => {
+                    expect(agents.length).toEqual(1);
+                    expect(agents[0].publicAddress).toEqual(_publicAddress);
+                    expect(typeof BigInt(agents[0].nonce)).toEqual('bigint');
+                    expect(agents[0].nonce).not.toEqual(nonce);
+                    expect(agents[0].nonce).toEqual(res.body.typedData.message.nonce);
+
+                    done();
+                  }).catch(err => {
+                    done.fail(err);
+                  });
+                });
+
+            }).catch(err => {
+              done.fail(err);
+            });
+          });
+        });
+
+        describe('browser', () => {
+
+          it('renders an instruction page with form-embedded public address', done => {
+            request(app)
+              .post('/auth/introduce')
+              .send({ publicAddress: _publicAddress })
+              .expect('Content-Type', /html/)
+              .expect(201)
+              .end((err, res) => {
+                if (err) return done.fail(err);
+
+                const $ = cheerio.load(res.text);
+                expect($('#signed-message-form input[name="publicAddress"]').attr('value')).toContain(_publicAddress);
+                expect($('#signed-message-form input[name="signature"]').attr('value')).toBeUndefined();
+
+                done();
+              });
+          });
+
+          it('sets a new nonce in existing Agent record', done => {
+            models.Agent.find({}).then(agents => {
+              expect(agents.length).toEqual(1);
+              expect(agents[0].publicAddress).toEqual(_publicAddress);
+              const nonce = agents[0].nonce;
+
+              request(app)
+                .post('/auth/introduce')
+                .send({ publicAddress: _publicAddress })
+                .expect('Content-Type', /html/)
+                .expect(201)
+                .end((err, res) => {
+                  if (err) return done.fail(err);
+
+                  models.Agent.find({}).then(agents => {
+                    expect(agents.length).toEqual(1);
+                    expect(agents[0].publicAddress).toEqual(_publicAddress);
+                    expect(typeof BigInt(agents[0].nonce)).toEqual('bigint');
+                    expect(agents[0].nonce).not.toEqual(nonce);
+                    //expect(agents[0].nonce).toEqual(res.body.typedData.message.nonce);
+
+                    done();
+                  }).catch(err => {
+                    done.fail(err);
+                  });
+                });
+
+            }).catch(err => {
+              done.fail(err);
+            });
           });
         });
       });
@@ -216,7 +363,7 @@ describe('identify', () => {
           session
             .post('/auth/introduce')
             .send({ publicAddress: _publicAddress })
-            .set('Content-Type', 'application/json')
+            .set('Accept', 'application/json')
             .expect('Content-Type', /json/)
             .expect(201)
             .end((err, res) => {
@@ -233,7 +380,7 @@ describe('identify', () => {
             signed = sigUtil.signTypedData(ethUtil.toBuffer(_privateAddress), {privateKey: _privateAddress, data: typedData, version: 'V3' });
           });
 
-          describe('API', () => {
+          describe('api', () => {
 
             it('returns 201 status with message', done => {
               session
@@ -593,7 +740,7 @@ describe('identify', () => {
       session
         .post('/auth/introduce')
         .send({ publicAddress: _publicAddress })
-        .set('Content-Type', 'application/json')
+        .set('Accept', 'application/json')
         .expect('Content-Type', /json/)
         .expect(201)
         .end((err, res) => {

@@ -65,19 +65,20 @@ context('authentication', () => {
     //});
   });
 
-  describe('logged in', () => {
+  describe('log in', () => {
     beforeEach(() => {
       cy.visit('/');
       cy.contains('Confirm your identity with Metamask').click();
     });
 
     context('signature request rejected', () => {
+
       beforeEach(() => {
         cy.rejectMetamaskSignatureRequest();
       });
 
       it('lands in the right place', () => {
-        cy.url().should('match', /\//);
+        cy.url().should('match', /\/$/);
       });
 
       it('displays the login link', () => {
@@ -85,8 +86,8 @@ context('authentication', () => {
       });
     });
 
-
     context('signature request accepted', () => {
+
       beforeEach(() => {
         cy.confirmMetamaskSignatureRequest();
       });
