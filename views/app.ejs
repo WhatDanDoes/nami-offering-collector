@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="description" content="<%= process.env.TITLE %>">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= process.env.TITLE %></title>
+    <link rel='stylesheet' href='/stylesheets/mvp.css' />
+    <link rel='stylesheet' href='/stylesheets/style.css' />
+  </head>
+  <body>
+    <header>
+      <nav>
+        <a id="home-link" href="/">
+          <img alt="Logo" src="/images/offering-plate.png" height="70">
+        </a>
+        <ul>
+          <li id="connect-metamask">
+            <a href="/auth/disconnect">
+              <button id="disconnect-metamask-button" type="submit">Disconnect Metamask</button>
+            </a>
+          </li>
+        </ul>
+      </nav>
+      <% include _partials/messages %>
+    </header>
+    <main>
+    </main>
+  </body>
+</html>
