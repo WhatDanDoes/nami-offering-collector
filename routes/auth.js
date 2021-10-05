@@ -63,8 +63,13 @@ router.post('/introduce', (req, res) => {
           }
           // 2021-10-4 https://gist.github.com/danschumann/ae0b5bdcf2e1cd1f4b61
           // You'd think stringifying JSON for this purpose would be simple....
-          res.status(201).render('sign', { publicAddress: agent.publicAddress, typedData: JSON.stringify(message).replace(/\\/g, '\\\\').replace(/"/g, '\\\"'), messages: req.flash() });
-
+          res.status(201).render('sign', {
+            publicAddress: agent.publicAddress,
+            typedData: JSON.stringify(message).replace(/\\/g, '\\\\').replace(/"/g, '\\\"'),
+            messages: req.flash(),
+            messageText: message.message.message,
+            nonce: message.message.nonce,
+          });
         });
       }).catch(err => {
         res.status(500).json(err);
@@ -78,7 +83,13 @@ router.post('/introduce', (req, res) => {
           if (req.headers['accept'] === 'application/json') {
             return res.status(201).json({ typedData: message, publicAddress: agent.publicAddress });
           }
-          res.status(201).render('sign', { publicAddress: req.body.publicAddress, typedData: JSON.stringify(message).replace(/\\/g, '\\\\').replace(/"/g, '\\\"'), messages: req.flash() });
+          res.status(201).render('sign', {
+            publicAddress: req.body.publicAddress,
+            typedData: JSON.stringify(message).replace(/\\/g, '\\\\').replace(/"/g, '\\\"'),
+            messages: req.flash(),
+            messageText: message.message.message,
+            nonce: message.message.nonce,
+          });
         });
       }).catch(err => {
         if (req.headers['accept'] === 'application/json') {
