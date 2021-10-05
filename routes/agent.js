@@ -14,7 +14,7 @@ router.put('/', ensureAuthorized, (req, res, next) =>  {
       if (req.headers['accept'] === 'application/json') {
         return res.status(403).json({ message: 'Forbidden' });
       }
-      return res.status(403).render('app', { title: process.env.TITLE, messages: { error: 'Unauthorized' }, agent: req.agent });
+      return res.status(403).render('app', { messages: { error: 'Unauthorized' }, agent: req.agent });
     }
     req.agent[prop] = req.body[prop];
   }
