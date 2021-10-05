@@ -93,7 +93,7 @@ context('authentication', () => {
       });
 
       it('lands in the right place', () => {
-        cy.url().should('match', /\//);
+        cy.url().should('match', /\/$/);
       });
 
       it('does not display the login link', () => {
@@ -121,7 +121,7 @@ context('authentication', () => {
         });
 
         it('lands in the right place', () => {
-          cy.url().should('match', /\//);
+          cy.url().should('match', /\/$/);
         });
 
         it('displays the login link', () => {
