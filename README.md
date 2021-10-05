@@ -49,13 +49,13 @@ npm run test-server
 Run Synpress. You can retrieve the `SECRET_WORDS` from the _HD Wallet Mnemonic_ produced by `ganache-cli`. The documentation recommends you use this:
 
 ```
-NETWORK_NAME=localhost SECRET_WORDS='twelve secret recovery words etc...' npx synpress run --configFile tests/e2e/customConfig.json
+NODE_ENV=test NETWORK_NAME=localhost SECRET_WORDS='twelve secret recovery words etc...' npx synpress run --configFile tests/e2e/customConfig.json
 ```
 
 The following doesn't reset state properly sometimes (Synpress is _clunky_, remember. Also, the documentation doesn't always align with what actually works):
 
 ```
-NETWORK_NAME=localhost SECRET_WORDS='twelve secret recovery words etc...' npx synpress open --configFile tests/e2e/customConfig.json
+NODE_ENV=test NETWORK_NAME=localhost SECRET_WORDS='twelve secret recovery words etc...' npx synpress open --configFile tests/e2e/customConfig.json
 ```
 
 ## 2021-10-4
