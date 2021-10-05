@@ -72,6 +72,12 @@ app.use((req, res, next) => {
 });
 
 /**
+ * For PUT/PATCH/DELETE
+ */
+const methodOverride = require('method-override');
+app.use(methodOverride('_method'))
+
+/**
  * Routes
  */
 app.use('/', indexRouter);
