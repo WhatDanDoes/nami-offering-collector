@@ -89,7 +89,7 @@ describe('account management', () => {
               .send({ name: 'Some Guy' })
               .set('Accept', 'application/json')
               .expect('Content-Type', /json/)
-              .expect(302)
+              .expect(201)
               .end((err, res) => {
                 if (err) return done.fail(err);
 
@@ -168,12 +168,12 @@ describe('account management', () => {
             session
               .put('/agent')
               .send({ name: 'Some Guy' })
-              .expect('Content-Type', /html/)
+              .expect('Content-Type', /text/)
               .expect(302)
               .end((err, res) => {
                 if (err) return done.fail(err);
 
-                expect(res.body.message).toEqual('Info updated');
+                expect(res.headers['location']).toEqual('/');
                 done();
               });
           });
@@ -183,7 +183,7 @@ describe('account management', () => {
             session
               .put('/agent')
               .send({ name: 'Some Guy' })
-              .expect('Content-Type', /html/)
+              .expect('Content-Type', /text/)
               .expect(302)
               .end((err, res) => {
                 if (err) return done.fail(err);
@@ -208,12 +208,10 @@ describe('account management', () => {
             session
               .put('/agent')
               .send({ publicAddress: '0x4D8B94b1358DB655aCAdcCF43768b9AbA00b2e74' })
-              .expect('Content-Type', /html/)
+              .expect('Content-Type', /text/)
               .expect(403)
               .end((err, res) => {
                 if (err) return done.fail(err);
-
-                expect(res.body.message).toEqual('Forbidden');
 
                 models.Agent.find({}).then(agents => {
                   expect(agents.length).toEqual(1);
@@ -238,8 +236,6 @@ describe('account management', () => {
               .end((err, res) => {
                 if (err) return done.fail(err);
 
-                expect(res.body.message).toEqual('Forbidden');
-
                 models.Agent.find({}).then(agents => {
                   expect(agents.length).toEqual(1);
                   expect(agents[0].nonce).toEqual(currentNonce);
@@ -258,13 +254,13 @@ describe('account management', () => {
 
       describe('api', () => {
 
-        it('returns 403 with a friendly message', done => {
+        it('returns 401 with a friendly message', done => {
           request(app)
             .put('/agent')
             .send({ name: 'Some Guy' })
             .set('Accept', 'application/json')
             .expect('Content-Type', /json/)
-            .expect(403)
+            .expect(401)
             .end((err, res) => {
               if (err) return done.fail(err);
 
@@ -282,7 +278,7 @@ describe('account management', () => {
               .send({ name: 'Some Guy' })
               .set('Accept', 'application/json')
               .expect('Content-Type', /json/)
-              .expect(400)
+              .expect(401)
               .end((err, res) => {
                 if (err) return done.fail(err);
 
@@ -307,7 +303,7 @@ describe('account management', () => {
           request(app)
             .put('/agent')
             .send({ name: 'Some Guy' })
-            .expect('Content-Type', /html/)
+            .expect('Content-Type', /text/)
             .expect(302)
             .end((err, res) => {
               if (err) return done.fail(err);
@@ -324,7 +320,7 @@ describe('account management', () => {
             request(app)
               .put('/agent')
               .send({ name: 'Some Guy' })
-              .expect('Content-Type', /html/)
+              .expect('Content-Type', /text/)
               .expect(302)
               .end((err, res) => {
                 if (err) return done.fail(err);
