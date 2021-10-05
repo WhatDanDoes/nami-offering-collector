@@ -23,7 +23,7 @@ router.put('/', ensureAuthorized, (req, res, next) =>  {
     if (req.headers['accept'] === 'application/json') {
       return res.status(201).json({ message: 'Info updated' });
     }
-    req.flash({ success: 'Info updated' });
+    req.flash('success', 'Info updated');
     res.redirect('/');
   }).catch(err => {
     res.status(500).json(err);
