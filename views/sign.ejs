@@ -11,12 +11,51 @@
   <body>
     <header>
       <nav>
-        <a id="home-link" href="/">Metamask is asking you to sign a message</a>
+        <a id="home-link" href="/">
+          <img alt="Logo" src="/images/offering-plate.png" height="70">
+        </a>
       </nav>
+      <h1>
+        <img alt="Logo" src="/images/offering-plate.png" height="40">
+        <b>+</b>
+        <img src="/images/metamask-fox.svg" height="40">
+      </h1>
+      <h1>Metamask is asking you to sign a message</h1>
+      <mark>Signing proves that you own the address you provided</mark>
     </header>
     <% include _partials/messages %>
     <main>
-      <h1>Signing proves that you own the account you provided</h1>
+
+      <article>
+        <h2>How does it do that?</h2>
+
+        <h3>Message</h3>
+
+        <aside>
+          <i><%= messageText %></i>
+        </aside>
+        <p>
+          This text is the same as that currently being displayed by the Metamask
+          plugin itself. It was sent by the Offering Collector server. The server
+          needs to be sure that you own the address with which you are logging in.
+          Signing this message is similar to signing a paper document in that your
+          signature is unique and difficult to replicate. But rather than using
+          pen and ink, you are using a cryptographic private key hidden in your
+          Metamask wallet.
+        </p>
+        <h3>Nonce</h3>
+        <aside>
+          <%= nonce %>
+        </aside>
+        <p>
+          This <em>nonce</em> is used only one time. With each login, a new nonce is
+          randomly generated. That is, every time you login you are effectively signing
+          a brand new, unique message. This adds another layer of security to ensure
+          that hackers cannot spoof your signature and gain access to your account. The
+          new nonce changes your signature in a way that makes it useless to anyone but
+          yourself, even if it is somehow stolen.
+        </p>
+      </article>
 
       <form id="signed-message-form" action="/auth/prove" method="post">
         <input type="hidden" name="publicAddress" value="<%= publicAddress %>">
