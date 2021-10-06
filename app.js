@@ -100,8 +100,15 @@ app.use(function(err, req, res, next) {
   res.render('error');
 });
 
-// How badly do I need this to run on port 3000 for testing? Normally it defaults to 3001 for testing
-let port = process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'tor' ? 3000 : 3000; //:3001;
+/**
+ * 2021-10-6
+ *
+ * Note to self: this is different from how I normally do things. Synpress
+ * falls apart if the server is running on anything but port 3000. Normally
+ * I would set 3000 to production and use 3001 for testing. It is opposite
+ * here.
+ */
+let port = process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'tor' ? 3001 : 3000;
 app.listen(port, '0.0.0.0', () => {
   console.log('metamask-offering-collector listening on ' + port + '!');
 });
