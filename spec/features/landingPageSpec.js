@@ -1,5 +1,5 @@
 const puppeteer = require('puppeteer');
-const dappeteer = require('dappeteer');
+//const dappeteer = require('dappeteer');
 const app = require('../../app');
 
 describe('landing page', () => {
