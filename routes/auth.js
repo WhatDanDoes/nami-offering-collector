@@ -92,7 +92,6 @@ router.post('/introduce', (req, res) => {
           });
         });
       }).catch(err => {
-console.log(err);
         if (req.headers['accept'] === 'application/json') {
           if (err.errors['publicAddress']) {
             res.status(400).json({ message: err.errors['publicAddress'].message });
