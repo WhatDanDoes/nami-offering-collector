@@ -69,7 +69,8 @@ Though [synpress](https://github.com/Synthetixio/synpress) is a wonderful tool, 
 In the application directory:
 
 ```
-cd auth0-photo-server
+cd metamask-offering-collector
+npm install --production
 cp .env.example .env # <- don't forget to configure
 NODE_ENV=production npm install
 ```
