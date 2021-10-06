@@ -16,6 +16,6 @@ WORKDIR $HOME
 ENV PATH $HOME/app/node_modules/.bin:$PATH
 
 ADD package.json $HOME
-RUN NODE_ENV=production npm install
+RUN npm install --production
 
 CMD ["node", "./app.js"]
