@@ -47,11 +47,17 @@ const sessionConfig = {
   store: MongoStore.create({ mongoUrl: 'mongodb://' + config.host + ':27017/' + config.database })
 };
 
-if (process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'staging') {
-  sessionConfig.cookie.httpOnly = false;
-  sessionConfig.cookie.sameSite = 'none';
-  sessionConfig.cookie.secure = true;
-}
+/**
+ * 2021-10-6
+ *
+ * This may not be relevant. The `httpOnly` in particular seems to mess up
+ * the client Javascript calls.
+ */
+//if (process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'staging') {
+//  sessionConfig.cookie.httpOnly = false;
+//  sessionConfig.cookie.sameSite = 'none';
+//  sessionConfig.cookie.secure = true;
+//}
 
 app.use(session(sessionConfig));
 
