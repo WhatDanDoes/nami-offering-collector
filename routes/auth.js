@@ -48,7 +48,7 @@ function getSigningMessage(nonce, done) {
  * The agent has introduced himself, create and return nonce message for signing
  */
 router.post('/introduce', (req, res) => {
-  models.Agent.findOne({ where: { publicAddress: req.body.publicAddress } }).then(agent => {
+  models.Agent.findOne({ publicAddress: req.body.publicAddress }).then(agent => {
 
     if (agent) {
       const nonce = Math.floor(Math.random() * 1000000).toString();
@@ -92,6 +92,7 @@ router.post('/introduce', (req, res) => {
           });
         });
       }).catch(err => {
+console.log(err);
         if (req.headers['accept'] === 'application/json') {
           if (err.errors['publicAddress']) {
             res.status(400).json({ message: err.errors['publicAddress'].message });
@@ -121,7 +122,7 @@ router.post('/introduce', (req, res) => {
  *
  */
 router.post('/prove', (req, res) => {
-  models.Agent.findOne({ where: { publicAddress: req.body.publicAddress } }).then(agent => {
+  models.Agent.findOne({ publicAddress: req.body.publicAddress }).then(agent => {
     getSigningMessage(agent.nonce, (err, message) => {
       if (err) return res.status(500).json({ message: err.message });
 

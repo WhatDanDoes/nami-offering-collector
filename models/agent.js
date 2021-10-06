@@ -19,7 +19,7 @@ module.exports = function(mongoose) {
         },
         {
           validator: async function(val) {
-            const agentExists = await this.model('Agent').findOne({ where: { publicAddress: val } });
+            const agentExists = await this.model('Agent').findOne({ publicAddress: val });
             return !agentExists;
           },
           message: 'That public address is already registered'
