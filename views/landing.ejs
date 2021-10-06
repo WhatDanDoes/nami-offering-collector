@@ -16,21 +16,15 @@
         </a>
         <ul>
           <li id="connect-metamask">
-            <% if (agent) { %>
-              <a href="/auth/disconnect">
-                <button id="disconnect-metamask-button" type="submit">Disconnect Metamask</button>
-              </a>
-            <% } else { %>
-              <form id="introduction-form" action="/auth/introduce" method="post" onsubmit="return handleIdentification(event)">
-                <input type="hidden" name="publicAddress">
-                <button id="connect-metamask-button" type="submit">Confirm your identity with Metamask</button>
-              </form>
-            <% } %>
+            <form id="introduction-form" action="/auth/introduce" method="post" onsubmit="return handleIdentification(event)">
+              <input type="hidden" name="publicAddress">
+              <button id="connect-metamask-button" type="submit">Confirm your identity with Metamask</button>
+            </form>
           </li>
         </ul>
       </nav>
       <% include _partials/messages %>
-      <h1><%= title %></h1>
+      <h1><%= process.env.TITLE %></h1>
       <p>Proverbs 3:9-10</p>
       <p>
         A secure and anonymous way to tithe on your Ethereum earnings.
