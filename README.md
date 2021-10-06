@@ -70,9 +70,8 @@ In the application directory:
 
 ```
 cd metamask-offering-collector
-npm install --production
 cp .env.example .env # <- don't forget to configure
-NODE_ENV=production npm install
+npm install --production
 ```
 
 The _Dockerized_ production is meant to be deployed behind an `nginx-proxy`/`lets-encrypt` combo. Change the _Let's Encrypt_ fields as appropriate and execute:
