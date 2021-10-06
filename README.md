@@ -63,3 +63,21 @@ NODE_ENV=test NETWORK_NAME=localhost SECRET_WORDS='twelve secret recovery words 
 _Note until fixed:_
 
 Though [synpress](https://github.com/Synthetixio/synpress) is a wonderful tool, it is still very much a work in progress. The CSS selectors that enable signature verification have changed somewhere in the last week, and so were manually modified in `node_modules/@synthetixio/synpress/pages/metamask/notification-page.js`.
+
+# Production
+
+In the application directory:
+
+```
+cd auth0-photo-server
+cp .env.example .env # <- don't forget to configure
+NODE_ENV=production npm install
+```
+
+The _Dockerized_ production is meant to be deployed behind an `nginx-proxy`/`lets-encrypt` combo. Change the _Let's Encrypt_ fields as appropriate and execute:
+
+```
+docker-compose -f docker-compose.prod.yml up -d
+```
+
+
