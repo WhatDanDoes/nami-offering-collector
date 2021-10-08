@@ -62,7 +62,23 @@ NODE_ENV=test NETWORK_NAME=localhost SECRET_WORDS='twelve secret recovery words 
 
 _Note until fixed:_
 
-Though [synpress](https://github.com/Synthetixio/synpress) is a wonderful tool, it is still very much a work in progress. The CSS selectors that enable signature verification have changed somewhere in the last week, and so were manually modified in `node_modules/@synthetixio/synpress/pages/metamask/notification-page.js`.
+Though [synpress](https://github.com/Synthetixio/synpress) is a wonderful tool, it is still very much a work in progress. The CSS selectors that enable signature verification have changed somewhere in the last week, and so were manually modified in `node_modules/@synthetixio/synpress/pages/metamask/notification-page.js`. Currently, change these:
+
+```
+const confirmSignatureRequestButton = `${notificationPage} .request-signature__footer__sign-button`;
+const rejectSignatureRequestButton = `${notificationPage} .request-signature__footer__cancel-button`;
+```
+
+To:
+
+```
+const confirmSignatureRequestButton = `${notificationPage} .signature-request-footer button:last-child`;
+const rejectSignatureRequestButton = `${notificationPage} .signature-request-footer button:first-child`;
+```
+
+## 2021-10-7
+
+Had trouble with Synpress not reloading the wallet on each try. Had to manually recover it using the `ganache-cli`-provided phrase. Also had to manually choose which of the ten addresses I wanted to use on the first test run.
 
 # Production
 
