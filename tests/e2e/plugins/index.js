@@ -1,6 +1,7 @@
 require('dotenv').config();
 const plugins = require('@synthetixio/synpress/plugins/');
 const db = require('./database');
+const ethers = require('ethers');
 
 module.exports = (on, config) => {
 
@@ -10,6 +11,16 @@ module.exports = (on, config) => {
   on('task', {
     dropDatabase () {
       return db.mongoose.connection.db.dropDatabase();
+    },
+    async getBalance (address) {
+      const provider = new ethers.providers.JsonRpcProvider('http://127.0.0.1:8545');
+      let balance = await provider.getBalance(address);
+      return ethers.utils.formatEther(balance);
+    },
+    getServerAddress () {
+      return new Promise((resolve, reject) => {
+        resolve(process.env.PUBLIC_ADDRESS)
+      })
     },
   });
 

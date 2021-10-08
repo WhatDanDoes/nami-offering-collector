@@ -25,6 +25,64 @@ context('account managment', () => {
     cy.get('form#account-details button#update-account-button[type="submit"]').should('not.be.disabled');
   });
 
+  describe('Donate form', () => {
+
+    let address, balance, serverAddress;
+    beforeEach(() => {
+
+      cy.fetchMetamaskWalletAddress().then(async result => {
+        address = result;
+        cy.task('getBalance', address).then(result => {
+          balance = result;
+          cy.task('getServerAddress').then(result => {
+            serverAddress = result;
+          });
+        });
+      });
+    });
+
+    context('balance > 0', () => {
+
+      it.only('provides a donation form', () => {
+        cy.get('form#send-eth').should('not.be.disabled');
+        cy.get('form#send-eth').should('not.have.attr', 'action');
+        cy.get('form#send-eth').should('not.have.attr', 'method');
+        cy.get('form#send-eth input[type="text"][name="from"]').should('have.value', address.toLowerCase());
+        cy.get('form#send-eth input[type="text"][name="from"]').should('be.disabled');
+        cy.get('form#send-eth input[type="text"][name="to"]').should('have.value', serverAddress);
+        cy.get('form#send-eth input[type="text"][name="to"]').should('be.disabled');
+        cy.get('form#send-eth input[type="range"][name="value"][min="0"]').should('have.value', '0');
+        cy.get('form#send-eth input[type="range"][name="value"]').should('have.attr', 'min', '0');
+        cy.get('form#send-eth input[type="range"][name="value"]').should('have.attr', 'max', balance);
+//        cy.get('form#send-eth input#send-eth-button[type="submit"]').should('exist');
+      });
+
+
+      it('displays the account\'s current balance', () => {
+
+      });
+    });
+
+    context('zero balance', () => {
+      it('disables the donation form', () => {
+        cy.get('form#account-details').should('be.disabled');
+        cy.get('form#account-details header').contains('You have 0 ETH in your account');
+        cy.get('form#account-details').should('not.have.attr', 'action');
+        cy.get('form#account-details').should('not.have.attr', 'method');
+        cy.get('form#send-eth input[type="text"][name="from"]').should('have.value', address);
+        cy.get('form#send-eth input[type="text"][name="to"]').should('have.value', process.env.PUBLIC_ADDRESS);
+        cy.get('form#send-eth input[type="range"][name="value"][min="0"]').should('have.value', '0');
+        cy.get('form#send-eth input#send-eth-button[type="submit"]').should('exist');
+      });
+
+      it('displays the account\'s current balance', () => {
+//        cy.get('input[type="range"][name="value"]').should('have.attr', 'min', '0');
+//        cy.get('input[type="range"][name="value"]').should('have.attr', 'max', '0');
+
+      });
+    });
+  });
+
   describe('Update button', () => {
 
     it('allows you to set the name field', () => {

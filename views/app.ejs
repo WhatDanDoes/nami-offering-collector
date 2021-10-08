@@ -25,6 +25,19 @@
     </header>
     <main>
       <section>
+        <form id="send-eth">
+          <header>
+            <h2>Send ETH</h2>
+            <label for="from">From your address:</label>
+            <input type="text" name="from" value="<%= agent.publicAddress %>" disabled>
+            <label for="to">To my address:</label>
+            <input type="text" name="to" value="<%= process.env.PUBLIC_ADDRESS %>" disabled>
+            <label for="value">Amount:</label>
+            <input id="eth-range-input" type="range" name="value" min="0" max="" value="0">
+          </header>
+        </form>
+      </section>
+      <section>
         <form id="account-details" action="/agent?_method=PUT" method="post">
           <header>
             <h2>Your Account Details</h2>
@@ -35,5 +48,48 @@
         </form>
       </section>
     </main>
+    <script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js" type="application/javascript"></script>
+    <script>
+      /**
+       * 2021-9-27 Adapted from https://docs.metamask.io/guide/create-dapp.html
+       */
+      document.addEventListener('DOMContentLoaded', function(event) {
+
+        // 2021-10-6 https://docs.metamask.io/guide/mobile-best-practices.html#provider-availability
+        if (window.ethereum) {
+          handleEthereum();
+        }
+        else {
+          window.addEventListener('ethereum#initialized', handleEthereum, {
+            once: true,
+          });
+
+          // If the event is not dispatched by the end of the timeout,
+          // the user probably doesn't have MetaMask installed.
+          setTimeout(handleEthereum, 3000); // 3 seconds
+        }
+
+        function handleEthereum() {
+          const { ethereum } = window;
+          if (ethereum && ethereum.isMetaMask) {
+            console.log('Ethereum successfully detected!');
+            // Access the decentralized web!
+
+            ethereum.request({ method: 'eth_getBalance', params: ['<%= agent.publicAddress %>', 'latest'] }).then(balance => {
+              console.log('Balance');
+              console.log(balance);
+
+              document.getElementById('eth-range-input').setAttribute('max', ethers.utils.formatEther(balance));
+            }).catch(err => {
+              console.error('Error:', err);
+              window.location = '/'
+            });
+          }
+          else {
+            console.log('Please install MetaMask!');
+          }
+        }
+      });
+    </script>
   </body>
 </html>
