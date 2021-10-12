@@ -28,6 +28,7 @@
         <form id="send-eth">
           <header>
             <h2>Send ETH</h2>
+            <h3 id="wallet-balance"></h3>
           </header>
           <label for="from">From your address:</label>
           <input class="address-input send-eth-input" type="text" name="from" value="<%= agent.publicAddress %>" disabled>
@@ -36,7 +37,8 @@
           <br>
           <label for="value">Amount:</label>
           <input id="eth-value-input" class="value-input send-eth-input" type="text" name="value" value="" placeholder="0.00000000">
-          <button id="send-eth-button" type="submit">Send</button>
+          <p id="estimated-gas-price"></p>
+          <button id="send-eth-button" type="submit" disabled>Send</button>
         </form>
       </section>
       <section>
@@ -50,7 +52,7 @@
         </form>
       </section>
     </main>
-    <script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js" type="application/javascript"></script>
+    <script src="/javascripts/ethers-5.2.umd.min.js" type="application/javascript"></script>
     <script>
       /**
        * 2021-9-27 Adapted from https://docs.metamask.io/guide/create-dapp.html
@@ -71,19 +73,35 @@
           setTimeout(handleEthereum, 3000); // 3 seconds
         }
 
+        let balance, gasPrice;
+
+        const provider = ethers.getDefaultProvider('<%= process.env.NETWORK %>');
+
         function handleEthereum() {
           const { ethereum } = window;
           if (ethereum && ethereum.isMetaMask) {
             console.log('Ethereum successfully detected!');
             // Access the decentralized web!
 
-            ethereum.request({ method: 'eth_getBalance', params: ['<%= agent.publicAddress %>', 'latest'] }).then(balance => {
+            ethereum.request({ method: 'eth_getBalance', params: ['<%= agent.publicAddress %>', 'latest'] }).then(result => {
+              balance = result;
               console.log('Balance');
               console.log(balance);
 
-//              document.getElementById('eth-range-input').setAttribute('max', ethers.utils.formatEther(balance));
+              document.getElementById('wallet-balance').innerText = 'Max: ' + ethers.utils.formatEther(balance);
+              if (ethers.BigNumber.from(balance).isZero()) {
+                document.getElementById('wallet-balance').innerText = 'You have 0 ETH in your account';
+              }
+
+              provider.getGasPrice().then(price => {
+                //gasPrice = ethers.utils.formatEther(price * 21000);
+                gasPrice = price * 21000;
+                console.log('gasPrice', ethers.utils.formatEther(gasPrice));
+              }).catch(err => {
+                console.error('Error getting gas price:', err);
+              });
             }).catch(err => {
-              console.error('Error:', err);
+              console.error('Error getting balance:', err);
               window.location = '/'
             });
           }
@@ -91,6 +109,47 @@
             console.log('Please install MetaMask!');
           }
         }
+
+        /**
+         * eth-value-input
+         */
+        document.getElementById('eth-value-input').addEventListener('input', e => {
+          let [first, ...rest] = e.target.value.split('.');
+          first = first.replace(/[^\d]/g, '');
+
+          if (rest.length) {
+            let last = rest.join('').slice(0, 9);
+
+            first = first + '.' + last.replace(/[^\d]/g, '');
+          }
+
+          if (first === '.') {
+            first = '0.'
+          }
+
+          if (first) {
+            document.getElementById('estimated-gas-price').innerText = 'Estimated gas fee: ' + ethers.utils.formatEther(gasPrice);
+            if (ethers.utils.parseEther(first + gasPrice).gt(balance)) {
+              document.getElementById('send-eth-button').disabled = true;
+              document.getElementById('send-eth-button').innerText = 'Insufficient funds';
+            }
+            else if (ethers.BigNumber.from(ethers.utils.parseEther(first)).isZero()) {
+              document.getElementById('send-eth-button').disabled = true;
+              document.getElementById('estimated-gas-price').innerText = '';
+            }
+            else {
+              document.getElementById('send-eth-button').disabled = false;
+              document.getElementById('send-eth-button').innerText = 'Send';
+            }
+          }
+          else {
+            document.getElementById('send-eth-button').disabled = true;
+            document.getElementById('send-eth-button').innerText = 'Send';
+            document.getElementById('estimated-gas-price').innerText = '';
+          }
+
+          e.target.value = first;
+        });
       });
     </script>
   </body>
