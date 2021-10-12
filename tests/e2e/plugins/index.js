@@ -22,6 +22,11 @@ module.exports = (on, config) => {
         resolve(process.env.PUBLIC_ADDRESS)
       })
     },
+    async getGasPrice () {
+      const provider = new ethers.providers.JsonRpcProvider('http://127.0.0.1:8545');
+      const price = await provider.getGasPrice();
+      return ethers.utils.formatEther(price);
+    },
   });
 
   config.env = {...config.env, ...process.env};
