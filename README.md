@@ -78,7 +78,7 @@ const rejectSignatureRequestButton = `${notificationPage} .signature-request-foo
 
 ## 2021-10-7
 
-Had trouble with Synpress not reloading the wallet on each try. Had to manually recover it using the `ganache-cli`-provided phrase. Also had to manually choose which of the ten addresses I wanted to use on the first test run.
+Had trouble with Synpress not reloading the wallet on each try. Had to manually recover it using the `ganache-cli`-provided phrase. Also had to manually choose which of the ten addresses I wanted to use on the first test run. Remember, the default `synpress` wallet password is _Tester@1234_.
 
 # Production
 
