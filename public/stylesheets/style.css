@@ -1,3 +1,6 @@
+/**
+ * Alerts
+ */
 .alert {
   padding: 0.75rem 1.25rem;
   margin-bottom: 1rem;
@@ -21,5 +24,22 @@
   background-color: #f2dede;
   border-color: #ebcccc;
   color: #a94442;
+}
+
+/**
+ * Send eth form
+ */
+.address-input {
+  font-size: .75em;
+}
+
+.value-input {
+  font-size: 1.5em;
+  color: #007700;
+}
+
+.send-eth-input {
+  text-align: right;
+  width: 90%;
 }
 
