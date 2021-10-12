@@ -51,14 +51,16 @@ context('account managment', () => {
         cy.get('form#send-eth input[type="text"][name="from"]').should('be.disabled');
         cy.get('form#send-eth input[type="text"][name="to"]').should('have.value', serverAddress);
         cy.get('form#send-eth input[type="text"][name="to"]').should('be.disabled');
-        cy.get('form#send-eth input[type="range"][name="value"][min="0"]').should('have.value', '0');
-        cy.get('form#send-eth input[type="range"][name="value"]').should('have.attr', 'min', '0');
-        cy.get('form#send-eth input[type="range"][name="value"]').should('have.attr', 'max', balance);
-//        cy.get('form#send-eth input#send-eth-button[type="submit"]').should('exist');
+        cy.get('form#send-eth input#eth-value-input[type="text"][name="value"]').should('have.value', '');
+        cy.get('form#send-eth #send-eth-button[type="submit"]').should('exist');
       });
 
 
       it('displays the account\'s current balance', () => {
+
+      });
+
+      it('only allows numerical content in the "amount" text field', () => {
 
       });
     });
@@ -71,7 +73,7 @@ context('account managment', () => {
         cy.get('form#account-details').should('not.have.attr', 'method');
         cy.get('form#send-eth input[type="text"][name="from"]').should('have.value', address);
         cy.get('form#send-eth input[type="text"][name="to"]').should('have.value', process.env.PUBLIC_ADDRESS);
-        cy.get('form#send-eth input[type="range"][name="value"][min="0"]').should('have.value', '0');
+        cy.get('form#send-eth input#eth-value-input[type="text"][name="value"]').should('have.value', '');
         cy.get('form#send-eth input#send-eth-button[type="submit"]').should('exist');
       });
 

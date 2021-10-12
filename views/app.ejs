@@ -14,9 +14,9 @@
         </ul>
       </nav>
       <h1>You are connected with:</h1>
-      <h3>
+      <h4>
         <%= agent.publicAddress %>
-      </h3>
+      </h4>
       <p>
         This is your <em>public</em> address. It is okay to show people this one.
       </p>
@@ -28,13 +28,15 @@
         <form id="send-eth">
           <header>
             <h2>Send ETH</h2>
-            <label for="from">From your address:</label>
-            <input type="text" name="from" value="<%= agent.publicAddress %>" disabled>
-            <label for="to">To my address:</label>
-            <input type="text" name="to" value="<%= process.env.PUBLIC_ADDRESS %>" disabled>
-            <label for="value">Amount:</label>
-            <input id="eth-range-input" type="range" name="value" min="0" max="" value="0">
           </header>
+          <label for="from">From your address:</label>
+          <input class="address-input send-eth-input" type="text" name="from" value="<%= agent.publicAddress %>" disabled>
+          <label for="to">To my address:</label>
+          <input class="address-input send-eth-input" type="text" name="to" value="<%= process.env.PUBLIC_ADDRESS %>" disabled>
+          <br>
+          <label for="value">Amount:</label>
+          <input id="eth-value-input" class="value-input send-eth-input" type="text" name="value" value="" placeholder="0.00000000">
+          <button id="send-eth-button" type="submit">Send</button>
         </form>
       </section>
       <section>
@@ -79,7 +81,7 @@
               console.log('Balance');
               console.log(balance);
 
-              document.getElementById('eth-range-input').setAttribute('max', ethers.utils.formatEther(balance));
+//              document.getElementById('eth-range-input').setAttribute('max', ethers.utils.formatEther(balance));
             }).catch(err => {
               console.error('Error:', err);
               window.location = '/'
