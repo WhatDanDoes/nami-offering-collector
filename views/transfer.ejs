@@ -15,13 +15,13 @@
       </nav>
       <h1>You are connected with:</h1>
       <h4>
-        <%= agent.publicAddress %>
+        <a href="/account">
+          <%= agent.publicAddress %>
+        </a>
       </h4>
       <p>
         This is your <em>public</em> address. It is okay to show people this one.
-      </p>
-      <p>
-        <a href="/account">Set your contact information to receive a tax receipt</a>
+        <a href="/account">Click it</a> to receive a tax receipt.
       </p>
       <br>
       <% include _partials/messages %>

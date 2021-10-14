@@ -9,23 +9,24 @@ context('account managment', () => {
     cy.visit('/');
     cy.contains('Confirm your identity with Metamask').click();
     cy.confirmMetamaskSignatureRequest();
-    cy.get('a[href="/account"]').click();
+    cy.get('a[href="/account"]:first-child').click();
   });
 
-  it('displays the connected wallet', () => {
-    cy.fetchMetamaskWalletAddress().then(address => {
-      cy.get('body header h1').contains('You are connected with:');
-      cy.get('body header h4').contains(address.toLowerCase());
-    });
+  it('displays a link back to the transfer page', () => {
+    cy.get('a[href="/"] button#make-a-donation-button').should('exist');
   });
 
   describe('Account Details form', () => {
 
     it('presents a form to edit account details', () => {
-      cy.get('form#account-details').should('have.attr', 'action', '/account?_method=PUT');
-      cy.get('form#account-details').should('have.attr', 'method', 'post');
-      cy.get('form#account-details input[type="text"][name="name"]').should('not.be.disabled');
-      cy.get('form#account-details button#update-account-button[type="submit"]').should('not.be.disabled');
+      cy.fetchMetamaskWalletAddress().then(address => {
+        cy.get('form#account-details').should('have.attr', 'action', '/account?_method=PUT');
+        cy.get('form#account-details').should('have.attr', 'method', 'post');
+        cy.get('form#account-details input#address-dummy[type="text"]').should('be.disabled');
+        cy.get('form#account-details input#address-dummy[type="text"]').should('have.value', address.toLowerCase());
+        cy.get('form#account-details input[type="text"][name="name"]').should('not.be.disabled');
+        cy.get('form#account-details button#update-account-button[type="submit"]').should('not.be.disabled');
+      });
     });
 
     describe('Update button', () => {

@@ -15,6 +15,7 @@ context('transfer eth', () => {
     cy.fetchMetamaskWalletAddress().then(address => {
       cy.get('body header h1').contains('You are connected with:');
       cy.get('body header h4').contains(address.toLowerCase());
+      cy.get('a[href="/account"]').should('exist');
     });
   });
 
