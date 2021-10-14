@@ -150,6 +150,13 @@ context('account managment', () => {
               });
             });
           });
+
+          it('displays a friendly message', () => {
+            cy.get('#eth-value-input').type('1');
+            cy.get('form#send-eth #send-eth-button[type="submit"]').click();
+            cy.confirmMetamaskTransaction();
+            cy.get('.alert.alert-success').contains('Transaction sent');
+          });
         });
       });
     });
