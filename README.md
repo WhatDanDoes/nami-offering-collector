@@ -37,7 +37,7 @@ These are the tests that include Metamask (I can't help but wonder if I should u
 Start the local test chain:
 
 ```
-npx ganache-cli
+npx ganache-cli --accounts 10 --mnemonic 'yard dune doll awake peanut hour zoo spread middle glad run rough' --debug
 ```
 
 Run app with `nodemon`:
@@ -55,7 +55,7 @@ NODE_ENV=test NETWORK_NAME=localhost SECRET_WORDS='twelve secret recovery words 
 The following doesn't reset state properly sometimes (Synpress is _clunky_, remember. Also, the documentation doesn't always align with what actually works):
 
 ```
-NODE_ENV=test NETWORK_NAME=localhost SECRET_WORDS='twelve secret recovery words etc...' npx synpress open --configFile tests/e2e/customConfig.json
+NODE_ENV=test NETWORK_NAME=localhost SECRET_WORDS='yard dune doll awake peanut hour zoo spread middle glad run rough' npx synpress open --configFile tests/e2e/customConfig.json
 ```
 
 ## 2021-10-4
@@ -79,6 +79,10 @@ const rejectSignatureRequestButton = `${notificationPage} .signature-request-foo
 ## 2021-10-7
 
 Had trouble with Synpress not reloading the wallet on each try. Had to manually recover it using the `ganache-cli`-provided phrase. Also had to manually choose which of the ten addresses I wanted to use on the first test run. Remember, the default `synpress` wallet password is _Tester@1234_.
+
+## 2021-10-14
+
+It would be nice if Synpress reset the wallet on open. Even pre-setting the _secret words_ on chain and on Synpress result in nonce misalignment when sending a transaction. Reset Synpress Metamask wallet manually on each new test/dev session. _Resetting_ in this case is not the same as an account recovery. Go into settings on the test wallet and reset it from there.
 
 # Production
 
