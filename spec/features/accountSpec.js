@@ -128,7 +128,6 @@ describe('account management', () => {
         });
       });
     });
-
   });
 
   describe('PUT /account', () => {

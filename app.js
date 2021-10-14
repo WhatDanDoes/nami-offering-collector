@@ -7,7 +7,7 @@ var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 
 var indexRouter = require('./routes/index');
-const agentRouter = require('./routes/agent');
+const accountRouter = require('./routes/account');
 const authRouter = require('./routes/auth');
 
 var app = express();
@@ -88,7 +88,7 @@ app.use(methodOverride('_method'))
  */
 app.use('/', indexRouter);
 app.use('/auth', authRouter);
-app.use('/account', agentRouter);
+app.use('/account', accountRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
