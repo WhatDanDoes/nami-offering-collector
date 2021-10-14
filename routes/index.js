@@ -6,7 +6,7 @@ const router = express.Router();
  */
 router.get('/', (req, res, next) => {
   if (req.agent) {
-    res.render('app', { messages: req.flash(), agent: req.agent });
+    res.render('transfer', { messages: req.flash(), agent: req.agent });
   }
   else {
     res.render('landing', { messages: req.flash() });

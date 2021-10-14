@@ -20,7 +20,7 @@ describe('account management', () => {
     });
   });
 
-  describe('PUT /agent', () => {
+  describe('PUT /account', () => {
 
     describe('authorized', () => {
 
@@ -69,7 +69,7 @@ describe('account management', () => {
 
           it('returns 201 with a friendly message', done => {
              session
-              .put('/agent')
+              .put('/account')
               .send({ name: 'Some Guy' })
               .set('Accept', 'application/json')
               .expect('Content-Type', /json/)
@@ -85,7 +85,7 @@ describe('account management', () => {
           it('updates the database', done => {
             expect(agent.name).toBeUndefined();
             session
-              .put('/agent')
+              .put('/account')
               .send({ name: 'Some Guy' })
               .set('Accept', 'application/json')
               .expect('Content-Type', /json/)
@@ -111,7 +111,7 @@ describe('account management', () => {
           it('does not allow modifying publicAddress', done => {
             expect(agent.publicAddress).toEqual(_publicAddress);
             session
-              .put('/agent')
+              .put('/account')
               .send({ publicAddress: '0x4D8B94b1358DB655aCAdcCF43768b9AbA00b2e74' })
               .set('Accept', 'application/json')
               .expect('Content-Type', /json/)
@@ -137,7 +137,7 @@ describe('account management', () => {
             const newNonce = Math.floor(Math.random() * 1000000).toString();
             expect(currentNonce).not.toEqual(newNonce);
             session
-              .put('/agent')
+              .put('/account')
               .send({ nonce: newNonce })
               .set('Accept', 'application/json')
               .expect('Content-Type', /json/)
@@ -166,14 +166,14 @@ describe('account management', () => {
 
           it('redirects', done => {
             session
-              .put('/agent')
+              .put('/account')
               .send({ name: 'Some Guy' })
               .expect('Content-Type', /text/)
               .expect(302)
               .end((err, res) => {
                 if (err) return done.fail(err);
 
-                expect(res.headers['location']).toEqual('/');
+                expect(res.headers['location']).toEqual('/account');
                 done();
               });
           });
@@ -181,7 +181,7 @@ describe('account management', () => {
           it('updates the database', done => {
             expect(agent.name).toBeUndefined();
             session
-              .put('/agent')
+              .put('/account')
               .send({ name: 'Some Guy' })
               .expect('Content-Type', /text/)
               .expect(302)
@@ -206,7 +206,7 @@ describe('account management', () => {
           it('does not allow modifying publicAddress', done => {
             expect(agent.publicAddress).toEqual(_publicAddress);
             session
-              .put('/agent')
+              .put('/account')
               .send({ publicAddress: '0x4D8B94b1358DB655aCAdcCF43768b9AbA00b2e74' })
               .expect('Content-Type', /text/)
               .expect(403)
@@ -229,7 +229,7 @@ describe('account management', () => {
             const newNonce = Math.floor(Math.random() * 1000000).toString();
             expect(currentNonce).not.toEqual(newNonce);
             session
-              .put('/agent')
+              .put('/account')
               .send({ nonce: newNonce })
               .expect('Content-Type', /html/)
               .expect(403)
@@ -256,7 +256,7 @@ describe('account management', () => {
 
         it('returns 401 with a friendly message', done => {
           request(app)
-            .put('/agent')
+            .put('/account')
             .send({ name: 'Some Guy' })
             .set('Accept', 'application/json')
             .expect('Content-Type', /json/)
@@ -274,7 +274,7 @@ describe('account management', () => {
             expect(agents.length).toEqual(0);
 
             request(app)
-              .put('/agent')
+              .put('/account')
               .send({ name: 'Some Guy' })
               .set('Accept', 'application/json')
               .expect('Content-Type', /json/)
@@ -301,7 +301,7 @@ describe('account management', () => {
 
         it('redirects', done => {
           request(app)
-            .put('/agent')
+            .put('/account')
             .send({ name: 'Some Guy' })
             .expect('Content-Type', /text/)
             .expect(302)
@@ -318,7 +318,7 @@ describe('account management', () => {
             expect(agents.length).toEqual(0);
 
             request(app)
-              .put('/agent')
+              .put('/account')
               .send({ name: 'Some Guy' })
               .expect('Content-Type', /text/)
               .expect(302)

@@ -20,6 +20,9 @@
       <p>
         This is your <em>public</em> address. It is okay to show people this one.
       </p>
+      <p>
+        <a href="/account">Set your contact information to receive a tax receipt</a>
+      </p>
       <br>
       <% include _partials/messages %>
     </header>
@@ -39,16 +42,6 @@
           <input id="eth-value-input" class="value-input send-eth-input" type="text" name="value" value="" placeholder="0.00000000">
           <p id="estimated-gas-price"></p>
           <button id="send-eth-button" type="submit" disabled>Send</button>
-        </form>
-      </section>
-      <section>
-        <form id="account-details" action="/agent?_method=PUT" method="post">
-          <header>
-            <h2>Your Account Details</h2>
-          </header>
-          <label for="name">Name:</label>
-          <input type="text" name="name" placeholder="Anonymous" value="<%= agent.name %>">
-          <button id="update-account-button" type="submit">Update</button>
         </form>
       </section>
     </main>

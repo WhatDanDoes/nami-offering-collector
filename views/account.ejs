@@ -1,0 +1,39 @@
+<% include _partials/head %>
+  <body>
+    <header>
+      <nav>
+        <a id="home-link" href="/">
+          <img alt="Logo" src="/images/offering-plate.png" height="70">
+        </a>
+        <ul>
+          <li id="connect-metamask">
+            <a href="/auth/disconnect">
+              <button id="disconnect-metamask-button" type="submit">Disconnect Metamask</button>
+            </a>
+          </li>
+        </ul>
+      </nav>
+      <h1>You are connected with:</h1>
+      <h4>
+        <%= agent.publicAddress %>
+      </h4>
+      <p>
+        This is your <em>public</em> address. It is okay to show people this one.
+      </p>
+      <br>
+      <% include _partials/messages %>
+    </header>
+    <main>
+      <section>
+        <form id="account-details" action="/account?_method=PUT" method="post">
+          <header>
+            <h2>Your Account Details</h2>
+          </header>
+          <label for="name">Name:</label>
+          <input type="text" name="name" placeholder="Anonymous" value="<%= agent.name %>">
+          <button id="update-account-button" type="submit">Update</button>
+        </form>
+      </section>
+    </main>
+  </body>
+</html>
