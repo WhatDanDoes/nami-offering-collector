@@ -86,7 +86,7 @@
             ethereum.request({ method: 'eth_getBalance', params: ['<%= agent.publicAddress %>', 'latest'] }).then(result => {
               balance = result;
               console.log('Balance');
-              console.log(balance);
+              console.log(ethers.utils.formatEther(balance));
 
               document.getElementById('wallet-balance').innerText = 'Max: ' + ethers.utils.formatEther(balance);
               if (ethers.BigNumber.from(balance).isZero()) {
@@ -94,7 +94,6 @@
               }
 
               provider.getGasPrice().then(price => {
-                //gasPrice = ethers.utils.formatEther(price * 21000);
                 gasPrice = price * 21000;
                 console.log('gasPrice', ethers.utils.formatEther(gasPrice));
               }).catch(err => {
@@ -109,6 +108,29 @@
             console.log('Please install MetaMask!');
           }
         }
+
+        /**
+         * send-eth form
+         */
+        document.getElementById('send-eth').addEventListener('submit', e => {
+          e.preventDefault();
+          console.log('Submitting transaction');
+          console.log(ethers.utils.parseEther(document.getElementById('eth-value-input').value));
+
+          const transactionParams = {
+            to: '<%= process.env.PUBLIC_ADDRESS %>',
+            from: '<%= agent.publicAddress %>',
+            value: ethers.utils.parseEther(document.getElementById('eth-value-input').value).toHexString()
+          };
+
+          ethereum.request({ method: 'eth_sendTransaction', params: [transactionParams] }).then(txHash => {
+            console.log('Transaction hash');
+            console.log(txHash);
+          }).catch(err => {
+            console.error('Error sending transaction:', err);
+            window.location = '/'
+          });
+        });
 
         /**
          * eth-value-input
@@ -129,11 +151,14 @@
 
           if (first) {
             document.getElementById('estimated-gas-price').innerText = 'Estimated gas fee: ' + ethers.utils.formatEther(gasPrice);
-            if (ethers.utils.parseEther(first + gasPrice).gt(balance)) {
+            let firstBigNum = ethers.utils.parseEther(first);
+            let gasPriceBigNum = ethers.utils.parseEther(ethers.utils.formatEther(gasPrice));
+
+            if (firstBigNum.add(gasPriceBigNum).gt(balance)) {
               document.getElementById('send-eth-button').disabled = true;
               document.getElementById('send-eth-button').innerText = 'Insufficient funds';
             }
-            else if (ethers.BigNumber.from(ethers.utils.parseEther(first)).isZero()) {
+            else if (firstBigNum.isZero()) {
               document.getElementById('send-eth-button').disabled = true;
               document.getElementById('estimated-gas-price').innerText = '';
             }
