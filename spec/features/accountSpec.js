@@ -20,6 +20,117 @@ describe('account management', () => {
     });
   });
 
+  describe('GET /account', () => {
+
+    describe('authorized', () => {
+
+      let session, agent;
+
+      beforeEach(done => {
+        session = request(app);
+        session
+          .post('/auth/introduce')
+          .send({ publicAddress: _publicAddress })
+          .set('Accept', 'application/json')
+          .expect('Content-Type', /json/)
+          .expect(201)
+          .end((err, res) => {
+            if (err) return done.fail(err);
+            ({ publicAddress, typedData } = res.body);
+
+            const signed = sigUtil.signTypedData(ethUtil.toBuffer(_privateAddress), {privateKey: _privateAddress, data: typedData, version: 'V3' });
+
+            session
+              .post('/auth/prove')
+              .send({ publicAddress: _publicAddress, signature: signed })
+              .set('Content-Type', 'application/json')
+              .set('Accept', 'application/json')
+              .expect('Content-Type', /json/)
+              .expect(201)
+              .end((err, res) => {
+                if (err) return done.fail(err);
+
+                expect(res.body.message).toEqual('Welcome!');
+
+                models.Agent.findOne({ where: { publicAddress: _publicAddress } }).then(result => {
+                  agent = result;
+
+                  done();
+                }).catch(err => {
+                  done.fail(err);
+                });
+              });
+          });
+      });
+
+      describe('api', () => {
+
+        it('returns successfully', done => {
+          session
+           .get('/account')
+           .set('Accept', 'application/json')
+           .expect('Content-Type', /json/)
+           .expect(200)
+           .end((err, res) => {
+             if (err) return done.fail(err);
+             expect(res.body.publicAddress).toEqual(agent.publicAddress);
+             done();
+           });
+        });
+      });
+
+      describe('browser', () => {
+
+        it('returns successfully', done => {
+          session
+           .get('/account')
+           .expect('Content-Type', /text/)
+           .expect(200)
+           .end((err, res) => {
+             if (err) return done.fail(err);
+             done();
+           });
+        });
+      });
+    });
+
+    describe('unauthorized', () => {
+
+      describe('api', () => {
+
+        it('returns 401 with a friendly message', done => {
+          request(app)
+           .get('/account')
+           .set('Accept', 'application/json')
+           .expect('Content-Type', /json/)
+           .expect(401)
+           .end((err, res) => {
+             if (err) return done.fail(err);
+             expect(res.body.message).toEqual('Login first');
+             done();
+           });
+        });
+      });
+
+      describe('browser', () => {
+
+        it('redirects', done => {
+          request(app)
+           .get('/account')
+           .expect('Content-Type', /text/)
+           .expect(302)
+           .end((err, res) => {
+             if (err) return done.fail(err);
+
+             expect(res.headers['location']).toEqual('/');
+             done();
+           });
+        });
+      });
+    });
+
+  });
+
   describe('PUT /account', () => {
 
     describe('authorized', () => {

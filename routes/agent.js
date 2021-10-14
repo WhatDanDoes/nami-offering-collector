@@ -4,14 +4,19 @@ const ensureAuthorized = require('../lib/ensureAuthorized');
 const models = require('../models');
 
 /**
- * GET /agent
+ * GET /account
  */
 router.get('/', (req, res, next) => {
   if (req.agent) {
+    if (req.headers['accept'] === 'application/json') {
+      return res.status(200).json(req.agent);
+    }
     res.render('account', { messages: req.flash(), agent: req.agent });
   }
   else {
-    res.render('landing', { messages: req.flash() });
+    if (req.headers['accept'] === 'application/json') {
+      return res.status(401).json({ message: 'Login first' });
+    }
     req.flash('info', 'Login first');
     res.redirect('/');
   }
@@ -20,7 +25,7 @@ router.get('/', (req, res, next) => {
 
 
 /**
- * PUT /agent
+ * PUT /account
  */
 router.put('/', ensureAuthorized, (req, res, next) =>  {
 
