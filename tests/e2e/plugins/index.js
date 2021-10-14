@@ -14,6 +14,9 @@ module.exports = (on, config) => {
     },
     async getBalance (address) {
       const provider = new ethers.providers.JsonRpcProvider('http://127.0.0.1:8545');
+      if (address === 'CONFIGURED') {
+        address = process.env.PUBLIC_ADDRESS;
+      }
       let balance = await provider.getBalance(address);
       return ethers.utils.formatEther(balance);
     },
