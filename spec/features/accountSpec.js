@@ -517,170 +517,183 @@ describe('account management', () => {
               });
           });
 
-//          it('updates the database', done => {
-//            expect(agent.name).toBeUndefined();
-//            session
-//              .put('/account')
-//              .send({ name: 'Some Guy' })
-//              .set('Accept', 'application/json')
-//              .expect('Content-Type', /json/)
-//              .expect(201)
-//              .end((err, res) => {
-//                if (err) return done.fail(err);
-//
-//                models.Agent.find({}).then(agents => {
-//                  expect(agents.length).toEqual(1);
-//                  expect(agents[0].name).toEqual('Some Guy');
-//                  expect(agents[0].publicAddress).toEqual(_publicAddress);
-//
-//                  done();
-//                }).catch(err => {
-//                  done.fail(err);
-//                });
-//              });
-//          });
+          it('updates the database', done => {
+            models.Transaction.find({}).then(transactions => {
+              expect(transactions.length).toEqual(0);
+
+              session
+                .post('/account/transaction')
+                .send({
+                  hash: '0x81a0a82dfbb7f818e9bbaf1050194bcaf8dd91d2ebf07e72cabe58a7b4174df7',
+                  value: ethers.utils.parseEther('100')
+                })
+                .set('Accept', 'application/json')
+                .expect('Content-Type', /json/)
+                .expect(201)
+                .end((err, res) => {
+                  if (err) return done.fail(err);
+
+                  models.Transaction.find({}).then(transactions => {
+                    expect(transactions.length).toEqual(1);
+                    expect(transactions[0].account).toEqual(agent._id);
+                    expect(transactions[0].value).toEqual('100.0');
+
+                    done();
+                  }).catch(err => {
+                    done.fail(err);
+                  });
+                });
+            }).catch(err => {
+              done.fail(err);
+            });
+          });
         });
 
         describe('failure', () => {
-//
-//          it('does not allow modifying publicAddress', done => {
-//            expect(agent.publicAddress).toEqual(_publicAddress);
-//            session
-//              .put('/account')
-//              .send({ publicAddress: '0x4D8B94b1358DB655aCAdcCF43768b9AbA00b2e74' })
-//              .set('Accept', 'application/json')
-//              .expect('Content-Type', /json/)
-//              .expect(403)
-//              .end((err, res) => {
-//                if (err) return done.fail(err);
-//
-//                expect(res.body.message).toEqual('Forbidden');
-//
-//                models.Agent.find({}).then(agents => {
-//                  expect(agents.length).toEqual(1);
-//                  expect(agents[0].publicAddress).toEqual(_publicAddress);
-//
-//                  done();
-//                }).catch(err => {
-//                  done.fail(err);
-//                });
-//              });
-//          });
-//
-//          it('does not allow modifying nonce', done => {
-//            const currentNonce = agent.nonce;
-//            const newNonce = Math.floor(Math.random() * 1000000).toString();
-//            expect(currentNonce).not.toEqual(newNonce);
-//            session
-//              .put('/account')
-//              .send({ nonce: newNonce })
-//              .set('Accept', 'application/json')
-//              .expect('Content-Type', /json/)
-//              .expect(403)
-//              .end((err, res) => {
-//                if (err) return done.fail(err);
-//
-//                expect(res.body.message).toEqual('Forbidden');
-//
-//                models.Agent.find({}).then(agents => {
-//                  expect(agents.length).toEqual(1);
-//                  expect(agents[0].nonce).toEqual(currentNonce);
-//
-//                  done();
-//                }).catch(err => {
-//                  done.fail(err);
-//                });
-//              });
-//          });
+
+          it('requires a hash', done => {
+            session
+              .post('/account/transaction')
+              .send({
+                value: ethers.utils.parseEther('100')
+              })
+              .set('Accept', 'application/json')
+              .expect('Content-Type', /json/)
+              .expect(400)
+              .end((err, res) => {
+                if (err) return done.fail(err);
+                expect(res.body.message).toEqual('Transaction hash required');
+
+                models.Transaction.find({}).then(transactions => {
+                  expect(transactions.length).toEqual(0);
+
+                  done();
+                }).catch(err => {
+                  done.fail(err);
+                });
+              });
+          });
+
+          it('requires a value', done => {
+            session
+              .post('/account/transaction')
+              .send({
+                hash: '0x81a0a82dfbb7f818e9bbaf1050194bcaf8dd91d2ebf07e72cabe58a7b4174df7',
+              })
+              .set('Accept', 'application/json')
+              .expect('Content-Type', /json/)
+              .expect(400)
+              .end((err, res) => {
+                if (err) return done.fail(err);
+                expect(res.body.message).toEqual('Value is required');
+
+                models.Transaction.find({}).then(transactions => {
+                  expect(transactions.length).toEqual(0);
+
+                  done();
+                }).catch(err => {
+                  done.fail(err);
+                });
+              });
+          });
         });
       });
 
       describe('browser', () => {
 
         describe('success', () => {
-//
-//          it('redirects', done => {
-//            session
-//              .put('/account')
-//              .send({ name: 'Some Guy' })
-//              .expect('Content-Type', /text/)
-//              .expect(302)
-//              .end((err, res) => {
-//                if (err) return done.fail(err);
-//
-//                expect(res.headers['location']).toEqual('/account');
-//                done();
-//              });
-//          });
-//
-//          it('updates the database', done => {
-//            expect(agent.name).toBeUndefined();
-//            session
-//              .put('/account')
-//              .send({ name: 'Some Guy' })
-//              .expect('Content-Type', /text/)
-//              .expect(302)
-//              .end((err, res) => {
-//                if (err) return done.fail(err);
-//
-//                models.Agent.find({}).then(agents => {
-//                  expect(agents.length).toEqual(1);
-//                  expect(agents[0].name).toEqual('Some Guy');
-//                  expect(agents[0].publicAddress).toEqual(_publicAddress);
-//
-//                  done();
-//                }).catch(err => {
-//                  done.fail(err);
-//                });
-//              });
-//          });
+
+          it('redirects', done => {
+            session
+              .post('/account/transaction')
+              .send({
+                hash: '0x81a0a82dfbb7f818e9bbaf1050194bcaf8dd91d2ebf07e72cabe58a7b4174df7',
+                value: ethers.utils.parseEther('100')
+              })
+              .expect('Content-Type', /text/)
+              .expect(302)
+              .end((err, res) => {
+                if (err) return done.fail(err);
+
+                expect(res.headers['location']).toEqual('/account');
+                done();
+              });
+          });
+
+          it('updates the database', done => {
+            models.Transaction.find({}).then(transactions => {
+              expect(transactions.length).toEqual(0);
+
+              session
+                .post('/account/transaction')
+                .send({
+                  hash: '0x81a0a82dfbb7f818e9bbaf1050194bcaf8dd91d2ebf07e72cabe58a7b4174df7',
+                  value: ethers.utils.parseEther('100')
+                })
+                .expect('Content-Type', /text/)
+                .expect(302)
+                .end((err, res) => {
+                  if (err) return done.fail(err);
+
+                  models.Transaction.find({}).then(transactions => {
+                    expect(transactions.length).toEqual(1);
+                    expect(transactions[0].account).toEqual(agent._id);
+                    expect(transactions[0].value).toEqual('100.0');
+
+                    done();
+                  }).catch(err => {
+                    done.fail(err);
+                  });
+                });
+            }).catch(err => {
+              done.fail(err);
+            });
+          });
         });
 
         describe('failure', () => {
-//
-//          it('does not allow modifying publicAddress', done => {
-//            expect(agent.publicAddress).toEqual(_publicAddress);
-//            session
-//              .put('/account')
-//              .send({ publicAddress: '0x4D8B94b1358DB655aCAdcCF43768b9AbA00b2e74' })
-//              .expect('Content-Type', /text/)
-//              .expect(403)
-//              .end((err, res) => {
-//                if (err) return done.fail(err);
-//
-//                models.Agent.find({}).then(agents => {
-//                  expect(agents.length).toEqual(1);
-//                  expect(agents[0].publicAddress).toEqual(_publicAddress);
-//
-//                  done();
-//                }).catch(err => {
-//                  done.fail(err);
-//                });
-//              });
-//          });
-//
-//          it('does not allow modifying nonce', done => {
-//            const currentNonce = agent.nonce;
-//            const newNonce = Math.floor(Math.random() * 1000000).toString();
-//            expect(currentNonce).not.toEqual(newNonce);
-//            session
-//              .put('/account')
-//              .send({ nonce: newNonce })
-//              .expect('Content-Type', /html/)
-//              .expect(403)
-//              .end((err, res) => {
-//                if (err) return done.fail(err);
-//
-//                models.Agent.find({}).then(agents => {
-//                  expect(agents.length).toEqual(1);
-//                  expect(agents[0].nonce).toEqual(currentNonce);
-//
-//                  done();
-//                }).catch(err => {
-//                  done.fail(err);
-//                });
-//              });
-//          });
+
+          it('requires a hash', done => {
+            session
+              .post('/account/transaction')
+              .send({
+                value: ethers.utils.parseEther('100')
+              })
+              .expect('Content-Type', /text/)
+              .expect(400)
+              .end((err, res) => {
+                if (err) return done.fail(err);
+
+                models.Transaction.find({}).then(transactions => {
+                  expect(transactions.length).toEqual(0);
+
+                  done();
+                }).catch(err => {
+                  done.fail(err);
+                });
+              });
+          });
+
+          it('requires a value', done => {
+            session
+              .post('/account/transaction')
+              .send({
+                hash: '0x81a0a82dfbb7f818e9bbaf1050194bcaf8dd91d2ebf07e72cabe58a7b4174df7',
+              })
+              .expect('Content-Type', /text/)
+              .expect(400)
+              .end((err, res) => {
+                if (err) return done.fail(err);
+
+                models.Transaction.find({}).then(transactions => {
+                  expect(transactions.length).toEqual(0);
+
+                  done();
+                }).catch(err => {
+                  done.fail(err);
+                });
+              });
+          });
         });
       });
     });
