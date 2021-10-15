@@ -43,6 +43,10 @@
           <p id="estimated-gas-price"></p>
           <button id="send-eth-button" type="submit" disabled>Send</button>
         </form>
+        <form id="record-transaction-form" action="/account/transaction" method="post" style="display:none">
+          <input id="transaction-hash-input" type="text" name="hash">
+          <input id="transaction-value-input" type="text" name="value">
+        </form>
       </section>
     </main>
     <script src="/javascripts/ethers-5.2.umd.min.js" type="application/javascript"></script>
@@ -110,15 +114,22 @@
           console.log('Submitting transaction');
           console.log(ethers.utils.parseEther(document.getElementById('eth-value-input').value));
 
+          const value = ethers.utils.parseEther(document.getElementById('eth-value-input').value);
+
           const transactionParams = {
             to: '<%= process.env.PUBLIC_ADDRESS %>',
             from: '<%= agent.publicAddress %>',
-            value: ethers.utils.parseEther(document.getElementById('eth-value-input').value).toHexString()
+            value: value.toHexString(),
           };
 
           ethereum.request({ method: 'eth_sendTransaction', params: [transactionParams] }).then(txHash => {
             console.log('Transaction hash');
             console.log(txHash);
+
+            // Record the transaction
+            document.getElementById('transaction-value-input').value = value.toHexString();
+            document.getElementById('transaction-hash-input').value = txHash;
+            document.getElementById('record-transaction-form').submit();
           }).catch(err => {
             console.error('Error sending transaction:', err);
             window.location = '/'
