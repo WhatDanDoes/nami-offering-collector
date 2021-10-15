@@ -21,7 +21,8 @@
     "http-errors": "~1.6.3",
     "method-override": "^3.0.0",
     "mongoose": "^6.0.7",
-    "morgan": "~1.9.1"
+    "morgan": "~1.9.1",
+    "validator": "^13.6.0"
   },
   "devDependencies": {
     "@synthetixio/synpress": "^0.9.25-beta.12",
