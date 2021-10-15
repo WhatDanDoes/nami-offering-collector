@@ -16,6 +16,7 @@
     "ejs": "~2.6.1",
     "eth-sig-util": "^3.0.1",
     "ethereum-address": "^0.0.4",
+    "ethers": "^5.4.7",
     "express": "~4.16.1",
     "express-session": "^1.17.2",
     "http-errors": "~1.6.3",
