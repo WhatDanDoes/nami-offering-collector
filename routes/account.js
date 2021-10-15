@@ -1,27 +1,18 @@
 const express = require('express');
 const router = express.Router();
+const ethers = require('ethers');
+const models = require('../models');
 const ensureAuthorized = require('../lib/ensureAuthorized');
 
 /**
  * GET /account
  */
-router.get('/', (req, res, next) => {
-  if (req.agent) {
-    if (req.headers['accept'] === 'application/json') {
-      return res.status(200).json(req.agent);
-    }
-    res.render('account', { messages: req.flash(), agent: req.agent });
+router.get('/', ensureAuthorized, (req, res, next) => {
+  if (req.headers['accept'] === 'application/json') {
+    return res.status(200).json(req.agent);
   }
-  else {
-    if (req.headers['accept'] === 'application/json') {
-      return res.status(401).json({ message: 'Login first' });
-    }
-    req.flash('info', 'Login first');
-    res.redirect('/');
-  }
+  res.render('account', { messages: req.flash(), agent: req.agent });
 });
-
-
 
 /**
  * PUT /account
@@ -49,5 +40,21 @@ router.put('/', ensureAuthorized, (req, res, next) =>  {
     res.status(500).json(err);
   });
 });
+
+/**
+ * POST /account/transaction
+ */
+router.post('/transaction', ensureAuthorized, (req, res, next) =>  {
+  models.Transaction.create({ hash: req.body.hash, value: ethers.BigNumber.from(req.body.value), account: req.agent }).then(tx => {
+    if (req.headers['accept'] === 'application/json') {
+      return res.status(201).json({ message: 'Transaction recorded' });
+    }
+    req.flash('success', 'Transaction recorded');
+    res.redirect('/account');
+  }).catch(err => {
+    res.status(500).json(err);
+  });
+});
+
 
 module.exports = router;

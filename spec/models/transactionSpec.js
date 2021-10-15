@@ -225,6 +225,16 @@ describe('Transaction', () => {
         });
       });
 
+      it('takes a prototype parsed ether BigNumber', done => {
+        const value = ethers.utils.parseEther('100');
+        Transaction.create({..._tx, account: account, value: value }).then(obj => {
+          expect(obj.value).toEqual(ethers.utils.formatEther(value));
+          done();
+        }).catch(error => {
+          done.fail(error);
+        });
+      });
+
       describe('getter', () => {
 
         it('returns formatted ether value', done => {
