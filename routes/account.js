@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const ensureAuthorized = require('../lib/ensureAuthorized');
-const models = require('../models');
 
 /**
  * GET /account
