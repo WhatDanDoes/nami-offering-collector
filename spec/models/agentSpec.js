@@ -170,29 +170,6 @@ describe('Agent', () => {
       });
     });
 
-    describe('name', () => {
-
-      it('is optional', done => {
-        expect(_profile.name).toBeUndefined();
-        Agent.create({..._profile, name: 'Wallet or agent name' }).then(obj => {
-          expect(obj.name).toEqual('Wallet or agent name');
-          done();
-        }).catch(error => {
-          done.fail(error);
-        });
-      });
-
-       it('has 255 characters max', done => {
-        Agent.create({..._profile, name: 'a'.repeat(256) }).then(obj => {
-          done.fail('This should not have saved');
-        }).catch(error => {
-          expect(Object.keys(error.errors).length).toEqual(1);
-          expect(error.errors['name'].message).toEqual('Name too long');
-          done();
-        });
-      });
-    });
-
     describe('nonce', () => {
 
       it('is required and automatically set', done => {
@@ -231,6 +208,193 @@ describe('Agent', () => {
           done();
         }).catch(error => {
           done.fail(error);
+        });
+      });
+    });
+
+    describe('contact components', () => {
+
+      describe('name', () => {
+
+        it('is optional', done => {
+          expect(_profile.name).toBeUndefined();
+          Agent.create({..._profile, name: 'Wallet or agent name' }).then(obj => {
+            expect(obj.name).toEqual('Wallet or agent name');
+            done();
+          }).catch(error => {
+            done.fail(error);
+          });
+        });
+
+         it('has 255 characters max', done => {
+          Agent.create({..._profile, name: 'a'.repeat(256) }).then(obj => {
+            done.fail('This should not have saved');
+          }).catch(error => {
+            expect(Object.keys(error.errors).length).toEqual(1);
+            expect(error.errors['name'].message).toEqual('Name too long');
+            done();
+          });
+        });
+      });
+
+      describe('email', () => {
+
+        it('is optional', done => {
+          expect(_profile.email).toBeUndefined();
+          Agent.create({..._profile, email: 'someguy@example.com' }).then(obj => {
+            expect(obj.email).toEqual('someguy@example.com');
+            done();
+          }).catch(error => {
+            done.fail(error);
+          });
+        });
+
+        it('is valid', done => {
+          Agent.create({..._profile, email: 'this is not an email' }).then(obj => {
+            done.fail('This should not have saved');
+          }).catch(error => {
+            expect(Object.keys(error.errors).length).toEqual(1);
+            expect(error.errors['email'].message).toEqual('Invalid email');
+            done();
+          });
+        });
+      });
+
+      describe('streetAddress', () => {
+
+        it('is optional', done => {
+          expect(_profile.streetAddress).toBeUndefined();
+          Agent.create({..._profile, streetAddress: '123 Fake Street' }).then(obj => {
+            expect(obj.streetAddress).toEqual('123 Fake Street');
+            done();
+          }).catch(error => {
+            done.fail(error);
+          });
+        });
+
+         it('has 255 characters max', done => {
+          Agent.create({..._profile, streetAddress: 'a'.repeat(256) }).then(obj => {
+            done.fail('This should not have saved');
+          }).catch(error => {
+            expect(Object.keys(error.errors).length).toEqual(1);
+            expect(error.errors['streetAddress'].message).toEqual('Street address too long');
+            done();
+          });
+        });
+      });
+
+      describe('city', () => {
+
+        it('is optional', done => {
+          expect(_profile.city).toBeUndefined();
+          Agent.create({..._profile, city: 'The C-Spot' }).then(obj => {
+            expect(obj.city).toEqual('The C-Spot');
+            done();
+          }).catch(error => {
+            done.fail(error);
+          });
+        });
+
+         it('has 255 characters max', done => {
+          Agent.create({..._profile, city: 'a'.repeat(256) }).then(obj => {
+            done.fail('This should not have saved');
+          }).catch(error => {
+            expect(Object.keys(error.errors).length).toEqual(1);
+            expect(error.errors['city'].message).toEqual('City name too long');
+            done();
+          });
+        });
+      });
+
+      describe('province', () => {
+
+        it('is optional', done => {
+          expect(_profile.province).toBeUndefined();
+          Agent.create({..._profile, province: 'Alberta' }).then(obj => {
+            expect(obj.province).toEqual('Alberta');
+            done();
+          }).catch(error => {
+            done.fail(error);
+          });
+        });
+
+         it('has 255 characters max', done => {
+          Agent.create({..._profile, province: 'a'.repeat(256) }).then(obj => {
+            done.fail('This should not have saved');
+          }).catch(error => {
+            expect(Object.keys(error.errors).length).toEqual(1);
+            expect(error.errors['province'].message).toEqual('Province name too long');
+            done();
+          });
+        });
+      });
+
+      describe('postalCode', () => {
+
+        it('is optional', done => {
+          expect(_profile.name).toBeUndefined();
+          Agent.create({..._profile, province: 'Alberta' }).then(obj => {
+            expect(obj.province).toEqual('Alberta');
+            done();
+          }).catch(error => {
+            done.fail(error);
+          });
+        });
+
+         it('has 255 characters max', done => {
+          Agent.create({..._profile, province: 'a'.repeat(256) }).then(obj => {
+            done.fail('This should not have saved');
+          }).catch(error => {
+            expect(Object.keys(error.errors).length).toEqual(1);
+            expect(error.errors['province'].message).toEqual('Province name too long');
+            done();
+          });
+        });
+      });
+
+      describe('country', () => {
+
+        it('is optional', done => {
+          expect(_profile.country).toBeUndefined();
+          Agent.create({..._profile, country: 'Canada' }).then(obj => {
+            expect(obj.country).toEqual('Canada');
+            done();
+          }).catch(error => {
+            done.fail(error);
+          });
+        });
+
+         it('has 255 characters max', done => {
+          Agent.create({..._profile, country: 'a'.repeat(256) }).then(obj => {
+            done.fail('This should not have saved');
+          }).catch(error => {
+            expect(Object.keys(error.errors).length).toEqual(1);
+            expect(error.errors['country'].message).toEqual('Country name too long');
+            done();
+          });
+        });
+      });
+
+      describe('phone', () => {
+
+        it('is optional', done => {
+          expect(_profile.phone).toBeUndefined();
+          Agent.create({..._profile, phone: '403-266-1234' }).then(obj => {
+            expect(obj.phone).toEqual('403-266-1234');
+            done();
+          }).catch(error => {
+            done.fail(error);
+          });
+        });
+
+         it('validates most common number formats', done => {
+          Agent.create({..._profile, phone: 'this is not a phone number' }).then(obj => {
+            done.fail('This should not have saved');
+          }).catch(error => {
+            expect(Object.keys(error.errors).length).toEqual(1);
+            expect(error.errors['phone'].message).toEqual('That doesn\'t look like a phone number');
+            done();
+          });
         });
       });
     });

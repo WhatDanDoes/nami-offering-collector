@@ -1,6 +1,7 @@
 module.exports = function(mongoose) {
   const {Types: {Long}} = mongoose;
 
+  const validator = require('validator')
   const ethereum_address = require('ethereum-address');
   const Schema = mongoose.Schema;
 
@@ -45,7 +46,37 @@ module.exports = function(mongoose) {
         },
         message: 'Invalid nonce. Must be BigInt parsable'
       }
-    }
+    },
+    email: {
+      type: String,
+      trim: true,
+      validate: [validator.isEmail, 'Invalid email']
+    },
+    streetAddress: {
+      type: String,
+      trim: true,
+      maxLength: [255, 'Street address too long']
+    },
+    city: {
+      type: String,
+      trim: true,
+      maxLength: [255, 'City name too long']
+    },
+    province: {
+      type: String,
+      trim: true,
+      maxLength: [255, 'Province name too long']
+    },
+    country: {
+      type: String,
+      trim: true,
+      maxLength: [255, 'Country name too long']
+    },
+    phone: {
+      type: String,
+      trim: true,
+      validate: [validator.isMobilePhone, 'That doesn\'t look like a phone number']
+    },
   }, {
     timestamps: true,
   });
