@@ -33,6 +33,16 @@ module.exports = function(mongoose) {
       validate: {
         validator: val => ethers.BigNumber.isBigNumber(val),
         message: 'Value must be a BigNumber'
+      },
+      get: value => {
+        try {
+          return ethers.utils.formatEther(value)
+        }
+        catch (err) {
+          // The try-catch is necessary in the case where
+          // `value` is `undefined`. The getter is called
+          // into play on validation for some reason.
+        }
       }
     },
     account: {

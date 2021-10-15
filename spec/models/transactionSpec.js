@@ -224,6 +224,18 @@ describe('Transaction', () => {
           done();
         });
       });
+
+      describe('getter', () => {
+
+        it('returns formatted ether value', done => {
+          transaction.save().then(obj => {
+            expect(transaction.value).toEqual('100.0');
+            done();
+          }).catch(err => {
+            done.fail(err);
+          });
+        });
+      });
     });
   });
 });
