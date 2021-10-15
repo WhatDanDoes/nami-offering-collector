@@ -24,7 +24,7 @@ describe('Transaction', () => {
     db.Agent.create(_account).then(obj => {
       account = obj;
 
-      transaction = new Transaction({ _tx, account: account });
+      transaction = new Transaction({ ..._tx, account: account });
 
       done();
     }).catch(err => {
@@ -90,7 +90,7 @@ describe('Transaction', () => {
 
       it('is unique', done => {
         transaction.save().then(obj => {
-          Transaction.create({_tx, account: account}).then(obj => {
+          Transaction.create({..._tx, account: account}).then(obj => {
             done.fail('This should not have saved');
           }).catch(error => {
             expect(Object.keys(error.errors).length).toEqual(1);
@@ -169,12 +169,13 @@ describe('Transaction', () => {
         });
 
         it('matches on a lowercase search', done => {
+          transaction.hash = _tx.hash.toUpperCase().replace(/^0X/, '0x');
           transaction.save().then(obj => {
-            expect(obj.hash).toEqual(_tx.hash);
+            expect(obj.hash).toEqual(_tx.hash.toUpperCase().replace(/^0X/, '0x'));
             expect(obj.hash).not.toEqual(_tx.hash.toLowerCase());
 
-            Transaction.findOne({ where: { hash: _tx.hash.toLowerCase() } }).then(transaction => {
-              expect(transaction.hash).toEqual(_tx.hash);
+            Transaction.findOne({ hash: _tx.hash.toLowerCase() }).then(transaction => {
+              expect(transaction.hash).toEqual(_tx.hash.toUpperCase().replace(/^0X/, '0x'));
               done();
             }).catch(error => {
               done.fail(error);
@@ -189,7 +190,7 @@ describe('Transaction', () => {
             expect(obj.hash).toEqual(_tx.hash);
             expect(obj.hash).not.toEqual(_tx.hash.toUpperCase().replace(/^0X/, '0x'));
 
-            Transaction.findOne({ where: { hash: _tx.hash.toUpperCase().replace(/^0X/, '0x') } }).then(transaction => {
+            Transaction.findOne({ hash: _tx.hash.toUpperCase().replace(/^0X/, '0x') }).then(transaction => {
               expect(transaction.hash).toEqual(_tx.hash);
               done();
             }).catch(error => {
@@ -206,10 +207,11 @@ describe('Transaction', () => {
 
       it('is required', done => {
         Transaction.create({..._tx, account: account, value: undefined }).then(obj => {
-          expect(obj.nonce).toBeDefined();
-          done();
+          done.fail('This should not have saved');
         }).catch(error => {
-          done.fail(error);
+          expect(Object.keys(error.errors).length).toEqual(1);
+          expect(error.errors['value'].message).toEqual('Value is required');
+          done();
         });
       });
 
