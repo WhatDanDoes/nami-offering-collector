@@ -79,6 +79,7 @@ module.exports = function(mongoose) {
     },
   }, {
     timestamps: true,
+    collation: { locale: 'en', strength: 1 }
   });
 
   return AgentSchema;

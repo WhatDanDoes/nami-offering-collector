@@ -141,7 +141,7 @@ describe('Agent', () => {
             expect(obj.publicAddress).toEqual(_profile.publicAddress);
             expect(obj.publicAddress).not.toEqual(_profile.publicAddress.toLowerCase());
 
-            Agent.findOne({ where: { publicAddress: _profile.publicAddress.toLowerCase() } }).then(agent => {
+            Agent.findOne({ publicAddress: _profile.publicAddress.toLowerCase() }).then(agent => {
               expect(agent.publicAddress).toEqual(_profile.publicAddress);
               done();
             }).catch(error => {
@@ -157,7 +157,7 @@ describe('Agent', () => {
             expect(obj.publicAddress).toEqual(_profile.publicAddress);
             expect(obj.publicAddress).not.toEqual(_profile.publicAddress.toUpperCase().replace(/^0X/, '0x'));
 
-            Agent.findOne({ where: { publicAddress: _profile.publicAddress.toUpperCase().replace(/^0X/, '0x') } }).then(agent => {
+            Agent.findOne({ publicAddress: _profile.publicAddress.toUpperCase().replace(/^0X/, '0x') }).then(agent => {
               expect(agent.publicAddress).toEqual(_profile.publicAddress);
               done();
             }).catch(error => {
