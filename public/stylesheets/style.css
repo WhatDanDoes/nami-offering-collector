@@ -43,3 +43,8 @@
   width: 90%;
 }
 
+.form-error {
+  font-size: 0.75em;
+  color: red;
+  text-decoration: none;
+}
