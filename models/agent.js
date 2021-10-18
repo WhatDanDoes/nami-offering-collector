@@ -49,8 +49,19 @@ module.exports = function(mongoose) {
     },
     email: {
       type: String,
+      required: false,
       trim: true,
-      validate: [validator.isEmail, 'Invalid email']
+      validate: [
+        {
+          validator: function(val) {
+            if (!val) {
+              return true;
+            }
+            return validator.isEmail(val);
+          },
+          message: 'Invalid email'
+        },
+      ]
     },
     streetAddress: {
       type: String,
@@ -67,6 +78,11 @@ module.exports = function(mongoose) {
       trim: true,
       maxLength: [255, 'Province name too long']
     },
+    postalCode: {
+      type: String,
+      trim: true,
+      maxLength: [255, 'Postal code name too long']
+    },
     country: {
       type: String,
       trim: true,
@@ -74,8 +90,19 @@ module.exports = function(mongoose) {
     },
     phone: {
       type: String,
+      required: false,
       trim: true,
-      validate: [validator.isMobilePhone, 'That doesn\'t look like a phone number']
+      validate: [
+        {
+          validator: function(val) {
+            if (!val) {
+              return true;
+            }
+            return validator.isMobilePhone(val);
+          },
+          message: 'That doesn\'t look like a phone number'
+        },
+      ]
     },
   }, {
     timestamps: true,

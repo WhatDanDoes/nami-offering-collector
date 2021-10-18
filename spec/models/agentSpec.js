@@ -220,7 +220,14 @@ describe('Agent', () => {
           expect(_profile.name).toBeUndefined();
           Agent.create({..._profile, name: 'Wallet or agent name' }).then(obj => {
             expect(obj.name).toEqual('Wallet or agent name');
-            done();
+
+            Agent.findOneAndUpdate({ publicAddress: obj.publicAddress }, { name: '' }, { new: true, runValidators: true }).then(obj => {
+              expect(obj.name).toEqual('');
+
+              done();
+            }).catch(error => {
+              done.fail(error);
+            });
           }).catch(error => {
             done.fail(error);
           });
@@ -243,7 +250,14 @@ describe('Agent', () => {
           expect(_profile.email).toBeUndefined();
           Agent.create({..._profile, email: 'someguy@example.com' }).then(obj => {
             expect(obj.email).toEqual('someguy@example.com');
-            done();
+
+            Agent.findOneAndUpdate({ publicAddress: obj.publicAddress }, { email: '' }, { new: true, runValidators: true }).then(obj => {
+              expect(obj.email).toEqual('');
+
+              done();
+            }).catch(error => {
+              done.fail(error);
+            });
           }).catch(error => {
             done.fail(error);
           });
@@ -266,13 +280,20 @@ describe('Agent', () => {
           expect(_profile.streetAddress).toBeUndefined();
           Agent.create({..._profile, streetAddress: '123 Fake Street' }).then(obj => {
             expect(obj.streetAddress).toEqual('123 Fake Street');
-            done();
+
+            Agent.findOneAndUpdate({ publicAddress: obj.publicAddress }, { streetAddress: '' }, { new: true, runValidators: true }).then(obj => {
+              expect(obj.streetAddress).toEqual('');
+
+              done();
+            }).catch(error => {
+              done.fail(error);
+            });
           }).catch(error => {
             done.fail(error);
           });
         });
 
-         it('has 255 characters max', done => {
+        it('has 255 characters max', done => {
           Agent.create({..._profile, streetAddress: 'a'.repeat(256) }).then(obj => {
             done.fail('This should not have saved');
           }).catch(error => {
@@ -289,13 +310,20 @@ describe('Agent', () => {
           expect(_profile.city).toBeUndefined();
           Agent.create({..._profile, city: 'The C-Spot' }).then(obj => {
             expect(obj.city).toEqual('The C-Spot');
-            done();
+
+            Agent.findOneAndUpdate({ publicAddress: obj.publicAddress }, { city: '' }, { new: true, runValidators: true }).then(obj => {
+              expect(obj.city).toEqual('');
+
+              done();
+            }).catch(error => {
+              done.fail(error);
+            });
           }).catch(error => {
             done.fail(error);
           });
         });
 
-         it('has 255 characters max', done => {
+        it('has 255 characters max', done => {
           Agent.create({..._profile, city: 'a'.repeat(256) }).then(obj => {
             done.fail('This should not have saved');
           }).catch(error => {
@@ -312,7 +340,14 @@ describe('Agent', () => {
           expect(_profile.province).toBeUndefined();
           Agent.create({..._profile, province: 'Alberta' }).then(obj => {
             expect(obj.province).toEqual('Alberta');
-            done();
+
+            Agent.findOneAndUpdate({ publicAddress: obj.publicAddress }, { province: '' }, { new: true, runValidators: true }).then(obj => {
+              expect(obj.province).toEqual('');
+
+              done();
+            }).catch(error => {
+              done.fail(error);
+            });
           }).catch(error => {
             done.fail(error);
           });
@@ -333,20 +368,27 @@ describe('Agent', () => {
 
         it('is optional', done => {
           expect(_profile.name).toBeUndefined();
-          Agent.create({..._profile, province: 'Alberta' }).then(obj => {
-            expect(obj.province).toEqual('Alberta');
-            done();
+          Agent.create({..._profile, postalCode: 'T0X0X0' }).then(obj => {
+            expect(obj.postalCode).toEqual('T0X0X0');
+
+            Agent.findOneAndUpdate({ publicAddress: obj.publicAddress }, { postalCode: '' }, { new: true, runValidators: true }).then(obj => {
+              expect(obj.postalCode).toEqual('');
+
+              done();
+            }).catch(error => {
+              done.fail(error);
+            });
           }).catch(error => {
             done.fail(error);
           });
         });
 
          it('has 255 characters max', done => {
-          Agent.create({..._profile, province: 'a'.repeat(256) }).then(obj => {
+          Agent.create({..._profile, postalCode: 'a'.repeat(256) }).then(obj => {
             done.fail('This should not have saved');
           }).catch(error => {
             expect(Object.keys(error.errors).length).toEqual(1);
-            expect(error.errors['province'].message).toEqual('Province name too long');
+            expect(error.errors['postalCode'].message).toEqual('Postal code name too long');
             done();
           });
         });
@@ -358,7 +400,14 @@ describe('Agent', () => {
           expect(_profile.country).toBeUndefined();
           Agent.create({..._profile, country: 'Canada' }).then(obj => {
             expect(obj.country).toEqual('Canada');
-            done();
+
+            Agent.findOneAndUpdate({ publicAddress: obj.publicAddress }, { country: '' }, { new: true, runValidators: true }).then(obj => {
+              expect(obj.country).toEqual('');
+
+              done();
+            }).catch(error => {
+              done.fail(error);
+            });
           }).catch(error => {
             done.fail(error);
           });
@@ -381,13 +430,20 @@ describe('Agent', () => {
           expect(_profile.phone).toBeUndefined();
           Agent.create({..._profile, phone: '403-266-1234' }).then(obj => {
             expect(obj.phone).toEqual('403-266-1234');
-            done();
+
+            Agent.findOneAndUpdate({ publicAddress: obj.publicAddress }, { phone: '' }, { new: true, runValidators: true }).then(obj => {
+              expect(obj.phone).toEqual('');
+
+              done();
+            }).catch(error => {
+              done.fail(error);
+            });
           }).catch(error => {
             done.fail(error);
           });
         });
 
-         it('validates most common number formats', done => {
+        it('validates most common number formats', done => {
           Agent.create({..._profile, phone: 'this is not a phone number' }).then(obj => {
             done.fail('This should not have saved');
           }).catch(error => {
