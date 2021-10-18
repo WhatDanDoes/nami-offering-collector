@@ -11,33 +11,36 @@ router.get('/', ensureAuthorized, (req, res, next) => {
   if (req.headers['accept'] === 'application/json') {
     return res.status(200).json(req.agent);
   }
-  res.render('account', { messages: req.flash(), agent: req.agent });
+  res.render('account', { messages: req.flash(), agent: req.agent, errors: {} });
 });
 
 /**
  * PUT /account
  */
 router.put('/', ensureAuthorized, (req, res, next) =>  {
-
   // Make sure no one tries modifying forbidden properties
+  const updates = {};
   for (let prop in req.body) {
     if (['publicAddress', 'nonce'].includes(prop)) {
       if (req.headers['accept'] === 'application/json') {
         return res.status(403).json({ message: 'Forbidden' });
       }
-      return res.status(403).render('account', { messages: { error: 'Unauthorized' }, agent: req.agent });
+      return res.status(403).render('account', { messages: { error: 'Unauthorized' }, agent: req.agent, errors: {} });
     }
-    req.agent[prop] = req.body[prop];
+    updates[prop] = req.body[prop];
   }
 
-  req.agent.save({ validateBeforeSave: false }).then(agent => {
+  models.Agent.findOneAndUpdate({ publicAddress: req.agent.publicAddress }, updates, { runValidators: true }).then(obj => {
     if (req.headers['accept'] === 'application/json') {
       return res.status(201).json({ message: 'Info updated' });
     }
     req.flash('success', 'Info updated');
     res.redirect('/account');
   }).catch(err => {
-    res.status(500).json(err);
+    if (req.headers['accept'] === 'application/json') {
+      return res.status(400).json({ message: err.errors[Object.keys(err.errors)[0]].message });
+    }
+    res.status(400).render('account', { messages: req.flash(), errors: err.errors, agent: {...req.agent, ...updates } });
   });
 });
 
@@ -50,7 +53,7 @@ router.post('/transaction', ensureAuthorized, (req, res, next) =>  {
       return res.status(400).json({ message: 'Value is required' });
     }
     req.flash('error', 'Value is required');
-    return res.status(400).render('account', { messages: req.flash(), agent: req.agent });
+    return res.status(400).render('account', { messages: req.flash(), agent: req.agent, errors: {} });
   }
   models.Transaction.create({ hash: req.body.hash, value: ethers.BigNumber.from(req.body.value), account: req.agent }).then(tx => {
     if (req.headers['accept'] === 'application/json') {
@@ -63,7 +66,7 @@ router.post('/transaction', ensureAuthorized, (req, res, next) =>  {
       return res.status(400).json({ message: err.errors[Object.keys(err.errors)[0]].message });
     }
     req.flash('error', err.errors[Object.keys(err.errors)[0]].message);
-    res.status(400).render('account', { messages: req.flash(), agent: req.agent });
+    res.status(400).render('account', { messages: req.flash(), agent: req.agent, errors: {} });
   });
 });
 
