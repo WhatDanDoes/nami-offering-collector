@@ -123,7 +123,7 @@ context('account managment', () => {
         cy.get('.alert.alert-success').contains('Info updated');
       });
 
-      it('shows an error on malformed input', () => {
+      it('shows an error when all input is malformed', () => {
         // Name
         cy.get('form#account-details label[for="name"] .form-error').should('not.exist');
         cy.get('form#account-details input[type="text"][name="name"]').type('a'.repeat(256));
@@ -167,6 +167,66 @@ context('account managment', () => {
         cy.get('form#account-details label[for="phone"] .form-error').contains('That doesn\'t look like a phone number');
         cy.get('form#account-details input[type="text"][name="phone"]').should('have.value', '123');
         // Email
+        cy.get('form#account-details label[for="email"] .form-error').contains('Invalid email');
+        cy.get('form#account-details input[type="email"][name="email"]').should('have.value', 'not@anemail');
+      });
+
+      /**
+       * The test above gave a false positive.
+       */
+      it.only('shows an error when single field input is malformed', () => {
+        // Name
+        cy.get('form#account-details label[for="name"] .form-error').should('not.exist');
+        cy.get('form#account-details input[type="text"][name="name"]').type('a'.repeat(256));
+        cy.get('#update-account-button').click();
+        cy.get('form#account-details label[for="name"] .form-error').contains('Name too long');
+        cy.get('form#account-details input[type="text"][name="name"]').should('have.value', 'a'.repeat(256));
+        cy.get('input[type="text"][name="name"]').clear();
+
+        // Street address
+        cy.get('form#account-details label[for="streetAddress"] .form-error').should('not.exist');
+        cy.get('form#account-details input[type="text"][name="streetAddress"]').type('a'.repeat(256));
+        cy.get('#update-account-button').click();
+        cy.get('form#account-details label[for="streetAddress"] .form-error').contains('Street address too long');
+        cy.get('form#account-details input[type="text"][name="streetAddress"]').should('have.value', 'a'.repeat(256));
+        cy.get('input[type="text"][name="streetAddress"]').clear();
+
+        // City
+        cy.get('form#account-details label[for="city"] .form-error').should('not.exist');
+        cy.get('form#account-details input[type="text"][name="city"]').type('a'.repeat(256));
+        cy.get('#update-account-button').click();
+        cy.get('form#account-details label[for="city"] .form-error').contains('City name too long');
+        cy.get('form#account-details input[type="text"][name="city"]').should('have.value', 'a'.repeat(256));
+        cy.get('input[type="text"][name="city"]').clear();
+
+        // Province
+        cy.get('form#account-details label[for="province"] .form-error').should('not.exist');
+        cy.get('form#account-details input[type="text"][name="province"]').type('a'.repeat(256));
+        cy.get('#update-account-button').click();
+        cy.get('form#account-details label[for="province"] .form-error').contains('Province name too long');
+        cy.get('form#account-details input[type="text"][name="province"]').should('have.value', 'a'.repeat(256));
+        cy.get('input[type="text"][name="province"]').clear();
+
+        // Country
+        cy.get('form#account-details label[for="country"] .form-error').should('not.exist');
+        cy.get('form#account-details input[type="text"][name="country"]').type('a'.repeat(256));
+        cy.get('#update-account-button').click();
+        cy.get('form#account-details label[for="country"] .form-error').contains('Country name too long');
+        cy.get('form#account-details input[type="text"][name="country"]').should('have.value', 'a'.repeat(256));
+        cy.get('input[type="text"][name="country"]').clear();
+
+        // Phone
+        cy.get('form#account-details label[for="phone"] .form-error').should('not.exist');
+        cy.get('form#account-details input[type="text"][name="phone"]').type('123');
+        cy.get('#update-account-button').click();
+        cy.get('form#account-details label[for="phone"] .form-error').contains('That doesn\'t look like a phone number');
+        cy.get('form#account-details input[type="text"][name="phone"]').should('have.value', '123');
+        cy.get('input[type="text"][name="phone"]').clear();
+
+        // Email
+        cy.get('form#account-details label[for="email"] .form-error').should('not.exist');
+        cy.get('form#account-details input[type="email"][name="email"]').type('not@ an email');
+        cy.get('#update-account-button').click();
         cy.get('form#account-details label[for="email"] .form-error').contains('Invalid email');
         cy.get('form#account-details input[type="email"][name="email"]').should('have.value', 'not@anemail');
       });

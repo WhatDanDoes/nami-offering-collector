@@ -31,32 +31,32 @@
           <input type="text" name="name" placeholder="Anonymous" value="<%= agent.name %>">
           <label for="streetAddress">
             Street Address:
-            <%- errors.name ? `<div class="form-error">${errors.streetAddress.message}</div>` : '' %>
+            <%- errors.streetAddress ? `<div class="form-error">${errors.streetAddress.message}</div>` : '' %>
           </label>
           <input type="text" name="streetAddress" value="<%= agent.streetAddress %>">
           <label for="city">
             City:
-            <%- errors.name ? `<div class="form-error">${errors.city.message}</div>` : '' %>
+            <%- errors.city ? `<div class="form-error">${errors.city.message}</div>` : '' %>
           </label>
           <input type="text" name="city" value="<%= agent.city %>">
           <label for="province">
             Province:
-            <%- errors.name ? `<div class="form-error">${errors.province.message}</div>` : '' %>
+            <%- errors.province ? `<div class="form-error">${errors.province.message}</div>` : '' %>
           </label>
           <input type="text" name="province" value="<%= agent.province %>">
           <label for="country">
             Country:
-            <%- errors.name ? `<div class="form-error">${errors.country.message}</div>` : '' %>
+            <%- errors.country ? `<div class="form-error">${errors.country.message}</div>` : '' %>
           </label>
           <input type="text" name="country" value="<%= agent.country %>">
           <label for="phone">
             Phone:
-            <%- errors.name ? `<div class="form-error">${errors.phone.message}</div>` : '' %>
+            <%- errors.phone ? `<div class="form-error">${errors.phone.message}</div>` : '' %>
           </label>
           <input type="text" name="phone" value="<%= agent.phone %>">
           <label for="email">
             Email:
-            <%- errors.name ? `<div class="form-error">${errors.email.message}</div>` : '' %>
+            <%- errors.email ? `<div class="form-error">${errors.email.message}</div>` : '' %>
           </label>
           <input type="email" name="email" value="<%= agent.email %>">
           <button id="update-account-button" type="submit">Update</button>
