@@ -40,6 +40,7 @@ router.put('/', ensureAuthorized, (req, res, next) =>  {
     if (req.headers['accept'] === 'application/json') {
       return res.status(400).json({ message: err.errors[Object.keys(err.errors)[0]].message });
     }
+    req.flash('error', 'Submission failed. Check your form.');
     res.status(400).render('account', { messages: req.flash(), errors: err.errors, agent: { ...updates, publicAddress: req.agent.publicAddress } });
   });
 });

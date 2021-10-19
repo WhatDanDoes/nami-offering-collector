@@ -238,6 +238,13 @@ context('account managment', () => {
         cy.get('form#account-details label[for="email"] .form-error').contains('Invalid email');
         cy.get('form#account-details input[type="email"][name="email"]').should('have.value', 'not@anemail');
       });
+
+      it('shows a friendly message on failure', () => {
+        cy.get('input[type="text"][name="name"]').should('have.value', '');
+        cy.get('input[type="text"][name="name"]').type('a'.repeat(256));
+        cy.get('#update-account-button').click();
+        cy.get('.alert.alert-error').contains('Submission failed. Check your form.');
+      });
     });
   });
 });
