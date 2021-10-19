@@ -715,7 +715,7 @@ describe('account management', () => {
               .end((err, res) => {
                 if (err) return done.fail(err);
 
-                expect(res.headers['location']).toEqual('/account');
+                expect(res.headers['location']).toEqual(`/account/${agent.publicAddress}`);
                 done();
               });
           });
@@ -808,15 +808,15 @@ describe('account management', () => {
 
         it('returns 401 with a friendly message', done => {
           session
-            .put(`/account/${anotherAgent}`)
+            .put(`/account/${anotherAgent.publicAddress}`)
             .send({ name: 'Some Guy' })
             .set('Accept', 'application/json')
             .expect('Content-Type', /json/)
-            .expect(401)
+            .expect(403)
             .end((err, res) => {
               if (err) return done.fail(err);
 
-              expect(res.body.message).toEqual('Unauthorized');
+              expect(res.body.message).toEqual('Forbidden');
               done();
             });
         });
@@ -824,11 +824,11 @@ describe('account management', () => {
         it('does not modify the database', done => {
           expect(anotherAgent.name).toBeUndefined();
           session
-            .put(`/account/${anotherAgent}`)
+            .put(`/account/${anotherAgent.publicAddress}`)
             .send({ name: 'Some Guy' })
             .set('Accept', 'application/json')
             .expect('Content-Type', /json/)
-            .expect(401)
+            .expect(403)
             .end((err, res) => {
               if (err) return done.fail(err);
 
@@ -847,14 +847,14 @@ describe('account management', () => {
 
         it('redirects', done => {
           session
-            .put(`/account/${anotherAgent}`)
+            .put(`/account/${anotherAgent.publicAddress}`)
             .send({ name: 'Some Guy' })
             .expect('Content-Type', /text/)
             .expect(302)
             .end((err, res) => {
               if (err) return done.fail(err);
 
-              expect(res.headers['location']).toEqual('/');
+              expect(res.headers['location']).toEqual('/account');
               done();
             });
         });
@@ -864,7 +864,7 @@ describe('account management', () => {
             expect(agent.name).toBeUndefined();
 
             session
-              .put(`/account/${anotherAgent}`)
+              .put(`/account/${anotherAgent.publicAddress}`)
               .send({ name: 'Some Guy' })
               .expect('Content-Type', /text/)
               .expect(302)

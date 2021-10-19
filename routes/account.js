@@ -73,23 +73,47 @@ router.put('/:publicAddress?', ensureAuthorized, (req, res, next) =>  {
     updates[prop] = req.body[prop];
   }
 
-  if (req.params.publicAddress && req.agent.isSuper()) {
 
+  if (req.params.publicAddress) {
+
+    if (!req.agent.isSuper() && req.params.publicAddress !== req.agent.publicAddress) {
+
+      if (req.headers['accept'] === 'application/json') {
+        return res.status(403).json({ message: 'Forbidden' });
+      }
+      req.flash('error', 'Forbidden');
+      return res.redirect('/account');
+    }
+
+    models.Agent.findOneAndUpdate({ publicAddress: req.params.publicAddress }, updates, { runValidators: true }).then(obj => {
+      if (req.headers['accept'] === 'application/json') {
+        return res.status(201).json({ message: 'Info updated' });
+      }
+      req.flash('success', 'Info updated');
+      res.redirect(`/account/${req.params.publicAddress}`);
+    }).catch(err => {
+      if (req.headers['accept'] === 'application/json') {
+        return res.status(400).json({ message: err.errors[Object.keys(err.errors)[0]].message });
+      }
+      req.flash('error', 'Submission failed. Check your form.');
+      res.status(400).render('account', { messages: req.flash(), errors: err.errors, agent: { ...updates, publicAddress: req.agent.publicAddress } });
+    });
   }
-
-  models.Agent.findOneAndUpdate({ publicAddress: req.agent.publicAddress }, updates, { runValidators: true }).then(obj => {
-    if (req.headers['accept'] === 'application/json') {
-      return res.status(201).json({ message: 'Info updated' });
-    }
-    req.flash('success', 'Info updated');
-    res.redirect('/account');
-  }).catch(err => {
-    if (req.headers['accept'] === 'application/json') {
-      return res.status(400).json({ message: err.errors[Object.keys(err.errors)[0]].message });
-    }
-    req.flash('error', 'Submission failed. Check your form.');
-    res.status(400).render('account', { messages: req.flash(), errors: err.errors, agent: { ...updates, publicAddress: req.agent.publicAddress } });
-  });
+  else {
+    models.Agent.findOneAndUpdate({ publicAddress: req.agent.publicAddress }, updates, { runValidators: true }).then(obj => {
+      if (req.headers['accept'] === 'application/json') {
+        return res.status(201).json({ message: 'Info updated' });
+      }
+      req.flash('success', 'Info updated');
+      res.redirect('/account');
+    }).catch(err => {
+      if (req.headers['accept'] === 'application/json') {
+        return res.status(400).json({ message: err.errors[Object.keys(err.errors)[0]].message });
+      }
+      req.flash('error', 'Submission failed. Check your form.');
+      res.status(400).render('account', { messages: req.flash(), errors: err.errors, agent: { ...updates, publicAddress: req.agent.publicAddress } });
+    });
+  }
 });
 
 module.exports = router;

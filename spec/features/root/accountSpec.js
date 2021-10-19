@@ -414,7 +414,7 @@ describe('root account management', () => {
 
                   models.Agent.findOne({ publicAddress: regularAccount.publicAddress }).then(agent => {
                     expect(agent.name).toEqual('Some Other Guy');
-                    expect(agent.publicAddress).toEqual(_publicAddress);
+                    expect(agent.publicAddress).toEqual(regularAccount.publicAddress);
 
                     done();
                   }).catch(err => {
