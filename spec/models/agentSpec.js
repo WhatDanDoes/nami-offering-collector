@@ -455,5 +455,29 @@ describe('Agent', () => {
       });
     });
   });
+
+  describe('#isSuper', () => {
+
+    it('returns false if account publicAddress does not match that configured in `.env`', done => {
+      expect(_profile.publicAddress).not.toEqual(process.env.PUBLIC_ADDRESS);
+      Agent.create(_profile).then(obj => {
+
+        expect(obj.isSuper()).toBe(false);
+        done();
+      }).catch(error => {
+        done.fail(error);
+      });
+    });
+
+    it('returns true if the account publicAddress is the samee as that configured in `.env`', done => {
+      Agent.create({ publicAddress: process.env.PUBLIC_ADDRESS }).then(obj => {
+
+        expect(obj.isSuper()).toBe(true);
+        done();
+      }).catch(error => {
+        done.fail(error);
+      });
+    });
+  });
 });
 

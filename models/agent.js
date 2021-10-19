@@ -109,5 +109,9 @@ module.exports = function(mongoose) {
     collation: { locale: 'en', strength: 1 }
   });
 
+  AgentSchema.methods.isSuper = function() {
+    return process.env.PUBLIC_ADDRESS === this.publicAddress;
+  };
+
   return AgentSchema;
 }
