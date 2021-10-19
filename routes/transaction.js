@@ -8,7 +8,14 @@ const ensureAuthorized = require('../lib/ensureAuthorized');
  * GET /transaction
  */
 router.get('/', ensureAuthorized, (req, res, next) => {
-  models.Transaction.find({ account: req.agent }).select({ "_id": 0, "__v": 0, "account": 0 }).then(txs => {
+  let searchOptions = { account: req.agent };
+  let selectOptions = { "_id": 0, "__v": 0, "account": 0 };
+
+  if (req.agent.isSuper()) {
+    searchOptions = {};
+    selectOptions = { "_id": 0, "hash": 1, "value": 1, "createdAt": 1 };
+  }
+  models.Transaction.find(searchOptions).populate('account', '-_id publicAddress name').select(selectOptions).then(txs => {
     if (req.headers['accept'] === 'application/json') {
       return res.status(200).json(txs);
     }
@@ -26,6 +33,16 @@ router.get('/', ensureAuthorized, (req, res, next) => {
  * POST /transaction
  */
 router.post('/', ensureAuthorized, (req, res, next) =>  {
+
+  if (req.agent.isSuper()) {
+    const msg = 'You didn\'t seriously send ETH to yourself, did you?';
+    if (req.headers['accept'] === 'application/json') {
+      return res.status(400).json({ message: msg });
+    }
+    req.flash('error', msg);
+    return res.status(400).render('transaction', { messages: req.flash(), agent: req.agent, errors: {} });
+  }
+
   if (!req.body.value) {
     if (req.headers['accept'] === 'application/json') {
       return res.status(400).json({ message: 'Value is required' });
