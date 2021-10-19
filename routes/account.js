@@ -45,31 +45,4 @@ router.put('/', ensureAuthorized, (req, res, next) =>  {
   });
 });
 
-/**
- * POST /account/transaction
- */
-router.post('/transaction', ensureAuthorized, (req, res, next) =>  {
-  if (!req.body.value) {
-    if (req.headers['accept'] === 'application/json') {
-      return res.status(400).json({ message: 'Value is required' });
-    }
-    req.flash('error', 'Value is required');
-    return res.status(400).render('account', { messages: req.flash(), agent: req.agent, errors: {} });
-  }
-  models.Transaction.create({ hash: req.body.hash, value: ethers.BigNumber.from(req.body.value), account: req.agent }).then(tx => {
-    if (req.headers['accept'] === 'application/json') {
-      return res.status(201).json({ message: 'Transaction recorded' });
-    }
-    req.flash('success', 'Transaction recorded');
-    res.redirect('/account');
-  }).catch(err => {
-    if (req.headers['accept'] === 'application/json') {
-      return res.status(400).json({ message: err.errors[Object.keys(err.errors)[0]].message });
-    }
-    req.flash('error', err.errors[Object.keys(err.errors)[0]].message);
-    res.status(400).render('account', { messages: req.flash(), agent: req.agent, errors: {} });
-  });
-});
-
-
 module.exports = router;

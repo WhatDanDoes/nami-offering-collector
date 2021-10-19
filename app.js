@@ -8,6 +8,7 @@ var logger = require('morgan');
 
 var indexRouter = require('./routes/index');
 const accountRouter = require('./routes/account');
+const transactionRouter = require('./routes/transaction');
 const authRouter = require('./routes/auth');
 
 var app = express();
@@ -89,6 +90,7 @@ app.use(methodOverride('_method'))
 app.use('/', indexRouter);
 app.use('/auth', authRouter);
 app.use('/account', accountRouter);
+app.use('/transaction', transactionRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
