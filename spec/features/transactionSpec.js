@@ -56,7 +56,6 @@ describe('transactions', () => {
                 models.Agent.findOne({ where: { publicAddress: _publicAddress } }).then(result => {
                   agent = result;
 
-
                   const txs = [
                     { hash: '0x5f77236022ded48a79ad2f98e646141aedc239db377a2b9a2376eb8a7b0a1014', value: ethers.utils.parseEther('1'), account: agent },
                   ];
@@ -95,6 +94,48 @@ describe('transactions', () => {
 
              done();
            });
+        });
+
+        it('returns transactions belonging to the authenticated account', done => {
+          // Create hypothetical account
+          models.Agent.create({ publicAddress: '0x3D2fA3e5C6e41d4D8b710f3C18c761AD3BB31da1'}).then(anotherAgent => {
+
+            models.Transaction.create({
+               hash: '0x29d184278c1bb10aed0ab4c56ac22c89009efe58e370c99951bca17f34ffd562',
+               value: ethers.utils.parseEther('88'),
+               account: anotherAgent,
+            }).then(result => {
+
+              models.Transaction.find().then(allTxs => {
+                expect(allTxs.length).toEqual(2);
+
+                session
+                 .get('/transaction')
+                 .set('Accept', 'application/json')
+                 .expect('Content-Type', /json/)
+                 .expect(200)
+                 .end((err, res) => {
+                   if (err) return done.fail(err);
+
+                   expect(res.body.length).toEqual(transactions.length);
+                   expect(res.body[0]._id).toBeUndefined();
+                   expect(res.body[0].hash).toEqual(transactions[0].hash);
+                   expect(ethers.utils.formatEther(ethers.BigNumber.from(res.body[0].value))).toEqual(transactions[0].value);
+                   expect(res.body[0].account).toBeUndefined();
+                   expect(res.body[0].__v).toBeUndefined();
+                   expect(new Date(res.body[0].createdAt)).toEqual(transactions[0].createdAt);
+
+                   done();
+                 });
+              }).catch(err => {
+                done.fail(err);
+              });
+            }).catch(err => {
+              done.fail(err);
+            });
+          }).catch(err => {
+            done.fail(err);
+          });
         });
       });
 
