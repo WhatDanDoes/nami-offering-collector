@@ -56,11 +56,17 @@ context('account managment', () => {
         cy.get('form#account-details input[type="email"][name="email"]').should('have.value', '');
 
         // Submit
-        cy.get('form#account-details button#update-account-button[type="submit"]').should('not.be.disabled');
+        cy.get('form#account-details button#update-account-button[type="submit"]').should('be.disabled');
       });
     });
 
     describe('Update button', () => {
+
+      it('is enabled when the form changes', () => {
+        cy.get('form#account-details button#update-account-button[type="submit"]').should('be.disabled');
+        cy.get('input[type="text"][name="name"]').type('Some Guy');
+        cy.get('form#account-details button#update-account-button[type="submit"]').should('not.be.disabled');
+      });
 
       it('allows you to set all the fields', () => {
         cy.get('input[type="text"][name="name"]').should('have.value', '');

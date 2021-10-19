@@ -59,7 +59,7 @@
             <%- errors.email ? `<div class="form-error">${errors.email.message}</div>` : '' %>
           </label>
           <input type="email" name="email" value="<%= agent.email %>">
-          <button id="update-account-button" type="submit">Update</button>
+          <button id="update-account-button" type="submit" disabled>Update</button>
         </form>
       </section>
       <section>
@@ -68,5 +68,12 @@
         </a>
       </section>
     </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function(event) {
+        document.getElementById('account-details').addEventListener('input', () => {
+          document.getElementById('update-account-button').disabled = false;
+        }, { once: true });
+      });
+    </script>
   </body>
 </html>
