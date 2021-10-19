@@ -21,6 +21,134 @@ describe('transactions', () => {
     });
   });
 
+  describe('GET /transaction', () => {
+
+    describe('authorized', () => {
+
+      let session, agent, transactions;
+
+      beforeEach(done => {
+        session = request(app);
+        session
+          .post('/auth/introduce')
+          .send({ publicAddress: _publicAddress })
+          .set('Accept', 'application/json')
+          .expect('Content-Type', /json/)
+          .expect(201)
+          .end((err, res) => {
+            if (err) return done.fail(err);
+            ({ publicAddress, typedData } = res.body);
+
+            const signed = sigUtil.signTypedData(ethUtil.toBuffer(_privateAddress), {privateKey: _privateAddress, data: typedData, version: 'V3' });
+
+            session
+              .post('/auth/prove')
+              .send({ publicAddress: _publicAddress, signature: signed })
+              .set('Content-Type', 'application/json')
+              .set('Accept', 'application/json')
+              .expect('Content-Type', /json/)
+              .expect(201)
+              .end((err, res) => {
+                if (err) return done.fail(err);
+
+                expect(res.body.message).toEqual('Welcome!');
+
+                models.Agent.findOne({ where: { publicAddress: _publicAddress } }).then(result => {
+                  agent = result;
+
+
+                  const txs = [
+                    { hash: '0x5f77236022ded48a79ad2f98e646141aedc239db377a2b9a2376eb8a7b0a1014', value: ethers.utils.parseEther('1'), account: agent },
+                  ];
+                  models.Transaction.insertMany(txs).then(result => {
+                    transactions = result;
+
+                    done();
+                  }).catch(err => {
+                    done.fail(err);
+                  });
+                }).catch(err => {
+                  done.fail(err);
+                });
+              });
+          });
+      });
+
+      describe('api', () => {
+
+        it('returns successfully with sanitized data', done => {
+          session
+           .get('/transaction')
+           .set('Accept', 'application/json')
+           .expect('Content-Type', /json/)
+           .expect(200)
+           .end((err, res) => {
+             if (err) return done.fail(err);
+
+             expect(res.body.length).toEqual(transactions.length);
+             expect(res.body[0]._id).toBeUndefined();
+             expect(res.body[0].hash).toEqual(transactions[0].hash);
+             expect(ethers.utils.formatEther(ethers.BigNumber.from(res.body[0].value))).toEqual(transactions[0].value);
+             expect(res.body[0].account).toBeUndefined();
+             expect(res.body[0].__v).toBeUndefined();
+             expect(new Date(res.body[0].createdAt)).toEqual(transactions[0].createdAt);
+
+             done();
+           });
+        });
+      });
+
+      describe('browser', () => {
+
+        it('returns successfully', done => {
+          session
+           .get('/transaction')
+           .expect('Content-Type', /text/)
+           .expect(200)
+           .end((err, res) => {
+             if (err) return done.fail(err);
+             done();
+           });
+        });
+      });
+    });
+
+    describe('unauthorized', () => {
+
+      describe('api', () => {
+
+        it('returns 401 with a friendly message', done => {
+          request(app)
+           .get('/transaction')
+           .set('Accept', 'application/json')
+           .expect('Content-Type', /json/)
+           .expect(401)
+           .end((err, res) => {
+             if (err) return done.fail(err);
+             expect(res.body.message).toEqual('Unauthorized');
+             done();
+           });
+        });
+      });
+
+      describe('browser', () => {
+
+        it('redirects', done => {
+          request(app)
+           .get('/transaction')
+           .expect('Content-Type', /text/)
+           .expect(302)
+           .end((err, res) => {
+             if (err) return done.fail(err);
+
+             expect(res.headers['location']).toEqual('/');
+             done();
+           });
+        });
+      });
+    });
+  });
+
   describe('POST /transaction', () => {
 
     describe('authorized', () => {

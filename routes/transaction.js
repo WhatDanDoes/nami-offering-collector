@@ -7,12 +7,20 @@ const ensureAuthorized = require('../lib/ensureAuthorized');
 /**
  * GET /transaction
  */
-//router.get('/', ensureAuthorized, (req, res, next) => {
-//  if (req.headers['accept'] === 'application/json') {
-//    return res.status(200).json(req.agent);
-//  }
-//  res.render('account', { messages: req.flash(), agent: req.agent, errors: {} });
-//});
+router.get('/', ensureAuthorized, (req, res, next) => {
+  models.Transaction.find({ account: req.agent }).select({ "_id": 0, "__v": 0, "account": 0 }).then(txs => {
+    if (req.headers['accept'] === 'application/json') {
+      return res.status(200).json(txs);
+    }
+    res.render('transaction', { messages: req.flash(), agent: req.agent, transactions: txs });
+  }).catch(err => {
+    if (req.headers['accept'] === 'application/json') {
+      return res.status(400).json({ message: err.errors[Object.keys(err.errors)[0]].message });
+    }
+    req.flash('error', err.errors[Object.keys(err.errors)[0]].message);
+    res.status(400).render('transaction', { messages: req.flash(), agent: req.agent, transactions: [] });
+  });
+});
 
 /**
  * POST /transaction
