@@ -45,7 +45,6 @@ describe('root transactions', () => {
       let session, root, transactions;
 
       beforeEach(done => {
-console.log("HEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEERE");
         session = request(app);
         session
           .post('/auth/introduce')
