@@ -14,9 +14,35 @@
         </ul>
       </nav>
       <br>
+
+      <h1>Tithing History</h1>
+      <h4>
+        <%= !transactions.length ? 'You have not sent any ETH yet': '' %>
+      </h4>
+      <br>
       <% include _partials/messages %>
     </header>
     <main>
+      <section>
+        <table id="transaction-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Tx Hash</th>
+              <th>Value</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% for (let tx of transactions) { %>
+            <tr>
+              <td><%= tx.createdAt %></td>
+              <td><%= tx.hash %></td>
+              <td><%= tx.value %></td>
+            </tr>
+            <% } %>
+          </tbody>
+        </table>
+      </section>
     </main>
   </body>
 </html>

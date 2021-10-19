@@ -353,7 +353,7 @@ describe('transactions', () => {
               .end((err, res) => {
                 if (err) return done.fail(err);
 
-                expect(res.headers['location']).toEqual('/account');
+                expect(res.headers['location']).toEqual('/transaction');
                 done();
               });
           });

@@ -151,6 +151,31 @@ context('transfer eth', () => {
             cy.confirmMetamaskTransaction();
             cy.get('.alert.alert-success').contains('Transaction recorded');
           });
+
+          it('lands in the right place', () => {
+            cy.get('#eth-value-input').type('1');
+            cy.get('form#send-eth #send-eth-button[type="submit"]').click();
+            cy.confirmMetamaskTransaction();
+            cy.url().should('include', '/transaction');
+          });
+
+          it('shows the transaction details in a list', () => {
+            cy.visit('/transaction');
+            cy.get('#transaction-table').find('tbody tr').should('have.length', 0);
+            cy.get('body header h4').contains('You have not sent any ETH yet');
+
+            cy.visit('/');
+            cy.get('#eth-value-input').type('1');
+            cy.get('form#send-eth #send-eth-button[type="submit"]').click();
+            cy.confirmMetamaskTransaction();
+            cy.get('#transaction-table').find('tbody tr').should('have.length', 1);
+
+            cy.visit('/');
+            cy.get('#eth-value-input').type('1');
+            cy.get('form#send-eth #send-eth-button[type="submit"]').click();
+            cy.confirmMetamaskTransaction();
+            cy.get('#transaction-table').find('tbody tr').should('have.length', 2);
+          });
         });
       });
     });
