@@ -214,7 +214,7 @@ describe('root account management', () => {
            .expect(200)
            .end((err, res) => {
              if (err) return done.fail(err);
-             expect(res.body.publicAddress).toEqual(agent.publicAddress);
+             expect(res.body.publicAddress).toEqual(root.publicAddress);
              done();
            });
         });
