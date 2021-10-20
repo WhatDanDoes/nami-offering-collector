@@ -2,6 +2,7 @@ const sigUtil = require('eth-sig-util');
 const ethUtil = require('ethereumjs-util');
 const ethers = require('ethers');
 const request = require('supertest-session');
+const cheerio = require('cheerio');
 const app = require('../../../app');
 const models = require('../../../models');
 
@@ -87,10 +88,29 @@ describe('root transactions', () => {
                       { hash: '0xe3bca4e0a8f2168d82b4bc9a6a6c4d2beb359df425a7b2d11837688af044f962', value: ethers.utils.parseEther('1'), account: agents[2] },
                     ];
 
-                    models.Transaction.insertMany(txs).then(result => {
-                      transactions = result;
+                    // Doing this one-at-a-time (as opposed to `insertMany`) so that `createdAt` is different for each
+                    models.Transaction.create(txs[0]).then(result => {
+                      models.Transaction.create(txs[1]).then(result => {
+                        models.Transaction.create(txs[2]).then(result => {
+                          models.Transaction.create(txs[3]).then(result => {
 
-                      done();
+                            // Retrieve transactions just created
+                            models.Transaction.find().populate('account', '-_id publicAddress name').sort({ createdAt: -1 }).then(result => {
+                              transactions = result;
+
+                              done();
+                            }).catch(err => {
+                              done.fail(err);
+                            });
+                          }).catch(err => {
+                            done.fail(err);
+                          });
+                        }).catch(err => {
+                          done.fail(err);
+                        });
+                      }).catch(err => {
+                        done.fail(err);
+                      });
                     }).catch(err => {
                       done.fail(err);
                     });
@@ -162,13 +182,45 @@ describe('root transactions', () => {
 
         it('returns successfully', done => {
           session
-           .get('/transaction')
-           .expect('Content-Type', /text/)
-           .expect(200)
-           .end((err, res) => {
-             if (err) return done.fail(err);
-             done();
-           });
+            .get('/transaction')
+            .expect('Content-Type', /text/)
+            .expect(200)
+            .end((err, res) => {
+              if (err) return done.fail(err);
+              const $ = cheerio.load(res.text);
+
+              expect($('#transaction-table tbody tr').length).toEqual(4);
+
+              // Row 1
+              expect($('#transaction-table tbody tr:first-child td:first-child').text())
+                .toEqual(transactions[0].createdAt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }));
+              expect($('#transaction-table tbody tr:first-child td:nth-child(2)').text()).toEqual('1.0');
+              expect($(`#transaction-table tbody tr:first-child td:last-child a[href="https://etherscan.io/tx/${transactions[0].hash}"]`).text().trim())
+                .toEqual(`${transactions[0].hash.slice(0, 4)}...${transactions[0].hash.slice(-3)}`);
+
+              // Row 2
+              expect($('#transaction-table tbody tr:nth-child(2) td:first-child').text())
+                .toEqual(transactions[1].createdAt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }));
+              expect($('#transaction-table tbody tr:nth-child(2) td:nth-child(2)').text()).toEqual('1.0');
+              expect($(`#transaction-table tbody tr:nth-child(2) td:last-child a[href="https://etherscan.io/tx/${transactions[1].hash}"]`).text().trim())
+                .toEqual(`${transactions[1].hash.slice(0, 4)}...${transactions[1].hash.slice(-3)}`);
+
+              // Row 3
+              expect($('#transaction-table tbody tr:nth-child(3) td:first-child').text())
+                .toEqual(transactions[2].createdAt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }));
+              expect($('#transaction-table tbody tr:nth-child(3) td:nth-child(2)').text()).toEqual('1.0');
+              expect($(`#transaction-table tbody tr:nth-child(3) td:last-child a[href="https://etherscan.io/tx/${transactions[2].hash}"]`).text().trim())
+                .toEqual(`${transactions[2].hash.slice(0, 4)}...${transactions[2].hash.slice(-3)}`);
+
+              // Row 4
+              expect($('#transaction-table tbody tr:nth-child(4) td:first-child').text())
+                .toEqual(transactions[3].createdAt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }));
+              expect($('#transaction-table tbody tr:nth-child(4) td:nth-child(2)').text()).toEqual('1.0');
+              expect($(`#transaction-table tbody tr:nth-child(4) td:last-child a[href="https://etherscan.io/tx/${transactions[3].hash}"]`).text().trim())
+                .toEqual(`${transactions[3].hash.slice(0, 4)}...${transactions[3].hash.slice(-3)}`);
+
+              done();
+            });
         });
       });
     });

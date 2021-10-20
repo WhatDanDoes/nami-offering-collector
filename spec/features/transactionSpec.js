@@ -2,6 +2,7 @@ const sigUtil = require('eth-sig-util');
 const ethUtil = require('ethereumjs-util');
 const ethers = require('ethers');
 const request = require('supertest-session');
+const cheerio = require('cheerio');
 const app = require('../../app');
 const models = require('../../models');
 
@@ -143,13 +144,23 @@ describe('transactions', () => {
 
         it('returns successfully', done => {
           session
-           .get('/transaction')
-           .expect('Content-Type', /text/)
-           .expect(200)
-           .end((err, res) => {
-             if (err) return done.fail(err);
-             done();
-           });
+            .get('/transaction')
+            .expect('Content-Type', /text/)
+            .expect(200)
+            .end((err, res) => {
+              if (err) return done.fail(err);
+              const $ = cheerio.load(res.text);
+
+              expect($('#transaction-table tbody tr').length).toEqual(1);
+
+              expect($('#transaction-table tbody tr:first-child td:first-child').text())
+                .toEqual(transactions[0].createdAt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }));
+              expect($('#transaction-table tbody tr:first-child td:nth-child(2)').text()).toEqual('1.0');
+              expect($(`#transaction-table tbody tr:first-child td:last-child a[href="https://etherscan.io/tx/${transactions[0].hash}"]`).text().trim())
+                .toEqual(`${transactions[0].hash.slice(0, 4)}...${transactions[0].hash.slice(-3)}`);
+
+              done();
+            });
         });
       });
     });

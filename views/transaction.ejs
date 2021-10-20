@@ -35,9 +35,13 @@
           <tbody>
             <% for (let tx of transactions) { %>
             <tr>
-              <td><%= tx.createdAt %></td>
+              <td><%= tx.createdAt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) %></td>
               <td><%= tx.value %></td>
-              <td><%= tx.hash %></td>
+              <td>
+                <a href="https://etherscan.io/tx/<%= tx.hash %>" target="_blank">
+                  <%= `${tx.hash.slice(0, 4)}...${tx.hash.slice(-3)}` %>
+                </a>
+              </td>
             </tr>
             <% } %>
           </tbody>
