@@ -30,7 +30,6 @@ describe('root transactions', () => {
     process.env.PUBLIC_ADDRESS = _PUBLIC_ADDRESS;
   });
 
-
   afterEach(done => {
     models.mongoose.connection.db.dropDatabase().then((err, result) => {
       done();
@@ -245,6 +244,10 @@ describe('root transactions', () => {
                 if (err) return done.fail(err);
                 const $ = cheerio.load(res.text);
 
+                // Link to transactions
+                expect($('header a[href="/account"] button#account-button').text()).toEqual('Accounts');
+
+                // Ordered by createdAt
                 expect($('#transaction-table tbody tr').length).toEqual(4);
 
                 // Row 1

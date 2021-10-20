@@ -12,11 +12,44 @@
             </a>
           </li>
         </ul>
+
       </nav>
+      <h1>Accounts</h1>
+      <h4>
+        <%= !agents.length ? 'No one has logged in' : '' %>
+      </h4>
       <br>
+      <a href="/transaction">
+        <button id="transaction-button">Transactions</button>
+      </a>
       <% include _partials/messages %>
     </header>
     <main>
+      <section>
+        <table id="account-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Last Seen</th>
+              <th>Address</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% for (let agent of agents) { %>
+            <tr>
+              <td><%= agent.name ? agent.name : '' %></td>
+              <td><%= agent.updatedAt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) %></td>
+              <td>
+                <a href="/account/<%= agent.publicAddress %>" target="_blank">
+                  <%= `${agent.publicAddress.slice(0, 4)}...${agent.publicAddress.slice(-3)}` %>
+                </a>
+              </td>
+            </tr>
+            <% } %>
+          </tbody>
+        </table>
+      </section>
+
     </main>
   </body>
 </html>

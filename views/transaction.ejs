@@ -20,6 +20,9 @@
         <%= !transactions.length ? agent.isSuper() ? 'No transactions' : 'You have not sent any ETH yet': '' %>
       </h4>
       <br>
+      <a href="/account">
+        <button id="account-button">Accounts</button>
+      </a>
       <% include _partials/messages %>
     </header>
     <main>

@@ -35,7 +35,7 @@ router.get('/:publicAddress?', ensureAuthorized, (req, res, next) => {
   }
   else {
     if (req.agent.isSuper()) {
-      models.Agent.find().then(results => {
+      models.Agent.find().sort({ updatedAt: -1 }).then(results => {
         agents = results.filter(a => a.publicAddress !== req.agent.publicAddress);
         if (req.headers['accept'] === 'application/json') {
           return res.status(200).json(agents);
