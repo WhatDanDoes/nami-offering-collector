@@ -21,7 +21,7 @@
       </h4>
       <br>
       <a href="/account">
-        <button id="account-button">Accounts</button>
+        <button id="account-button">Account<%= agent.isSuper() ? 's' : '' %></button>
       </a>
       <% include _partials/messages %>
     </header>

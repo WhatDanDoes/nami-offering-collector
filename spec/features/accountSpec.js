@@ -1,6 +1,7 @@
 const sigUtil = require('eth-sig-util');
 const ethUtil = require('ethereumjs-util');
 const ethers = require('ethers');
+const cheerio = require('cheerio');
 const request = require('supertest-session');
 const app = require('../../app');
 const models = require('../../models');
@@ -84,13 +85,21 @@ describe('account management', () => {
 
         it('returns successfully', done => {
           session
-           .get('/account')
-           .expect('Content-Type', /text/)
-           .expect(200)
-           .end((err, res) => {
-             if (err) return done.fail(err);
-             done();
-           });
+            .get('/account')
+            .expect('Content-Type', /text/)
+            .expect(200)
+            .end((err, res) => {
+              if (err) return done.fail(err);
+
+              const $ = cheerio.load(res.text);
+
+              // Link to transactions
+              expect($('header a[href="/transaction"] button#transaction-button').text()).toEqual('Transactions');
+              // Link to donate
+              expect($('header a[href="/"] button#donate-button').text()).toEqual('Donate');
+
+              done();
+            });
         });
       });
     });
