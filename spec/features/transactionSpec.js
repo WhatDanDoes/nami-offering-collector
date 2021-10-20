@@ -57,16 +57,7 @@ describe('transactions', () => {
                 models.Agent.findOne({ where: { publicAddress: _publicAddress } }).then(result => {
                   agent = result;
 
-                  const txs = [
-                    { hash: '0x5f77236022ded48a79ad2f98e646141aedc239db377a2b9a2376eb8a7b0a1014', value: ethers.utils.parseEther('1'), account: agent },
-                  ];
-                  models.Transaction.insertMany(txs).then(result => {
-                    transactions = result;
-
-                    done();
-                  }).catch(err => {
-                    done.fail(err);
-                  });
+                  done();
                 }).catch(err => {
                   done.fail(err);
                 });
@@ -74,60 +65,66 @@ describe('transactions', () => {
           });
       });
 
-      describe('api', () => {
+      describe('no transactions', () => {
 
-        it('returns successfully with sanitized data', done => {
-          session
-           .get('/transaction')
-           .set('Accept', 'application/json')
-           .expect('Content-Type', /json/)
-           .expect(200)
-           .end((err, res) => {
-             if (err) return done.fail(err);
+        describe('api', () => {
 
-             expect(res.body.length).toEqual(transactions.length);
-             expect(res.body[0]._id).toBeUndefined();
-             expect(res.body[0].hash).toEqual(transactions[0].hash);
-             expect(ethers.utils.formatEther(ethers.BigNumber.from(res.body[0].value))).toEqual(transactions[0].value);
-             expect(res.body[0].account).toBeUndefined();
-             expect(res.body[0].__v).toBeUndefined();
-             expect(new Date(res.body[0].createdAt)).toEqual(transactions[0].createdAt);
+          it('returns successfully with empty array', done => {
+            session
+             .get('/transaction')
+             .set('Accept', 'application/json')
+             .expect('Content-Type', /json/)
+             .expect(200)
+             .end((err, res) => {
+               if (err) return done.fail(err);
 
-             done();
-           });
+               expect(res.body.length).toEqual(0);
+
+               done();
+             });
+          });
         });
 
-        it('returns transactions belonging to the authenticated account', done => {
-          // Create hypothetical account
+        describe('browser', () => {
+
+          it('returns successfully with message', done => {
+            session
+              .get('/transaction')
+              .expect('Content-Type', /text/)
+              .expect(200)
+              .end((err, res) => {
+                if (err) return done.fail(err);
+                const $ = cheerio.load(res.text);
+
+
+                expect($('header h4').text().trim()).toEqual('You have not sent any ETH yet');
+                expect($('#transaction-table tbody tr').length).toEqual(0);
+
+                done();
+              });
+          });
+        });
+      });
+
+      describe('transactions exist', () => {
+
+        let tx;
+
+        beforeEach(done => {
+          // Create hypothetical unrelated account
           models.Agent.create({ publicAddress: '0x3D2fA3e5C6e41d4D8b710f3C18c761AD3BB31da1'}).then(anotherAgent => {
 
-            models.Transaction.create({
-               hash: '0x29d184278c1bb10aed0ab4c56ac22c89009efe58e370c99951bca17f34ffd562',
-               value: ethers.utils.parseEther('88'),
-               account: anotherAgent,
-            }).then(result => {
+            const txs = [
+              { hash: '0x5f77236022ded48a79ad2f98e646141aedc239db377a2b9a2376eb8a7b0a1014', value: ethers.utils.parseEther('1'), account: agent },
+              { hash: '0x29d184278c1bb10aed0ab4c56ac22c89009efe58e370c99951bca17f34ffd562', value: ethers.utils.parseEther('88'), account: anotherAgent },
+            ];
+            models.Transaction.insertMany(txs).then(result => {
+              transactions = result;
 
-              models.Transaction.find().then(allTxs => {
-                expect(allTxs.length).toEqual(2);
+              models.Transaction.findOne({ account: agent }).then(result => {
+                tx = result;
 
-                session
-                 .get('/transaction')
-                 .set('Accept', 'application/json')
-                 .expect('Content-Type', /json/)
-                 .expect(200)
-                 .end((err, res) => {
-                   if (err) return done.fail(err);
-
-                   expect(res.body.length).toEqual(transactions.length);
-                   expect(res.body[0]._id).toBeUndefined();
-                   expect(res.body[0].hash).toEqual(transactions[0].hash);
-                   expect(ethers.utils.formatEther(ethers.BigNumber.from(res.body[0].value))).toEqual(transactions[0].value);
-                   expect(res.body[0].account).toBeUndefined();
-                   expect(res.body[0].__v).toBeUndefined();
-                   expect(new Date(res.body[0].createdAt)).toEqual(transactions[0].createdAt);
-
-                   done();
-                 });
+                done();
               }).catch(err => {
                 done.fail(err);
               });
@@ -138,29 +135,74 @@ describe('transactions', () => {
             done.fail(err);
           });
         });
-      });
 
-      describe('browser', () => {
+        describe('api', () => {
 
-        it('returns successfully', done => {
-          session
-            .get('/transaction')
-            .expect('Content-Type', /text/)
-            .expect(200)
-            .end((err, res) => {
-              if (err) return done.fail(err);
-              const $ = cheerio.load(res.text);
+          it('returns successfully with sanitized data', done => {
+            session
+             .get('/transaction')
+             .set('Accept', 'application/json')
+             .expect('Content-Type', /json/)
+             .expect(200)
+             .end((err, res) => {
+               if (err) return done.fail(err);
 
-              expect($('#transaction-table tbody tr').length).toEqual(1);
+               expect(res.body.length).toEqual(1);
+               expect(res.body[0]._id).toBeUndefined();
+               expect(res.body[0].hash).toEqual(tx.hash);
+               expect(ethers.utils.formatEther(ethers.BigNumber.from(res.body[0].value))).toEqual(tx.value);
+               expect(res.body[0].account).toBeUndefined();
+               expect(res.body[0].__v).toBeUndefined();
+               expect(new Date(res.body[0].createdAt)).toEqual(tx.createdAt);
 
-              expect($('#transaction-table tbody tr:first-child td:first-child').text())
-                .toEqual(transactions[0].createdAt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }));
-              expect($('#transaction-table tbody tr:first-child td:nth-child(2)').text()).toEqual('1.0');
-              expect($(`#transaction-table tbody tr:first-child td:last-child a[href="https://etherscan.io/tx/${transactions[0].hash}"]`).text().trim())
-                .toEqual(`${transactions[0].hash.slice(0, 4)}...${transactions[0].hash.slice(-3)}`);
+               done();
+             });
+          });
 
-              done();
-            });
+          it('returns transactions belonging to the authenticated account', done => {
+            session
+             .get('/transaction')
+             .set('Accept', 'application/json')
+             .expect('Content-Type', /json/)
+             .expect(200)
+             .end((err, res) => {
+               if (err) return done.fail(err);
+
+               expect(res.body.length).toEqual(1);
+               expect(res.body[0]._id).toBeUndefined();
+               expect(res.body[0].hash).toEqual(tx.hash);
+               expect(ethers.utils.formatEther(ethers.BigNumber.from(res.body[0].value))).toEqual(tx.value);
+               expect(res.body[0].account).toBeUndefined();
+               expect(res.body[0].__v).toBeUndefined();
+               expect(new Date(res.body[0].createdAt)).toEqual(tx.createdAt);
+
+               done();
+             });
+          });
+        });
+
+        describe('browser', () => {
+
+          it('returns successfully', done => {
+            session
+              .get('/transaction')
+              .expect('Content-Type', /text/)
+              .expect(200)
+              .end((err, res) => {
+                if (err) return done.fail(err);
+                const $ = cheerio.load(res.text);
+
+                expect($('#transaction-table tbody tr').length).toEqual(1);
+
+                expect($('#transaction-table tbody tr:first-child td:first-child').text())
+                  .toEqual(transactions[0].createdAt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }));
+                expect($('#transaction-table tbody tr:first-child td:nth-child(2)').text()).toEqual('1.0');
+                expect($(`#transaction-table tbody tr:first-child td:last-child a[href="https://etherscan.io/tx/${transactions[0].hash}"]`).text().trim())
+                  .toEqual(`${transactions[0].hash.slice(0, 4)}...${transactions[0].hash.slice(-3)}`);
+
+                done();
+              });
+          });
         });
       });
     });

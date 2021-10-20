@@ -17,7 +17,7 @@
 
       <h1>Tithing History</h1>
       <h4>
-        <%= !transactions.length ? 'You have not sent any ETH yet': '' %>
+        <%= !transactions.length ? agent.isSuper() ? 'No transactions' : 'You have not sent any ETH yet': '' %>
       </h4>
       <br>
       <% include _partials/messages %>
