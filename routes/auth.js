@@ -136,6 +136,11 @@ router.post('/prove', (req, res) => {
             return res.status(201).json({ message: 'Welcome!' });
           }
 
+          if (agent.isSuper()) {
+            req.flash('success', 'Welcome, root!');
+            return res.redirect('/transaction');
+          }
+
           req.flash('success', 'Welcome!');
           res.redirect('/');
         });

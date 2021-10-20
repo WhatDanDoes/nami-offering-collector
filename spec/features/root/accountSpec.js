@@ -104,18 +104,24 @@ describe('root account management', () => {
 
       describe('api', () => {
 
-        it('returns successfully with all accounts', done => {
+        it('returns successfully with all accounts except the root', done => {
           models.Agent.find().then(agents => {
             session
-             .get('/account')
-             .set('Accept', 'application/json')
-             .expect('Content-Type', /json/)
-             .expect(200)
-             .end((err, res) => {
-               if (err) return done.fail(err);
-               expect(res.body.length).toEqual(agents.length);
-               done();
-             });
+              .get('/account')
+              .set('Accept', 'application/json')
+              .expect('Content-Type', /json/)
+              .expect(200)
+              .end((err, res) => {
+                if (err) return done.fail(err);
+
+                expect(res.body.length).toEqual(agents.length - 1);
+
+                for (let account of res.body) {
+                  expect(account.publicAddress).not.toEqual(root.publicAddress);
+                }
+
+                done();
+              });
           }).catch(err => {
             done.fail(err);
           });

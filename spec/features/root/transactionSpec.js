@@ -251,6 +251,8 @@ describe('root transactions', () => {
                 expect($('#transaction-table tbody tr:first-child td:first-child').text())
                   .toEqual(transactions[0].createdAt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }));
                 expect($('#transaction-table tbody tr:first-child td:nth-child(2)').text()).toEqual('1.0');
+                expect($(`#transaction-table tbody tr:first-child td:nth-child(3) a[href="/account/${transactions[0].account.publicAddress}"]`).text().trim())
+                  .toEqual(`${transactions[0].account.publicAddress.slice(0, 4)}...${transactions[0].account.publicAddress.slice(-3)}`);
                 expect($(`#transaction-table tbody tr:first-child td:last-child a[href="https://etherscan.io/tx/${transactions[0].hash}"]`).text().trim())
                   .toEqual(`${transactions[0].hash.slice(0, 4)}...${transactions[0].hash.slice(-3)}`);
 
@@ -258,6 +260,8 @@ describe('root transactions', () => {
                 expect($('#transaction-table tbody tr:nth-child(2) td:first-child').text())
                   .toEqual(transactions[1].createdAt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }));
                 expect($('#transaction-table tbody tr:nth-child(2) td:nth-child(2)').text()).toEqual('1.0');
+                expect($(`#transaction-table tbody tr:nth-child(2) td:nth-child(3) a[href="/account/${transactions[1].account.publicAddress}"]`).text().trim())
+                  .toEqual(`${transactions[1].account.publicAddress.slice(0, 4)}...${transactions[1].account.publicAddress.slice(-3)}`);
                 expect($(`#transaction-table tbody tr:nth-child(2) td:last-child a[href="https://etherscan.io/tx/${transactions[1].hash}"]`).text().trim())
                   .toEqual(`${transactions[1].hash.slice(0, 4)}...${transactions[1].hash.slice(-3)}`);
 
@@ -265,6 +269,8 @@ describe('root transactions', () => {
                 expect($('#transaction-table tbody tr:nth-child(3) td:first-child').text())
                   .toEqual(transactions[2].createdAt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }));
                 expect($('#transaction-table tbody tr:nth-child(3) td:nth-child(2)').text()).toEqual('1.0');
+                expect($(`#transaction-table tbody tr:nth-child(3) td:nth-child(3) a[href="/account/${transactions[1].account.publicAddress}"]`).text().trim())
+                  .toEqual(`${transactions[2].account.publicAddress.slice(0, 4)}...${transactions[2].account.publicAddress.slice(-3)}`);
                 expect($(`#transaction-table tbody tr:nth-child(3) td:last-child a[href="https://etherscan.io/tx/${transactions[2].hash}"]`).text().trim())
                   .toEqual(`${transactions[2].hash.slice(0, 4)}...${transactions[2].hash.slice(-3)}`);
 
@@ -272,6 +278,8 @@ describe('root transactions', () => {
                 expect($('#transaction-table tbody tr:nth-child(4) td:first-child').text())
                   .toEqual(transactions[3].createdAt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }));
                 expect($('#transaction-table tbody tr:nth-child(4) td:nth-child(2)').text()).toEqual('1.0');
+                expect($(`#transaction-table tbody tr:first-child td:nth-child(3) a[href="/account/${transactions[3].account.publicAddress}"]`).text().trim())
+                  .toEqual(`${transactions[3].account.publicAddress.slice(0, 4)}...${transactions[3].account.publicAddress.slice(-3)}`);
                 expect($(`#transaction-table tbody tr:nth-child(4) td:last-child a[href="https://etherscan.io/tx/${transactions[3].hash}"]`).text().trim())
                   .toEqual(`${transactions[3].hash.slice(0, 4)}...${transactions[3].hash.slice(-3)}`);
 

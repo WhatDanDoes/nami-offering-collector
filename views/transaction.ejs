@@ -29,6 +29,7 @@
             <tr>
               <th>Date</th>
               <th>Value</th>
+              <%- agent.isSuper() ? '<th>Donor</th>' : '' %>
               <th>Tx Hash</th>
             </tr>
           </thead>
@@ -37,6 +38,13 @@
             <tr>
               <td><%= tx.createdAt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) %></td>
               <td><%= tx.value %></td>
+              <% if (agent.isSuper()) { %>
+              <td>
+                <a href="/account/<%= tx.account.publicAddress %>" target="_blank">
+                  <%= `${tx.account.publicAddress.slice(0, 4)}...${tx.account.publicAddress.slice(-3)}` %>
+                </a>
+              </td>
+              <% } %>
               <td>
                 <a href="https://etherscan.io/tx/<%= tx.hash %>" target="_blank">
                   <%= `${tx.hash.slice(0, 4)}...${tx.hash.slice(-3)}` %>
