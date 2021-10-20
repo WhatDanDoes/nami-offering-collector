@@ -15,7 +15,7 @@ router.get('/', ensureAuthorized, (req, res, next) => {
     searchOptions = {};
     selectOptions = { "_id": 0, "hash": 1, "value": 1, "createdAt": 1 };
   }
-  models.Transaction.find(searchOptions).populate('account', '-_id publicAddress name').select(selectOptions).then(txs => {
+  models.Transaction.find(searchOptions).populate('account', '-_id publicAddress name').select(selectOptions).sort({ createdAt: -1 }).then(txs => {
     if (req.headers['accept'] === 'application/json') {
       return res.status(200).json(txs);
     }

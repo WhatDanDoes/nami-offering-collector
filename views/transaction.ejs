@@ -28,16 +28,16 @@
           <thead>
             <tr>
               <th>Date</th>
-              <th>Tx Hash</th>
               <th>Value</th>
+              <th>Tx Hash</th>
             </tr>
           </thead>
           <tbody>
             <% for (let tx of transactions) { %>
             <tr>
               <td><%= tx.createdAt %></td>
-              <td><%= tx.hash %></td>
               <td><%= tx.value %></td>
+              <td><%= tx.hash %></td>
             </tr>
             <% } %>
           </tbody>
