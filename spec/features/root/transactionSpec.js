@@ -245,7 +245,7 @@ describe('root transactions', () => {
                 const $ = cheerio.load(res.text);
 
                 // Link to transactions
-                expect($('header a[href="/account"] button#account-button').text()).toEqual('Accounts');
+                expect($('header a[href="/account"] #account-button').text()).toEqual('Accounts');
 
                 // Ordered by createdAt
                 expect($('#transaction-table tbody tr').length).toEqual(4);

@@ -151,7 +151,7 @@ describe('root account management', () => {
                 const $ = cheerio.load(res.text);
 
                 // Link to transactions
-                expect($('header a[href="/transaction"] button#transaction-button').text()).toEqual('Transactions');
+                expect($('header a[href="/transaction"] #transaction-button').text()).toEqual('Transactions');
 
                 // Ordered by updatedAt
                 expect($('#account-table tbody tr').length).toEqual(3);

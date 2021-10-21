@@ -97,7 +97,7 @@ describe('transactions', () => {
                 const $ = cheerio.load(res.text);
 
                 // Link to accounts
-                expect($('header a[href="/account"] button#account-button').text()).toEqual('Account');
+                expect($('header a[href="/account"] #account-button').text()).toEqual('Account');
 
                 expect($('header h4').text().trim()).toEqual('You have not sent any ETH yet');
                 expect($('#transaction-table tbody tr').length).toEqual(0);
