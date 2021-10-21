@@ -30,10 +30,10 @@ describe('landing page', () => {
     });
 
     it('displays a warning in the navbar', async () => {
-      const el = await page.$('header nav ul li#connect-metamask');
+      const el = await page.$('header #connect-metamask');
 
       const warning = await el.evaluate(e => e.textContent);
-      expect(warning).toEqual('Install the Metamask browser plugin');
+      expect(warning).toEqual('Install the Metamask↗ browser plugin');
     });
 
     it('does not display a .messages element', async () => {

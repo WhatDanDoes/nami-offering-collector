@@ -102,7 +102,7 @@ router.post('/introduce', (req, res) => {
         }
         else {
           if (err.errors['publicAddress']) {
-            req.flash('error', err.errors['publicAddress'].message);
+            req.flash('error', 'I don\'t think you have Metamask installed');
           }
           else {
             req.flash('error', err.message);

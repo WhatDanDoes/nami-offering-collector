@@ -31,14 +31,15 @@ context('authentication', () => {
 
     context('first visit', () => {
       it('shows the home page', () => {
-        cy.get('header h1').contains('Metamask Offering Collector');
+        cy.get('header nav').contains('Metamask Offering Collector');
       });
 
       /**
        * If I can find the public address, that means I can connect Metamask
        */
       it('displays the confirm-identity button', () => {
-        cy.get('#connect-metamask').contains('Confirm your identity with Metamask');
+        cy.get('#introduction-form-top').contains('Confirm your identity with Metamask');
+        cy.get('#introduction-form-bottom').contains('Confirm your identity');
       });
 
       it('does not display the logout button', () => {
@@ -82,7 +83,8 @@ context('authentication', () => {
       });
 
       it('displays the login link', () => {
-        cy.get('#connect-metamask').contains('Confirm your identity with Metamask');
+        cy.get('#introduction-form-top').contains('Confirm your identity with Metamask');
+        cy.get('#introduction-form-bottom').contains('Confirm your identity');
       });
     });
 
@@ -125,7 +127,8 @@ context('authentication', () => {
         });
 
         it('displays the login link', () => {
-          cy.get('#connect-metamask').contains('Confirm your identity with Metamask');
+          cy.get('#introduction-form-top').contains('Confirm your identity with Metamask');
+          cy.get('#introduction-form-bottom').contains('Confirm your identity');
         });
       });
     });

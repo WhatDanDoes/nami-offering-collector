@@ -6,23 +6,36 @@
           <img alt="Logo" src="/images/offering-plate.png" height="70">
         </a>
         <ul>
-          <li id="connect-metamask">
-            <form id="introduction-form" action="/auth/introduce" method="post" onsubmit="return handleIdentification(event)">
-              <input type="hidden" name="publicAddress">
-              <button id="connect-metamask-button" type="submit">Confirm your identity with Metamask</button>
-            </form>
+          <li>
+            <%= process.env.TITLE %>
           </li>
         </ul>
       </nav>
       <% include _partials/messages %>
-      <h1><%= process.env.TITLE %></h1>
-      <p>Proverbs 3:9-10</p>
+      <div id="connect-metamask"></div>
+      <h1>A secure and anonymous way to tithe on your Ethereum earnings.</h1>
       <p>
-        A secure and anonymous way to tithe on your Ethereum earnings.
+        Proverbs 3:9-10
       </p>
+      <p>
+      <form id="introduction-form-top" action="/auth/introduce" method="post" onsubmit="return handleIdentification(event)">
+        <input type="hidden" name="publicAddress">
+        <button class="connect-metamask-button" type="submit">Confirm your identity with Metamask</button>
+      </form>
     </header>
     <main>
       <section>
+        <aside>
+          <img src="/images/metamask-fox.svg" height="70">
+          <h3>What is Metamask?</h2>
+          <p>
+            Metamask is a plugin for your browser, e.g., Chrome or Firefox.
+            You can also download an app for your phone. Metamask allows you to
+            connect securely with your Ethereum account. You don't need logins or
+            email addresses to use this application. You simply verify
+            account ownership by clicking the button above.
+          </p>
+        </aside>
         <aside>
           <img src="/images/ethereum-logo.svg" height="70">
           <h3>What is Ethereum?</h3>
@@ -35,13 +48,46 @@
         </aside>
         <aside>
           <img src="/images/metamask-fox.svg" height="70">
-          <h3>What is Metamask?</h2>
+          <h3>Will I get a tax receipt?</h2>
           <p>
-            Metamask is a plugin for your browser, e.g., Chrome or Firefox.
-            You can also download an app for your phone. Metamask allows you to
-            connect securely with your Ethereum account. You don't need logins or
-            email addresses to use this application. You simply verify
-            account ownership by clicking the button above.
+            Yes. Once your gift of Eth is received, it will be liquidated in exhcange
+            for Canadian currency. You will receive a receipt for the sale
+            price minus network <em>gas</em> and bank fees.
+          </p>
+        </aside>
+        <aside>
+          <img src="/images/metamask-fox.svg" height="70">
+          <h3>Can I give anonymously?</h2>
+          <p>
+            Yes. Donations made anonymously will not be liquidated, but rather
+            used in blockchain development projects. Of course, tax receipts
+            can only be issued if your contact information is provided. Anonymous
+            givers cannot be receipted.
+          </p>
+        </aside>
+        <aside>
+          <img src="/images/metamask-fox.svg" height="70">
+          <h3>Wouldn't regular money be better?</h2>
+          <p>
+            Eth does something <em>regular</em> money cannot. It is the currency
+            of the Ethereum blockchain. As a blockchain developer, I need Eth to
+            execute <em>smart contracts</em> on the Ethereum network.
+          </p>
+          <p>
+            You can still give regular money too though!
+          </p>
+        </aside>
+        <aside>
+          <img src="/images/metamask-fox.svg" height="70">
+          <h3>Can I try this app without giving?</h2>
+          <p>
+            Yes, please do. You'll need to learn a bit about <a>Metamask</a>.
+            Don't worry, it's easy. This app will try to teach a bit too. After
+            you've installed Metamask,
+            <form id="introduction-form-bottom" action="/auth/introduce" method="post" onsubmit="return handleIdentification(event)">
+              <input type="hidden" name="publicAddress">
+              <button class="connect-metamask-button" type="submit">Confirm your identity</button>
+            </form>
           </p>
         </aside>
       </section>
@@ -63,12 +109,16 @@
           handleIdentification = (e) => {
             e.preventDefault();
 
-            document.getElementById("connect-metamask-button").disabled = true;
+            for (let button of document.querySelectorAll("connect-metamask-button")) {
+              button.disabled = true;
+            }
+
             ethereum.request({ method: 'eth_requestAccounts' }).then(accounts => {
 
               const account = accounts[0];
 
-              document.querySelector('input[name="publicAddress"]').value = account;
+              e.target.querySelector('input[name="publicAddress"]').value = account;
+
               e.target.submit();
             }).catch(err => {
               console.error('Something dreadful happened when accessing your account');
@@ -77,7 +127,7 @@
           };
         }
         else {
-          document.getElementById('connect-metamask').innerHTML = 'Install the <a href="https://metamask.io/" target="_blank">Metamask</a> browser plugin';
+          document.getElementById('connect-metamask').innerHTML = '<br><mark>Install the <a href="https://metamask.io/" target="_blank">Metamask↗</a> browser plugin</mark>';
         }
       });
     </script>

@@ -697,7 +697,7 @@ describe('auth', () => {
                   .end((err, res) => {
 
                     const $ = cheerio.load(res.text);
-                    expect($('#messages .alert.alert-error').text()).toContain('Invalid public address');
+                    expect($('#messages .alert.alert-error').text()).toContain('I don\'t think you have Metamask installed');
                     done();
                   });
               });
