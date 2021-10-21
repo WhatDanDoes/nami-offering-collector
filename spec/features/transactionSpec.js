@@ -340,6 +340,30 @@ describe('transactions', () => {
               done.fail(err);
             });
           });
+
+          it('updates the account\'s `updatedAt` field', done => {
+            const oldDate = agent.updatedAt;
+            session
+              .post('/transaction')
+              .send({
+                hash: '0x81a0a82dfbb7f818e9bbaf1050194bcaf8dd91d2ebf07e72cabe58a7b4174df7',
+                value: ethers.utils.parseEther('100')
+              })
+              .set('Accept', 'application/json')
+              .expect('Content-Type', /json/)
+              .expect(201)
+              .end((err, res) => {
+                if (err) return done.fail(err);
+
+                models.Agent.findOne({ publicAddress: agent.publicAddress}).then(result => {
+                  expect(oldDate < result.updatedAt).toBe(true);
+
+                  done();
+                }).catch(err => {
+                  done.fail(err);
+                });
+              });
+          });
         });
 
         describe('failure', () => {
@@ -382,6 +406,30 @@ describe('transactions', () => {
 
                 models.Transaction.find({}).then(transactions => {
                   expect(transactions.length).toEqual(0);
+
+                  done();
+                }).catch(err => {
+                  done.fail(err);
+                });
+              });
+          });
+
+
+          it('does not update the account\'s `updatedAt` field', done => {
+            const oldDate = agent.updatedAt;
+            session
+              .post('/transaction')
+              .send({
+                hash: '0x81a0a82dfbb7f818e9bbaf1050194bcaf8dd91d2ebf07e72cabe58a7b4174df7',
+              })
+              .set('Accept', 'application/json')
+              .expect('Content-Type', /json/)
+              .expect(400)
+              .end((err, res) => {
+                if (err) return done.fail(err);
+
+                models.Agent.findOne({ publicAddress: agent.publicAddress}).then(result => {
+                  expect(oldDate).toEqual(result.updatedAt);
 
                   done();
                 }).catch(err => {
@@ -442,6 +490,29 @@ describe('transactions', () => {
               done.fail(err);
             });
           });
+
+          it('updates the account\'s `updatedAt` field', done => {
+            const oldDate = agent.updatedAt;
+            session
+              .post('/transaction')
+              .send({
+                hash: '0x81a0a82dfbb7f818e9bbaf1050194bcaf8dd91d2ebf07e72cabe58a7b4174df7',
+                value: ethers.utils.parseEther('100')
+              })
+              .expect('Content-Type', /text/)
+              .expect(302)
+              .end((err, res) => {
+                if (err) return done.fail(err);
+
+                models.Agent.findOne({ publicAddress: agent.publicAddress}).then(result => {
+                  expect(oldDate < result.updatedAt).toBe(true);
+
+                  done();
+                }).catch(err => {
+                  done.fail(err);
+                });
+              });
+          });
         });
 
         describe('failure', () => {
@@ -480,6 +551,28 @@ describe('transactions', () => {
 
                 models.Transaction.find({}).then(transactions => {
                   expect(transactions.length).toEqual(0);
+
+                  done();
+                }).catch(err => {
+                  done.fail(err);
+                });
+              });
+          });
+
+          it('does not update the account\'s `updatedAt` field', done => {
+            const oldDate = agent.updatedAt;
+            session
+              .post('/transaction')
+              .send({
+                hash: '0x81a0a82dfbb7f818e9bbaf1050194bcaf8dd91d2ebf07e72cabe58a7b4174df7',
+              })
+              .expect('Content-Type', /text/)
+              .expect(400)
+              .end((err, res) => {
+                if (err) return done.fail(err);
+
+                models.Agent.findOne({ publicAddress: agent.publicAddress}).then(result => {
+                  expect(oldDate).toEqual(result.updatedAt);
 
                   done();
                 }).catch(err => {

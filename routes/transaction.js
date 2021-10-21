@@ -52,11 +52,20 @@ router.post('/', ensureAuthorized, (req, res, next) =>  {
   }
 
   models.Transaction.create({ hash: req.body.hash, value: ethers.BigNumber.from(req.body.value), account: req.agent }).then(tx => {
-    if (req.headers['accept'] === 'application/json') {
-      return res.status(201).json({ message: 'Transaction recorded' });
-    }
-    req.flash('success', 'Transaction recorded');
-    res.redirect('/transaction');
+    // Update updatedAt on the account so that root can see recent account activity
+    models.Agent.findOneAndUpdate({ publicAddress: req.agent.publicAddress }, { updatedAt: Date.now() }, { runValidators: true }).then(obj => {
+      if (req.headers['accept'] === 'application/json') {
+        return res.status(201).json({ message: 'Transaction recorded' });
+      }
+      req.flash('success', 'Transaction recorded');
+      res.redirect('/transaction');
+    }).catch(err => {
+      if (req.headers['accept'] === 'application/json') {
+        return res.status(400).json({ message: err.errors[Object.keys(err.errors)[0]].message });
+      }
+      req.flash('error', err.errors[Object.keys(err.errors)[0]].message);
+      res.status(400).render('account', { messages: req.flash(), agent: req.agent, errors: {} });
+    });
   }).catch(err => {
     if (req.headers['accept'] === 'application/json') {
       return res.status(400).json({ message: err.errors[Object.keys(err.errors)[0]].message });
