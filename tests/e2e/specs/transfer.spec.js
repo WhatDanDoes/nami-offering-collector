@@ -14,9 +14,13 @@ context('transfer eth', () => {
   it('displays the connected wallet', () => {
     cy.fetchMetamaskWalletAddress().then(address => {
       cy.get('body header h1').contains('You are connected with:');
-      cy.get('body header h4').contains(address.toLowerCase());
-      cy.get('a[href="/account"]').should('exist');
+      cy.get('body header h4 a[href="/account"]').contains(address.toLowerCase());
     });
+  });
+
+  it('displays links to account and transaction pages', () => {
+    cy.get('header p a[href="/transaction"] i').contains('History');
+    cy.get('header p a[href="/account"] i').contains('Account');
   });
 
   describe('Donate form', () => {
@@ -149,7 +153,7 @@ context('transfer eth', () => {
             cy.get('#eth-value-input').type('1');
             cy.get('form#send-eth #send-eth-button[type="submit"]').click();
             cy.confirmMetamaskTransaction();
-            cy.get('.alert.alert-success').contains('Transaction recorded');
+            cy.get('.alert.alert-success').contains('Transaction recorded. Update your account details to receive a tax receipt.');
           });
 
           it('lands in the right place', () => {

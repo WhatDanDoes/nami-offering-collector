@@ -94,9 +94,9 @@ describe('account management', () => {
               const $ = cheerio.load(res.text);
 
               // Link to transactions
-              expect($('header a[href="/transaction"] button#transaction-button').text()).toEqual('Transactions');
+              expect($('header a[href="/transaction"] #transaction-button').text().trim()).toEqual('Transactions');
               // Link to donate
-              expect($('header a[href="/"] button#donate-button').text()).toEqual('Donate');
+              expect($('header a[href="/"] #donate-button').text().trim()).toEqual('Donate');
 
               done();
             });

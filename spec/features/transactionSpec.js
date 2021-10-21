@@ -305,7 +305,7 @@ describe('transactions', () => {
               .end((err, res) => {
                 if (err) return done.fail(err);
 
-                expect(res.body.message).toEqual('Transaction recorded');
+                expect(res.body.message).toEqual('Transaction recorded. Update your account details to receive a tax receipt.');
                 done();
               });
           });

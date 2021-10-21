@@ -11,6 +11,12 @@ context('transaction view', () => {
     cy.confirmMetamaskSignatureRequest();
   });
 
+  it('displays links to account and donate pages', () => {
+    cy.visit('/transaction');
+    cy.get('header p a[href="/"] i').contains('Donate');
+    cy.get('header p a[href="/account"] i').contains('Account');
+  });
+
   describe('no transactions', () => {
 
     it('displays an empty table and a message', () => {

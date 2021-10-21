@@ -13,6 +13,9 @@
           </li>
         </ul>
       </nav>
+      <p>
+        <% include _partials/messages %>
+      </p>
       <h1>You are connected with:</h1>
       <h4>
         <a href="/account">
@@ -21,10 +24,16 @@
       </h4>
       <p>
         This is your <em>public</em> address. It is okay to show people this one.
-        <a href="/account">Click it</a> to receive a tax receipt.
       </p>
       <br>
-      <% include _partials/messages %>
+      <p>
+        <a href="/transaction">
+          <i id="transaction-button">History</i>
+        </a>
+        <a href="/account">
+          <i id="account-button">Account<%= agent.isSuper() ? 's' : '' %></i>
+        </a>
+      </p>
     </header>
     <main>
       <section>

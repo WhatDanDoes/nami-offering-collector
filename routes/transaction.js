@@ -54,10 +54,11 @@ router.post('/', ensureAuthorized, (req, res, next) =>  {
   models.Transaction.create({ hash: req.body.hash, value: ethers.BigNumber.from(req.body.value), account: req.agent }).then(tx => {
     // Update updatedAt on the account so that root can see recent account activity
     models.Agent.findOneAndUpdate({ publicAddress: req.agent.publicAddress }, { updatedAt: Date.now() }, { runValidators: true }).then(obj => {
+      const msg = 'Transaction recorded. Update your account details to receive a tax receipt.'
       if (req.headers['accept'] === 'application/json') {
-        return res.status(201).json({ message: 'Transaction recorded' });
+        return res.status(201).json({ message: msg });
       }
-      req.flash('success', 'Transaction recorded');
+      req.flash('success', msg);
       res.redirect('/transaction');
     }).catch(err => {
       if (req.headers['accept'] === 'application/json') {
