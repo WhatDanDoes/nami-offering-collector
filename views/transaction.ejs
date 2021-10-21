@@ -13,17 +13,18 @@
           </li>
         </ul>
       </nav>
-      <br>
-
+      <p>
+        <% include _partials/messages %>
+      </p>
       <h1>Tithing History</h1>
       <h4>
         <%= !transactions.length ? agent.isSuper() ? 'No transactions' : 'You have not sent any ETH yet': '' %>
       </h4>
-      <br>
-      <a href="/account">
-        <button id="account-button">Account<%= agent.isSuper() ? 's' : '' %></button>
-      </a>
-      <% include _partials/messages %>
+      <p>
+        <a href="/account">
+          <i id="account-button">Account<%= agent.isSuper() ? 's' : '' %></i>
+        </a>
+      </p>
     </header>
     <main>
       <section>

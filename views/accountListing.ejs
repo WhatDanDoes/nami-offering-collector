@@ -12,17 +12,19 @@
             </a>
           </li>
         </ul>
-
       </nav>
+      <p>
+        <% include _partials/messages %>
+      </p>
       <h1>Accounts</h1>
       <h4>
         <%= !agents.length ? 'No one has logged in' : '' %>
       </h4>
-      <br>
-      <a href="/transaction">
-        <button id="transaction-button">Transactions</button>
-      </a>
-      <% include _partials/messages %>
+      <p>
+        <a href="/transaction">
+          <i id="transaction-button">Transactions</i>
+        </a>
+      </p>
     </header>
     <main>
       <section>
