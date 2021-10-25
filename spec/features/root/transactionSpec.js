@@ -246,6 +246,7 @@ describe('root transactions', () => {
 
                 // Link to transactions
                 expect($('header a[href="/account"] #account-button').text()).toEqual('Accounts');
+                expect($('header a[href="/"] #donate-button').length).toEqual(0);
 
                 // Ordered by createdAt
                 expect($('#transaction-table tbody tr').length).toEqual(4);

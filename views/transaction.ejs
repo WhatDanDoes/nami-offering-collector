@@ -21,9 +21,11 @@
         <%= !transactions.length ? agent.isSuper() ? 'No transactions' : 'You have not sent any ETH yet': '' %>
       </h4>
       <p>
+        <% if (!agent.isSuper()) { %>
         <a href="/">
           <i id="donate-button">Donate</i>
         </a>
+        <% } %>
         <a href="/account">
           <i id="account-button">Account<%= agent.isSuper() ? 's' : '' %></i>
         </a>
