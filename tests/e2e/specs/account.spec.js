@@ -12,8 +12,9 @@ context('account managment', () => {
     cy.get('a[href="/account"]:first-child').click();
   });
 
-  it('displays a link back to the transfer page', () => {
-    cy.get('a[href="/"] button#make-a-donation-button').should('exist');
+  it('displays navigation links', () => {
+    cy.get('a[href="/"] #donate-button').should('exist');
+    cy.get('a[href="/transaction"] #transaction-button').should('exist');
   });
 
   describe('Account Details form', () => {
