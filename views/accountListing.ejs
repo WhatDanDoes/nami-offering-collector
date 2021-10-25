@@ -42,7 +42,7 @@
               <td><%= agent.name ? agent.name : '' %></td>
               <td><%= agent.updatedAt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) %></td>
               <td>
-                <a href="/account/<%= agent.publicAddress %>" target="_blank">
+                <a href="/account/<%= agent.publicAddress %>">
                   <%= `${agent.publicAddress.slice(0, 4)}...${agent.publicAddress.slice(-3)}` %>
                 </a>
               </td>
