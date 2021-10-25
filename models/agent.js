@@ -110,7 +110,7 @@ module.exports = function(mongoose) {
   });
 
   AgentSchema.methods.isSuper = function() {
-    return process.env.PUBLIC_ADDRESS === this.publicAddress;
+    return process.env.PUBLIC_ADDRESS.toLowerCase() === this.publicAddress.toLowerCase();
   };
 
   return AgentSchema;
