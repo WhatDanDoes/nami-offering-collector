@@ -469,8 +469,18 @@ describe('Agent', () => {
       });
     });
 
-    it('returns true if the account publicAddress is the samee as that configured in `.env`', done => {
+    it('returns true if the account publicAddress is the same as that configured in `.env`', done => {
       Agent.create({ publicAddress: process.env.PUBLIC_ADDRESS }).then(obj => {
+
+        expect(obj.isSuper()).toBe(true);
+        done();
+      }).catch(error => {
+        done.fail(error);
+      });
+    });
+
+    it('returns true if even if account publicAddress has irregular capitalization', done => {
+      Agent.create({ publicAddress: process.env.PUBLIC_ADDRESS.toUpperCase().replace(/^0X/, '0x') }).then(obj => {
 
         expect(obj.isSuper()).toBe(true);
         done();
