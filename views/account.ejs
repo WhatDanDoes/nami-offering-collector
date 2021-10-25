@@ -17,7 +17,11 @@
         <% include _partials/messages %>
       </p>
       <p>
-        <% if (!superView) { %>
+        <% if (superView) { %>
+        <a href="/account">
+          <i id="account-button">Accounts</i>
+        </a>
+        <% } else {%>
         <a href="/">
           <i id="donate-button">Donate</i>
         </a>

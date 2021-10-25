@@ -293,9 +293,9 @@ describe('root account management', () => {
            .end((err, res) => {
              if (err) return done.fail(err);
 
-             // No Donate buuton
              const $ = cheerio.load(res.text);
              expect($('header a[href="/"] #donate-button').length).toEqual(0);
+             expect($('header a[href="/account"] #account-button').length).toEqual(1);
              expect($(`form#account-details[action="/account/${_publicAddress}?_method=PUT"]`).length).toEqual(1);
 
              done();
@@ -310,11 +310,10 @@ describe('root account management', () => {
            .end((err, res) => {
              if (err) return done.fail(err);
 
-             // No Donate buuton
              const $ = cheerio.load(res.text);
              expect($('header a[href="/"] #donate-button').length).toEqual(0);
+             expect($('header a[href="/account"] #account-button').length).toEqual(1);
              expect($(`form#account-details[action="/account/${regularAgents[1].publicAddress}?_method=PUT"]`).length).toEqual(1);
-
 
              done();
            });
