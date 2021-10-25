@@ -17,9 +17,11 @@
         <% include _partials/messages %>
       </p>
       <p>
+        <% if (!superView) { %>
         <a href="/">
           <i id="donate-button">Donate</i>
         </a>
+        <% } %>
         <a href="/transaction">
           <i id="transaction-button">Transactions</i>
         </a>
@@ -27,7 +29,7 @@
     </header>
     <main>
       <section>
-        <form id="account-details" action="/account?_method=PUT" method="post">
+        <form id="account-details" action="<%= `/account${ superView ? '/' + agent.publicAddress : '' }?_method=PUT` %>" method="post">
           <header>
             <h2>Your Account Details</h2>
           </header>

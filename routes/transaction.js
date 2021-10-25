@@ -48,7 +48,7 @@ router.post('/', ensureAuthorized, (req, res, next) =>  {
       return res.status(400).json({ message: 'Value is required' });
     }
     req.flash('error', 'Value is required');
-    return res.status(400).render('account', { messages: req.flash(), agent: req.agent, errors: {} });
+    return res.status(400).render('account', { messages: req.flash(), agent: req.agent, errors: {}, superView: req.agent.isSuper() });
   }
 
   models.Transaction.create({ hash: req.body.hash, value: ethers.BigNumber.from(req.body.value), account: req.agent }).then(tx => {
@@ -65,14 +65,14 @@ router.post('/', ensureAuthorized, (req, res, next) =>  {
         return res.status(400).json({ message: err.errors[Object.keys(err.errors)[0]].message });
       }
       req.flash('error', err.errors[Object.keys(err.errors)[0]].message);
-      res.status(400).render('account', { messages: req.flash(), agent: req.agent, errors: {} });
+      res.status(400).render('account', { messages: req.flash(), agent: req.agent, errors: {}, superView: req.agent.isSuper() });
     });
   }).catch(err => {
     if (req.headers['accept'] === 'application/json') {
       return res.status(400).json({ message: err.errors[Object.keys(err.errors)[0]].message });
     }
     req.flash('error', err.errors[Object.keys(err.errors)[0]].message);
-    res.status(400).render('account', { messages: req.flash(), agent: req.agent, errors: {} });
+    res.status(400).render('account', { messages: req.flash(), agent: req.agent, errors: {}, superView: req.agent.isSuper() });
   });
 });
 

@@ -292,17 +292,30 @@ describe('root account management', () => {
            .expect(200)
            .end((err, res) => {
              if (err) return done.fail(err);
+
+             // No Donate buuton
+             const $ = cheerio.load(res.text);
+             expect($('header a[href="/"] #donate-button').length).toEqual(0);
+             expect($(`form#account-details[action="/account/${_publicAddress}?_method=PUT"]`).length).toEqual(1);
+
              done();
            });
         });
 
-        it('returns successfully with any account info', done => {
+        it('returns successfully with any account info superview', done => {
           session
            .get(`/account/${regularAgents[1].publicAddress}`)
            .expect('Content-Type', /text/)
            .expect(200)
            .end((err, res) => {
              if (err) return done.fail(err);
+
+             // No Donate buuton
+             const $ = cheerio.load(res.text);
+             expect($('header a[href="/"] #donate-button').length).toEqual(0);
+             expect($(`form#account-details[action="/account/${regularAgents[1].publicAddress}?_method=PUT"]`).length).toEqual(1);
+
+
              done();
            });
         });

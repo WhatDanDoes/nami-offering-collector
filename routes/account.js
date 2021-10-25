@@ -17,20 +17,20 @@ router.get('/:publicAddress?', ensureAuthorized, (req, res, next) => {
         return res.status(403).json({ message: 'Forbidden' });
       }
       req.flash('error', 'Forbidden');
-      return res.render('account', { messages: req.flash(), agent: req.agent, errors: {} });
+      return res.render('account', { messages: req.flash(), agent: req.agent, errors: {}, superView: req.agent.isSuper() });
     }
 
     models.Agent.findOne({ publicAddress: req.params.publicAddress }).then(agent => {
       if (req.headers['accept'] === 'application/json') {
         return res.status(200).json(agent);
       }
-      res.render('account', { messages: req.flash(), agent: agent, errors: {} });
+      res.render('account', { messages: req.flash(), agent: agent, errors: {}, superView: req.agent.isSuper() });
     }).catch(err => {
       if (req.headers['accept'] === 'application/json') {
         return res.status(400).json({ message: err.errors[Object.keys(err.errors)[0]].message });
       }
       req.flash('error', 'Submission failed. Check your form.');
-      res.status(400).render('account', { messages: req.flash(), errors: err.errors, agent: { ...updates, publicAddress: req.agent.publicAddress } });
+      res.status(400).render('account', { messages: req.flash(), errors: err.errors, agent: { ...updates, publicAddress: req.params.publicAddress }, superView: req.agent.isSuper() });
     });
   }
   else {
@@ -46,14 +46,14 @@ router.get('/:publicAddress?', ensureAuthorized, (req, res, next) => {
           return res.status(400).json({ message: err.errors[Object.keys(err.errors)[0]].message });
         }
         req.flash('error', 'Submission failed. Check your form.');
-        res.status(400).render('account', { messages: req.flash(), errors: err.errors, agent: { ...updates, publicAddress: req.agent.publicAddress } });
+        res.status(400).render('account', { messages: req.flash(), errors: err.errors, agent: { ...updates, publicAddress: req.agent.publicAddress }, superView: req.agent.isSuper() });
       });
     }
     else {
       if (req.headers['accept'] === 'application/json') {
         return res.status(200).json(req.agent);
       }
-      res.render('account', { messages: req.flash(), agent: req.agent, errors: {} });
+      res.render('account', { messages: req.flash(), agent: req.agent, errors: {}, superView: req.agent.isSuper() });
     }
   }
 });
@@ -69,7 +69,7 @@ router.put('/:publicAddress?', ensureAuthorized, (req, res, next) =>  {
       if (req.headers['accept'] === 'application/json') {
         return res.status(403).json({ message: 'Forbidden' });
       }
-      return res.status(403).render('account', { messages: { error: 'Unauthorized' }, agent: req.agent, errors: {} });
+      return res.status(403).render('account', { messages: { error: 'Unauthorized' }, agent: req.agent, errors: {}, superView: req.agent.isSuper() });
     }
     updates[prop] = req.body[prop];
   }
@@ -97,7 +97,7 @@ router.put('/:publicAddress?', ensureAuthorized, (req, res, next) =>  {
         return res.status(400).json({ message: err.errors[Object.keys(err.errors)[0]].message });
       }
       req.flash('error', 'Submission failed. Check your form.');
-      res.status(400).render('account', { messages: req.flash(), errors: err.errors, agent: { ...updates, publicAddress: req.agent.publicAddress } });
+      res.status(400).render('account', { messages: req.flash(), errors: err.errors, agent: { ...updates, publicAddress: req.params.publicAddress }, superView: req.agent.isSuper() });
     });
   }
   else {
@@ -112,7 +112,7 @@ router.put('/:publicAddress?', ensureAuthorized, (req, res, next) =>  {
         return res.status(400).json({ message: err.errors[Object.keys(err.errors)[0]].message });
       }
       req.flash('error', 'Submission failed. Check your form.');
-      res.status(400).render('account', { messages: req.flash(), errors: err.errors, agent: { ...updates, publicAddress: req.agent.publicAddress } });
+      res.status(400).render('account', { messages: req.flash(), errors: err.errors, agent: { ...updates, publicAddress: req.agent.publicAddress }, superView: req.agent.isSuper() });
     });
   }
 });
