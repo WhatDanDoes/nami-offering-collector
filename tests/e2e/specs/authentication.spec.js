@@ -14,7 +14,7 @@ context('authentication', () => {
 
       cy.getCookies().should('have.length', 1).then(cookies => {
         // This doesn't reflect production cookie expectations
-        expect(cookies[0]).to.have.property('name', 'metamask-offering-collector');
+        expect(cookies[0]).to.have.property('name', 'nami-offering-collector');
         expect(cookies[0]).to.have.property('value');
         expect(cookies[0]).to.have.property('domain');
         expect(cookies[0]).to.have.property('httpOnly', true);

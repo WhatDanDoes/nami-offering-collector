@@ -1,7 +1,7 @@
-metamask-offering-collector
+nami-offering-collector
 ===========================
 
-A proof-of-concept web application that allows accepting ETH for ministry and fundraising purposes via [MetaMask](https://metamask.io/).
+A proof-of-concept web application that allows accepting ETH for ministry and fundraising purposes via [Nami](https://namiwallet.io/) wallet.
 
 # Setup
 
@@ -89,7 +89,7 @@ It would be nice if Synpress reset the wallet on open. Even pre-setting the _sec
 In the application directory:
 
 ```
-cd metamask-offering-collector
+cd nami-offering-collector
 cp .env.example .env # <- don't forget to configure
 npm install --production
 ```

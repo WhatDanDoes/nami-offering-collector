@@ -118,7 +118,7 @@ app.use(function(err, req, res, next) {
  */
 let port = process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'tor' ? 3001 : 3000;
 app.listen(port, '0.0.0.0', () => {
-  console.log('metamask-offering-collector listening on ' + port + '!');
+  console.log('nami-offering-collector listening on ' + port + '!');
 });
 
 module.exports = app;
