@@ -66,7 +66,7 @@ describe('root auth', () => {
 
                 response = res;
 
-                models.Agent.findOne({ where: { publicAddress: _publicAddress } }).then(result => {
+                models.Account.findOne({ where: { publicAddress: _publicAddress } }).then(result => {
                   root = result;
 
                   done();

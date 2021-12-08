@@ -8,10 +8,10 @@ const ensureAuthorized = require('../lib/ensureAuthorized');
  * GET /transaction
  */
 router.get('/', ensureAuthorized, (req, res, next) => {
-  let searchOptions = { account: req.agent };
+  let searchOptions = { account: req.account };
   let selectOptions = { "_id": 0, "__v": 0, "account": 0 };
 
-  if (req.agent.isSuper()) {
+  if (req.account.isSuper()) {
     searchOptions = {};
     selectOptions = { "_id": 0, "hash": 1, "value": 1, "createdAt": 1 };
   }
@@ -19,13 +19,13 @@ router.get('/', ensureAuthorized, (req, res, next) => {
     if (req.headers['accept'] === 'application/json') {
       return res.status(200).json(txs);
     }
-    res.render('transaction', { messages: req.flash(), agent: req.agent, transactions: txs });
+    res.render('transaction', { messages: req.flash(), account: req.account, transactions: txs });
   }).catch(err => {
     if (req.headers['accept'] === 'application/json') {
       return res.status(400).json({ message: err.errors[Object.keys(err.errors)[0]].message });
     }
     req.flash('error', err.errors[Object.keys(err.errors)[0]].message);
-    res.status(400).render('transaction', { messages: req.flash(), agent: req.agent, transactions: [] });
+    res.status(400).render('transaction', { messages: req.flash(), account: req.account, transactions: [] });
   });
 });
 
@@ -34,13 +34,13 @@ router.get('/', ensureAuthorized, (req, res, next) => {
  */
 router.post('/', ensureAuthorized, (req, res, next) =>  {
 
-  if (req.agent.isSuper()) {
+  if (req.account.isSuper()) {
     const msg = 'You didn\'t seriously send ETH to yourself, did you?';
     if (req.headers['accept'] === 'application/json') {
       return res.status(400).json({ message: msg });
     }
     req.flash('error', msg);
-    return res.status(400).render('transaction', { messages: req.flash(), agent: req.agent, errors: {}, transactions: [] });
+    return res.status(400).render('transaction', { messages: req.flash(), account: req.account, errors: {}, transactions: [] });
   }
 
   if (!req.body.value) {
@@ -48,12 +48,12 @@ router.post('/', ensureAuthorized, (req, res, next) =>  {
       return res.status(400).json({ message: 'Value is required' });
     }
     req.flash('error', 'Value is required');
-    return res.status(400).render('account', { messages: req.flash(), agent: req.agent, errors: {}, superView: req.agent.isSuper() });
+    return res.status(400).render('account', { messages: req.flash(), account: req.account, errors: {}, superView: req.account.isSuper() });
   }
 
-  models.Transaction.create({ hash: req.body.hash, value: ethers.BigNumber.from(req.body.value), account: req.agent }).then(tx => {
+  models.Transaction.create({ hash: req.body.hash, value: ethers.BigNumber.from(req.body.value), account: req.account }).then(tx => {
     // Update updatedAt on the account so that root can see recent account activity
-    models.Agent.findOneAndUpdate({ publicAddress: req.agent.publicAddress }, { updatedAt: Date.now() }, { runValidators: true }).then(obj => {
+    models.Account.findOneAndUpdate({ publicAddress: req.account.publicAddress }, { updatedAt: Date.now() }, { runValidators: true }).then(obj => {
       const msg = 'Transaction recorded. Update your account details to receive a tax receipt.'
       if (req.headers['accept'] === 'application/json') {
         return res.status(201).json({ message: msg });
@@ -65,14 +65,14 @@ router.post('/', ensureAuthorized, (req, res, next) =>  {
         return res.status(400).json({ message: err.errors[Object.keys(err.errors)[0]].message });
       }
       req.flash('error', err.errors[Object.keys(err.errors)[0]].message);
-      res.status(400).render('account', { messages: req.flash(), agent: req.agent, errors: {}, superView: req.agent.isSuper() });
+      res.status(400).render('account', { messages: req.flash(), account: req.account, errors: {}, superView: req.account.isSuper() });
     });
   }).catch(err => {
     if (req.headers['accept'] === 'application/json') {
       return res.status(400).json({ message: err.errors[Object.keys(err.errors)[0]].message });
     }
     req.flash('error', err.errors[Object.keys(err.errors)[0]].message);
-    res.status(400).render('account', { messages: req.flash(), agent: req.agent, errors: {}, superView: req.agent.isSuper() });
+    res.status(400).render('account', { messages: req.flash(), account: req.account, errors: {}, superView: req.account.isSuper() });
   });
 });
 

@@ -70,7 +70,7 @@ describe('root transactions', () => {
 
                 expect(res.body.message).toEqual('Welcome!');
 
-                models.Agent.findOne({ where: { publicAddress: _publicAddress } }).then(result => {
+                models.Account.findOne({ where: { publicAddress: _publicAddress } }).then(result => {
                   root = result;
 
                   done();
@@ -125,21 +125,21 @@ describe('root transactions', () => {
       describe('transactions exist', () => {
 
         beforeEach(done => {
-          models.Agent.findOne({ where: { publicAddress: _publicAddress } }).then(result => {
+          models.Account.findOne({ where: { publicAddress: _publicAddress } }).then(result => {
             root = result;
 
-            const regularAgents = [
+            const regularAccounts = [
               { publicAddress: '0x07D740737b08BB0B041C15E94C5f87BC689909d5' },
               { publicAddress: '0xE40153f2428846Ce1FFB7B4169ce08c9374b1187', name: 'Some Guy' },
               { publicAddress: '0x07D740737b08BB0B041C15E94C5f87BC689909d5' },
             ];
 
-            models.Agent.insertMany(regularAgents).then(agents => {
+            models.Account.insertMany(regularAccounts).then(accounts => {
               const txs = [
-                { hash: '0x5f77236022ded48a79ad2f98e646141aedc239db377a2b9a2376eb8a7b0a1014', value: ethers.utils.parseEther('1'), account: agents[0] },
-                { hash: '0x8df25a1b626d2aea8c337ed087493c91d1ee2c0c9c9470e5b87060170c256631', value: ethers.utils.parseEther('1'), account: agents[1] },
-                { hash: '0x204248c1800cfbdf303923a824e53a31c5cdc9678c13c4433dbac1f5576dc9a7', value: ethers.utils.parseEther('1'), account: agents[1] },
-                { hash: '0xe3bca4e0a8f2168d82b4bc9a6a6c4d2beb359df425a7b2d11837688af044f962', value: ethers.utils.parseEther('1'), account: agents[2] },
+                { hash: '0x5f77236022ded48a79ad2f98e646141aedc239db377a2b9a2376eb8a7b0a1014', value: ethers.utils.parseEther('1'), account: accounts[0] },
+                { hash: '0x8df25a1b626d2aea8c337ed087493c91d1ee2c0c9c9470e5b87060170c256631', value: ethers.utils.parseEther('1'), account: accounts[1] },
+                { hash: '0x204248c1800cfbdf303923a824e53a31c5cdc9678c13c4433dbac1f5576dc9a7', value: ethers.utils.parseEther('1'), account: accounts[1] },
+                { hash: '0xe3bca4e0a8f2168d82b4bc9a6a6c4d2beb359df425a7b2d11837688af044f962', value: ethers.utils.parseEther('1'), account: accounts[2] },
               ];
 
               // Doing this one-at-a-time (as opposed to `insertMany`) so that `createdAt` is different for each
@@ -299,7 +299,7 @@ describe('root transactions', () => {
 
     describe('authorized', () => {
 
-      let session, agent;
+      let session, account;
 
       beforeEach(done => {
         session = request(app);
@@ -327,8 +327,8 @@ describe('root transactions', () => {
 
                 expect(res.body.message).toEqual('Welcome!');
 
-                models.Agent.findOne({ where: { publicAddress: _publicAddress } }).then(result => {
-                  agent = result;
+                models.Account.findOne({ where: { publicAddress: _publicAddress } }).then(result => {
+                  account = result;
 
                   done();
                 }).catch(err => {

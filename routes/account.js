@@ -11,49 +11,49 @@ router.get('/:publicAddress?', ensureAuthorized, (req, res, next) => {
 
   if (req.params.publicAddress) {
 
-    if (!req.agent.isSuper() && req.params.publicAddress !== req.agent.publicAddress) {
+    if (!req.account.isSuper() && req.params.publicAddress !== req.account.publicAddress) {
 
       if (req.headers['accept'] === 'application/json') {
         return res.status(403).json({ message: 'Forbidden' });
       }
       req.flash('error', 'Forbidden');
-      return res.render('account', { messages: req.flash(), agent: req.agent, errors: {}, superView: req.agent.isSuper() });
+      return res.render('account', { messages: req.flash(), account: req.account, errors: {}, superView: req.account.isSuper() });
     }
 
-    models.Agent.findOne({ publicAddress: req.params.publicAddress }).then(agent => {
+    models.Account.findOne({ publicAddress: req.params.publicAddress }).then(account => {
       if (req.headers['accept'] === 'application/json') {
-        return res.status(200).json(agent);
+        return res.status(200).json(account);
       }
-      res.render('account', { messages: req.flash(), agent: agent, errors: {}, superView: req.agent.isSuper() });
+      res.render('account', { messages: req.flash(), account: account, errors: {}, superView: req.account.isSuper() });
     }).catch(err => {
       if (req.headers['accept'] === 'application/json') {
         return res.status(400).json({ message: err.errors[Object.keys(err.errors)[0]].message });
       }
       req.flash('error', 'Submission failed. Check your form.');
-      res.status(400).render('account', { messages: req.flash(), errors: err.errors, agent: { ...updates, publicAddress: req.params.publicAddress }, superView: req.agent.isSuper() });
+      res.status(400).render('account', { messages: req.flash(), errors: err.errors, account: { ...updates, publicAddress: req.params.publicAddress }, superView: req.account.isSuper() });
     });
   }
   else {
-    if (req.agent.isSuper()) {
-      models.Agent.find().sort({ updatedAt: -1 }).then(results => {
-        agents = results.filter(a => a.publicAddress !== req.agent.publicAddress);
+    if (req.account.isSuper()) {
+      models.Account.find().sort({ updatedAt: -1 }).then(results => {
+        accounts = results.filter(a => a.publicAddress !== req.account.publicAddress);
         if (req.headers['accept'] === 'application/json') {
-          return res.status(200).json(agents);
+          return res.status(200).json(accounts);
         }
-        res.render('accountListing', { messages: req.flash(), agents: agents, errors: {} });
+        res.render('accountListing', { messages: req.flash(), accounts: accounts, errors: {} });
       }).catch(err => {
         if (req.headers['accept'] === 'application/json') {
           return res.status(400).json({ message: err.errors[Object.keys(err.errors)[0]].message });
         }
         req.flash('error', 'Submission failed. Check your form.');
-        res.status(400).render('account', { messages: req.flash(), errors: err.errors, agent: { ...updates, publicAddress: req.agent.publicAddress }, superView: req.agent.isSuper() });
+        res.status(400).render('account', { messages: req.flash(), errors: err.errors, account: { ...updates, publicAddress: req.account.publicAddress }, superView: req.account.isSuper() });
       });
     }
     else {
       if (req.headers['accept'] === 'application/json') {
-        return res.status(200).json(req.agent);
+        return res.status(200).json(req.account);
       }
-      res.render('account', { messages: req.flash(), agent: req.agent, errors: {}, superView: req.agent.isSuper() });
+      res.render('account', { messages: req.flash(), account: req.account, errors: {}, superView: req.account.isSuper() });
     }
   }
 });
@@ -69,7 +69,7 @@ router.put('/:publicAddress?', ensureAuthorized, (req, res, next) =>  {
       if (req.headers['accept'] === 'application/json') {
         return res.status(403).json({ message: 'Forbidden' });
       }
-      return res.status(403).render('account', { messages: { error: 'Unauthorized' }, agent: req.agent, errors: {}, superView: req.agent.isSuper() });
+      return res.status(403).render('account', { messages: { error: 'Unauthorized' }, account: req.account, errors: {}, superView: req.account.isSuper() });
     }
     updates[prop] = req.body[prop];
   }
@@ -77,7 +77,7 @@ router.put('/:publicAddress?', ensureAuthorized, (req, res, next) =>  {
 
   if (req.params.publicAddress) {
 
-    if (!req.agent.isSuper() && req.params.publicAddress !== req.agent.publicAddress) {
+    if (!req.account.isSuper() && req.params.publicAddress !== req.account.publicAddress) {
 
       if (req.headers['accept'] === 'application/json') {
         return res.status(403).json({ message: 'Forbidden' });
@@ -86,7 +86,7 @@ router.put('/:publicAddress?', ensureAuthorized, (req, res, next) =>  {
       return res.redirect('/account');
     }
 
-    models.Agent.findOneAndUpdate({ publicAddress: req.params.publicAddress }, updates, { runValidators: true }).then(obj => {
+    models.Account.findOneAndUpdate({ publicAddress: req.params.publicAddress }, updates, { runValidators: true }).then(obj => {
       if (req.headers['accept'] === 'application/json') {
         return res.status(201).json({ message: 'Info updated' });
       }
@@ -97,11 +97,11 @@ router.put('/:publicAddress?', ensureAuthorized, (req, res, next) =>  {
         return res.status(400).json({ message: err.errors[Object.keys(err.errors)[0]].message });
       }
       req.flash('error', 'Submission failed. Check your form.');
-      res.status(400).render('account', { messages: req.flash(), errors: err.errors, agent: { ...updates, publicAddress: req.params.publicAddress }, superView: req.agent.isSuper() });
+      res.status(400).render('account', { messages: req.flash(), errors: err.errors, account: { ...updates, publicAddress: req.params.publicAddress }, superView: req.account.isSuper() });
     });
   }
   else {
-    models.Agent.findOneAndUpdate({ publicAddress: req.agent.publicAddress }, updates, { runValidators: true }).then(obj => {
+    models.Account.findOneAndUpdate({ publicAddress: req.account.publicAddress }, updates, { runValidators: true }).then(obj => {
       if (req.headers['accept'] === 'application/json') {
         return res.status(201).json({ message: 'Info updated' });
       }
@@ -112,7 +112,7 @@ router.put('/:publicAddress?', ensureAuthorized, (req, res, next) =>  {
         return res.status(400).json({ message: err.errors[Object.keys(err.errors)[0]].message });
       }
       req.flash('error', 'Submission failed. Check your form.');
-      res.status(400).render('account', { messages: req.flash(), errors: err.errors, agent: { ...updates, publicAddress: req.agent.publicAddress }, superView: req.agent.isSuper() });
+      res.status(400).render('account', { messages: req.flash(), errors: err.errors, account: { ...updates, publicAddress: req.account.publicAddress }, superView: req.account.isSuper() });
     });
   }
 });

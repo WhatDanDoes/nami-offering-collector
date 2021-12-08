@@ -26,7 +26,7 @@ describe('transactions', () => {
 
     describe('authorized', () => {
 
-      let session, agent, transactions;
+      let session, account, transactions;
 
       beforeEach(done => {
         session = request(app);
@@ -54,8 +54,8 @@ describe('transactions', () => {
 
                 expect(res.body.message).toEqual('Welcome!');
 
-                models.Agent.findOne({ where: { publicAddress: _publicAddress } }).then(result => {
-                  agent = result;
+                models.Account.findOne({ where: { publicAddress: _publicAddress } }).then(result => {
+                  account = result;
 
                   done();
                 }).catch(err => {
@@ -114,16 +114,16 @@ describe('transactions', () => {
 
         beforeEach(done => {
           // Create hypothetical unrelated account
-          models.Agent.create({ publicAddress: '0x3D2fA3e5C6e41d4D8b710f3C18c761AD3BB31da1'}).then(anotherAgent => {
+          models.Account.create({ publicAddress: '0x3D2fA3e5C6e41d4D8b710f3C18c761AD3BB31da1'}).then(anotherAccount => {
 
             const txs = [
-              { hash: '0x5f77236022ded48a79ad2f98e646141aedc239db377a2b9a2376eb8a7b0a1014', value: ethers.utils.parseEther('1'), account: agent },
-              { hash: '0x29d184278c1bb10aed0ab4c56ac22c89009efe58e370c99951bca17f34ffd562', value: ethers.utils.parseEther('88'), account: anotherAgent },
+              { hash: '0x5f77236022ded48a79ad2f98e646141aedc239db377a2b9a2376eb8a7b0a1014', value: ethers.utils.parseEther('1'), account: account },
+              { hash: '0x29d184278c1bb10aed0ab4c56ac22c89009efe58e370c99951bca17f34ffd562', value: ethers.utils.parseEther('88'), account: anotherAccount },
             ];
             models.Transaction.insertMany(txs).then(result => {
               transactions = result;
 
-              models.Transaction.findOne({ account: agent }).then(result => {
+              models.Transaction.findOne({ account: account }).then(result => {
                 tx = result;
 
                 done();
@@ -249,7 +249,7 @@ describe('transactions', () => {
 
     describe('authorized', () => {
 
-      let session, agent;
+      let session, account;
 
       beforeEach(done => {
         session = request(app);
@@ -277,8 +277,8 @@ describe('transactions', () => {
 
                 expect(res.body.message).toEqual('Welcome!');
 
-                models.Agent.findOne({ where: { publicAddress: _publicAddress } }).then(result => {
-                  agent = result;
+                models.Account.findOne({ where: { publicAddress: _publicAddress } }).then(result => {
+                  account = result;
 
                   done();
                 }).catch(err => {
@@ -328,7 +328,7 @@ describe('transactions', () => {
 
                   models.Transaction.find({}).then(transactions => {
                     expect(transactions.length).toEqual(1);
-                    expect(transactions[0].account).toEqual(agent._id);
+                    expect(transactions[0].account).toEqual(account._id);
                     expect(transactions[0].value).toEqual('100.0');
 
                     done();
@@ -342,7 +342,7 @@ describe('transactions', () => {
           });
 
           it('updates the account\'s `updatedAt` field', done => {
-            const oldDate = agent.updatedAt;
+            const oldDate = account.updatedAt;
             session
               .post('/transaction')
               .send({
@@ -355,7 +355,7 @@ describe('transactions', () => {
               .end((err, res) => {
                 if (err) return done.fail(err);
 
-                models.Agent.findOne({ publicAddress: agent.publicAddress}).then(result => {
+                models.Account.findOne({ publicAddress: account.publicAddress}).then(result => {
                   expect(oldDate < result.updatedAt).toBe(true);
 
                   done();
@@ -416,7 +416,7 @@ describe('transactions', () => {
 
 
           it('does not update the account\'s `updatedAt` field', done => {
-            const oldDate = agent.updatedAt;
+            const oldDate = account.updatedAt;
             session
               .post('/transaction')
               .send({
@@ -428,7 +428,7 @@ describe('transactions', () => {
               .end((err, res) => {
                 if (err) return done.fail(err);
 
-                models.Agent.findOne({ publicAddress: agent.publicAddress}).then(result => {
+                models.Account.findOne({ publicAddress: account.publicAddress}).then(result => {
                   expect(oldDate).toEqual(result.updatedAt);
 
                   done();
@@ -478,7 +478,7 @@ describe('transactions', () => {
 
                   models.Transaction.find({}).then(transactions => {
                     expect(transactions.length).toEqual(1);
-                    expect(transactions[0].account).toEqual(agent._id);
+                    expect(transactions[0].account).toEqual(account._id);
                     expect(transactions[0].value).toEqual('100.0');
 
                     done();
@@ -492,7 +492,7 @@ describe('transactions', () => {
           });
 
           it('updates the account\'s `updatedAt` field', done => {
-            const oldDate = agent.updatedAt;
+            const oldDate = account.updatedAt;
             session
               .post('/transaction')
               .send({
@@ -504,7 +504,7 @@ describe('transactions', () => {
               .end((err, res) => {
                 if (err) return done.fail(err);
 
-                models.Agent.findOne({ publicAddress: agent.publicAddress}).then(result => {
+                models.Account.findOne({ publicAddress: account.publicAddress}).then(result => {
                   expect(oldDate < result.updatedAt).toBe(true);
 
                   done();
@@ -560,7 +560,7 @@ describe('transactions', () => {
           });
 
           it('does not update the account\'s `updatedAt` field', done => {
-            const oldDate = agent.updatedAt;
+            const oldDate = account.updatedAt;
             session
               .post('/transaction')
               .send({
@@ -571,7 +571,7 @@ describe('transactions', () => {
               .end((err, res) => {
                 if (err) return done.fail(err);
 
-                models.Agent.findOne({ publicAddress: agent.publicAddress}).then(result => {
+                models.Account.findOne({ publicAddress: account.publicAddress}).then(result => {
                   expect(oldDate).toEqual(result.updatedAt);
 
                   done();

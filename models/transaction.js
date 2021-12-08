@@ -47,7 +47,7 @@ module.exports = function(mongoose) {
     },
     account: {
       type: Schema.Types.ObjectId,
-      ref: 'Agent',
+      ref: 'Account',
       required: [true, 'To what account does this transaction belong?'],
     },
   }, {

@@ -1,15 +1,15 @@
 const db = require('../../models');
-const Agent = db.Agent;
+const Account = db.Account;
 
-describe('Agent', () => {
+describe('Account', () => {
 
   const _profile = {
     publicAddress: '0x0eDB511d9434452D24a3Eeb47E3d02Fda903A73a',
   };
 
-  let agent;
+  let account;
   beforeEach(() => {
-    agent = new Agent(_profile);
+    account = new Account(_profile);
   });
 
   afterEach(done => {
@@ -23,11 +23,11 @@ describe('Agent', () => {
   describe('basic validation', () => {
 
     it('sets the createdAt and updatedAt fields', done => {
-      expect(agent.createdAt).toBe(undefined);
-      expect(agent.updatedAt).toBe(undefined);
-      agent.save().then(obj => {
-        expect(agent.createdAt instanceof Date).toBe(true);
-        expect(agent.updatedAt instanceof Date).toBe(true);
+      expect(account.createdAt).toBe(undefined);
+      expect(account.updatedAt).toBe(undefined);
+      account.save().then(obj => {
+        expect(account.createdAt instanceof Date).toBe(true);
+        expect(account.updatedAt instanceof Date).toBe(true);
         done();
       }).catch(err => {
         done.fail(err);
@@ -37,7 +37,7 @@ describe('Agent', () => {
     describe('publicAddress', () => {
 
       it('is required', done => {
-        Agent.create({..._profile, publicAddress: undefined }).then(obj => {
+        Account.create({..._profile, publicAddress: undefined }).then(obj => {
           done.fail('This should not have saved');
         }).catch(error => {
           expect(Object.keys(error.errors).length).toEqual(1);
@@ -47,7 +47,7 @@ describe('Agent', () => {
       });
 
       it('cannot be null', done => {
-        Agent.create({..._profile, publicAddress: null }).then(obj => {
+        Account.create({..._profile, publicAddress: null }).then(obj => {
           done.fail('This should not have saved');
         }).catch(error => {
           expect(Object.keys(error.errors).length).toEqual(1);
@@ -57,8 +57,8 @@ describe('Agent', () => {
       });
 
       it('is unique', done => {
-        agent.save().then(obj => {
-          Agent.create(_profile).then(obj => {
+        account.save().then(obj => {
+          Account.create(_profile).then(obj => {
             done.fail('This should not have saved');
           }).catch(error => {
             expect(Object.keys(error.errors).length).toEqual(1);
@@ -71,7 +71,7 @@ describe('Agent', () => {
       });
 
       it('is valid', done => {
-        Agent.create({..._profile, publicAddress: 'this is not valid' }).then(obj => {
+        Account.create({..._profile, publicAddress: 'this is not valid' }).then(obj => {
           done.fail('This should not have saved');
         }).catch(error => {
           expect(Object.keys(error.errors).length).toEqual(1);
@@ -81,7 +81,7 @@ describe('Agent', () => {
       });
 
       it('cannot be blank', done => {
-        Agent.create({..._profile, publicAddress: '' }).then(obj => {
+        Account.create({..._profile, publicAddress: '' }).then(obj => {
           done.fail('This should not have saved');
         }).catch(error => {
           expect(Object.keys(error.errors).length).toEqual(1);
@@ -91,7 +91,7 @@ describe('Agent', () => {
       });
 
       it('trims whitespace', done => {
-        Agent.create({..._profile, publicAddress: `   ${_profile.publicAddress}   ` }).then(obj => {
+        Account.create({..._profile, publicAddress: `   ${_profile.publicAddress}   ` }).then(obj => {
           expect(obj.publicAddress).toEqual(_profile.publicAddress);
           done();
         }).catch(error => {
@@ -102,11 +102,11 @@ describe('Agent', () => {
       describe('case insensitivity', () => {
 
         it('won\'t save a lowercase duplicate', done => {
-          agent.save().then(obj => {
+          account.save().then(obj => {
             expect(obj.publicAddress).toEqual(_profile.publicAddress);
 
             // Create lowercase dup
-            Agent.create({..._profile, publicAddress: _profile.publicAddress.toLowerCase() }).then(obj => {
+            Account.create({..._profile, publicAddress: _profile.publicAddress.toLowerCase() }).then(obj => {
               done.fail('This should not have saved');
             }).catch(error => {
               expect(Object.keys(error.errors).length).toEqual(1);
@@ -119,12 +119,12 @@ describe('Agent', () => {
         });
 
         it('won\'t save an uppercase duplicate', done => {
-          agent.save().then(obj => {
+          account.save().then(obj => {
             expect(obj.publicAddress).toEqual(_profile.publicAddress);
             expect(obj.publicAddress).not.toEqual(_profile.publicAddress.toUpperCase().replace(/^0X/, '0x'));
 
             // Create uppercase dup
-            Agent.create({..._profile, publicAddress: _profile.publicAddress.toUpperCase().replace(/^0X/, '0x') }).then(obj => {
+            Account.create({..._profile, publicAddress: _profile.publicAddress.toUpperCase().replace(/^0X/, '0x') }).then(obj => {
               done.fail('This should not have saved');
             }).catch(error => {
               expect(Object.keys(error.errors).length).toEqual(1);
@@ -137,12 +137,12 @@ describe('Agent', () => {
         });
 
         it('matches on a lowercase search', done => {
-          agent.save().then(obj => {
+          account.save().then(obj => {
             expect(obj.publicAddress).toEqual(_profile.publicAddress);
             expect(obj.publicAddress).not.toEqual(_profile.publicAddress.toLowerCase());
 
-            Agent.findOne({ publicAddress: _profile.publicAddress.toLowerCase() }).then(agent => {
-              expect(agent.publicAddress).toEqual(_profile.publicAddress);
+            Account.findOne({ publicAddress: _profile.publicAddress.toLowerCase() }).then(account => {
+              expect(account.publicAddress).toEqual(_profile.publicAddress);
               done();
             }).catch(error => {
               done.fail(error);
@@ -153,12 +153,12 @@ describe('Agent', () => {
         });
 
         it('matches on an uppercase search', done => {
-          agent.save().then(obj => {
+          account.save().then(obj => {
             expect(obj.publicAddress).toEqual(_profile.publicAddress);
             expect(obj.publicAddress).not.toEqual(_profile.publicAddress.toUpperCase().replace(/^0X/, '0x'));
 
-            Agent.findOne({ publicAddress: _profile.publicAddress.toUpperCase().replace(/^0X/, '0x') }).then(agent => {
-              expect(agent.publicAddress).toEqual(_profile.publicAddress);
+            Account.findOne({ publicAddress: _profile.publicAddress.toUpperCase().replace(/^0X/, '0x') }).then(account => {
+              expect(account.publicAddress).toEqual(_profile.publicAddress);
               done();
             }).catch(error => {
               done.fail(error);
@@ -173,7 +173,7 @@ describe('Agent', () => {
     describe('nonce', () => {
 
       it('is required and automatically set', done => {
-        Agent.create({..._profile, nonce: undefined }).then(obj => {
+        Account.create({..._profile, nonce: undefined }).then(obj => {
           expect(obj.nonce).toBeDefined();
           done();
         }).catch(error => {
@@ -182,7 +182,7 @@ describe('Agent', () => {
       });
 
       it('does not accept non-parsable bigint strings', done => {
-        Agent.create({..._profile, nonce: 'this is not a bigint string' }).then(obj => {
+        Account.create({..._profile, nonce: 'this is not a bigint string' }).then(obj => {
           done.fail('This should not have saved');
         }).catch(error => {
           expect(Object.keys(error.errors).length).toEqual(1);
@@ -193,7 +193,7 @@ describe('Agent', () => {
 
       it('is a bigint parsable string', done => {
         expect(_profile.nonce).toBeUndefined();
-        agent.save().then(obj => {
+        account.save().then(obj => {
           expect(typeof obj.nonce).toEqual('string');
           expect(typeof BigInt(obj.nonce)).toEqual('bigint');
           done();
@@ -203,7 +203,7 @@ describe('Agent', () => {
       });
 
       it('is manually set-able', done => {
-        Agent.create({..._profile, nonce: BigInt(9007199254740991) }).then(obj => {
+        Account.create({..._profile, nonce: BigInt(9007199254740991) }).then(obj => {
           expect(obj.nonce).toEqual('9007199254740991');
           done();
         }).catch(error => {
@@ -218,10 +218,10 @@ describe('Agent', () => {
 
         it('is optional', done => {
           expect(_profile.name).toBeUndefined();
-          Agent.create({..._profile, name: 'Wallet or agent name' }).then(obj => {
-            expect(obj.name).toEqual('Wallet or agent name');
+          Account.create({..._profile, name: 'Wallet or account name' }).then(obj => {
+            expect(obj.name).toEqual('Wallet or account name');
 
-            Agent.findOneAndUpdate({ publicAddress: obj.publicAddress }, { name: '' }, { new: true, runValidators: true }).then(obj => {
+            Account.findOneAndUpdate({ publicAddress: obj.publicAddress }, { name: '' }, { new: true, runValidators: true }).then(obj => {
               expect(obj.name).toEqual('');
 
               done();
@@ -234,7 +234,7 @@ describe('Agent', () => {
         });
 
          it('has 255 characters max', done => {
-          Agent.create({..._profile, name: 'a'.repeat(256) }).then(obj => {
+          Account.create({..._profile, name: 'a'.repeat(256) }).then(obj => {
             done.fail('This should not have saved');
           }).catch(error => {
             expect(Object.keys(error.errors).length).toEqual(1);
@@ -248,10 +248,10 @@ describe('Agent', () => {
 
         it('is optional', done => {
           expect(_profile.email).toBeUndefined();
-          Agent.create({..._profile, email: 'someguy@example.com' }).then(obj => {
+          Account.create({..._profile, email: 'someguy@example.com' }).then(obj => {
             expect(obj.email).toEqual('someguy@example.com');
 
-            Agent.findOneAndUpdate({ publicAddress: obj.publicAddress }, { email: '' }, { new: true, runValidators: true }).then(obj => {
+            Account.findOneAndUpdate({ publicAddress: obj.publicAddress }, { email: '' }, { new: true, runValidators: true }).then(obj => {
               expect(obj.email).toEqual('');
 
               done();
@@ -264,7 +264,7 @@ describe('Agent', () => {
         });
 
         it('is valid', done => {
-          Agent.create({..._profile, email: 'this is not an email' }).then(obj => {
+          Account.create({..._profile, email: 'this is not an email' }).then(obj => {
             done.fail('This should not have saved');
           }).catch(error => {
             expect(Object.keys(error.errors).length).toEqual(1);
@@ -278,10 +278,10 @@ describe('Agent', () => {
 
         it('is optional', done => {
           expect(_profile.streetAddress).toBeUndefined();
-          Agent.create({..._profile, streetAddress: '123 Fake Street' }).then(obj => {
+          Account.create({..._profile, streetAddress: '123 Fake Street' }).then(obj => {
             expect(obj.streetAddress).toEqual('123 Fake Street');
 
-            Agent.findOneAndUpdate({ publicAddress: obj.publicAddress }, { streetAddress: '' }, { new: true, runValidators: true }).then(obj => {
+            Account.findOneAndUpdate({ publicAddress: obj.publicAddress }, { streetAddress: '' }, { new: true, runValidators: true }).then(obj => {
               expect(obj.streetAddress).toEqual('');
 
               done();
@@ -294,7 +294,7 @@ describe('Agent', () => {
         });
 
         it('has 255 characters max', done => {
-          Agent.create({..._profile, streetAddress: 'a'.repeat(256) }).then(obj => {
+          Account.create({..._profile, streetAddress: 'a'.repeat(256) }).then(obj => {
             done.fail('This should not have saved');
           }).catch(error => {
             expect(Object.keys(error.errors).length).toEqual(1);
@@ -308,10 +308,10 @@ describe('Agent', () => {
 
         it('is optional', done => {
           expect(_profile.city).toBeUndefined();
-          Agent.create({..._profile, city: 'The C-Spot' }).then(obj => {
+          Account.create({..._profile, city: 'The C-Spot' }).then(obj => {
             expect(obj.city).toEqual('The C-Spot');
 
-            Agent.findOneAndUpdate({ publicAddress: obj.publicAddress }, { city: '' }, { new: true, runValidators: true }).then(obj => {
+            Account.findOneAndUpdate({ publicAddress: obj.publicAddress }, { city: '' }, { new: true, runValidators: true }).then(obj => {
               expect(obj.city).toEqual('');
 
               done();
@@ -324,7 +324,7 @@ describe('Agent', () => {
         });
 
         it('has 255 characters max', done => {
-          Agent.create({..._profile, city: 'a'.repeat(256) }).then(obj => {
+          Account.create({..._profile, city: 'a'.repeat(256) }).then(obj => {
             done.fail('This should not have saved');
           }).catch(error => {
             expect(Object.keys(error.errors).length).toEqual(1);
@@ -338,10 +338,10 @@ describe('Agent', () => {
 
         it('is optional', done => {
           expect(_profile.province).toBeUndefined();
-          Agent.create({..._profile, province: 'Alberta' }).then(obj => {
+          Account.create({..._profile, province: 'Alberta' }).then(obj => {
             expect(obj.province).toEqual('Alberta');
 
-            Agent.findOneAndUpdate({ publicAddress: obj.publicAddress }, { province: '' }, { new: true, runValidators: true }).then(obj => {
+            Account.findOneAndUpdate({ publicAddress: obj.publicAddress }, { province: '' }, { new: true, runValidators: true }).then(obj => {
               expect(obj.province).toEqual('');
 
               done();
@@ -354,7 +354,7 @@ describe('Agent', () => {
         });
 
          it('has 255 characters max', done => {
-          Agent.create({..._profile, province: 'a'.repeat(256) }).then(obj => {
+          Account.create({..._profile, province: 'a'.repeat(256) }).then(obj => {
             done.fail('This should not have saved');
           }).catch(error => {
             expect(Object.keys(error.errors).length).toEqual(1);
@@ -368,10 +368,10 @@ describe('Agent', () => {
 
         it('is optional', done => {
           expect(_profile.name).toBeUndefined();
-          Agent.create({..._profile, postalCode: 'T0X0X0' }).then(obj => {
+          Account.create({..._profile, postalCode: 'T0X0X0' }).then(obj => {
             expect(obj.postalCode).toEqual('T0X0X0');
 
-            Agent.findOneAndUpdate({ publicAddress: obj.publicAddress }, { postalCode: '' }, { new: true, runValidators: true }).then(obj => {
+            Account.findOneAndUpdate({ publicAddress: obj.publicAddress }, { postalCode: '' }, { new: true, runValidators: true }).then(obj => {
               expect(obj.postalCode).toEqual('');
 
               done();
@@ -384,7 +384,7 @@ describe('Agent', () => {
         });
 
          it('has 255 characters max', done => {
-          Agent.create({..._profile, postalCode: 'a'.repeat(256) }).then(obj => {
+          Account.create({..._profile, postalCode: 'a'.repeat(256) }).then(obj => {
             done.fail('This should not have saved');
           }).catch(error => {
             expect(Object.keys(error.errors).length).toEqual(1);
@@ -398,10 +398,10 @@ describe('Agent', () => {
 
         it('is optional', done => {
           expect(_profile.country).toBeUndefined();
-          Agent.create({..._profile, country: 'Canada' }).then(obj => {
+          Account.create({..._profile, country: 'Canada' }).then(obj => {
             expect(obj.country).toEqual('Canada');
 
-            Agent.findOneAndUpdate({ publicAddress: obj.publicAddress }, { country: '' }, { new: true, runValidators: true }).then(obj => {
+            Account.findOneAndUpdate({ publicAddress: obj.publicAddress }, { country: '' }, { new: true, runValidators: true }).then(obj => {
               expect(obj.country).toEqual('');
 
               done();
@@ -414,7 +414,7 @@ describe('Agent', () => {
         });
 
          it('has 255 characters max', done => {
-          Agent.create({..._profile, country: 'a'.repeat(256) }).then(obj => {
+          Account.create({..._profile, country: 'a'.repeat(256) }).then(obj => {
             done.fail('This should not have saved');
           }).catch(error => {
             expect(Object.keys(error.errors).length).toEqual(1);
@@ -428,10 +428,10 @@ describe('Agent', () => {
 
         it('is optional', done => {
           expect(_profile.phone).toBeUndefined();
-          Agent.create({..._profile, phone: '403-266-1234' }).then(obj => {
+          Account.create({..._profile, phone: '403-266-1234' }).then(obj => {
             expect(obj.phone).toEqual('403-266-1234');
 
-            Agent.findOneAndUpdate({ publicAddress: obj.publicAddress }, { phone: '' }, { new: true, runValidators: true }).then(obj => {
+            Account.findOneAndUpdate({ publicAddress: obj.publicAddress }, { phone: '' }, { new: true, runValidators: true }).then(obj => {
               expect(obj.phone).toEqual('');
 
               done();
@@ -444,7 +444,7 @@ describe('Agent', () => {
         });
 
         it('validates most common number formats', done => {
-          Agent.create({..._profile, phone: 'this is not a phone number' }).then(obj => {
+          Account.create({..._profile, phone: 'this is not a phone number' }).then(obj => {
             done.fail('This should not have saved');
           }).catch(error => {
             expect(Object.keys(error.errors).length).toEqual(1);
@@ -460,7 +460,7 @@ describe('Agent', () => {
 
     it('returns false if account publicAddress does not match that configured in `.env`', done => {
       expect(_profile.publicAddress).not.toEqual(process.env.PUBLIC_ADDRESS);
-      Agent.create(_profile).then(obj => {
+      Account.create(_profile).then(obj => {
 
         expect(obj.isSuper()).toBe(false);
         done();
@@ -470,7 +470,7 @@ describe('Agent', () => {
     });
 
     it('returns true if the account publicAddress is the same as that configured in `.env`', done => {
-      Agent.create({ publicAddress: process.env.PUBLIC_ADDRESS }).then(obj => {
+      Account.create({ publicAddress: process.env.PUBLIC_ADDRESS }).then(obj => {
 
         expect(obj.isSuper()).toBe(true);
         done();
@@ -480,7 +480,7 @@ describe('Agent', () => {
     });
 
     it('returns true if even if account publicAddress has irregular capitalization', done => {
-      Agent.create({ publicAddress: process.env.PUBLIC_ADDRESS.toUpperCase().replace(/^0X/, '0x') }).then(obj => {
+      Account.create({ publicAddress: process.env.PUBLIC_ADDRESS.toUpperCase().replace(/^0X/, '0x') }).then(obj => {
 
         expect(obj.isSuper()).toBe(true);
         done();

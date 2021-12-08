@@ -21,7 +21,7 @@ describe('Transaction', () => {
   });
 
   beforeEach(done => {
-    db.Agent.create(_account).then(obj => {
+    db.Account.create(_account).then(obj => {
       account = obj;
 
       transaction = new Transaction({ ..._tx, account: account });

@@ -63,15 +63,15 @@ const sessionConfig = {
 app.use(session(sessionConfig));
 
 /**
- * Check for existing session and attach `req.agent` if it exists
+ * Check for existing session and attach `req.account` if it exists
  */
 const models = require('./models');
 app.use((req, res, next) => {
-  if (!req.session.agent_id) {
+  if (!req.session.account_id) {
     return next();
   }
-  models.Agent.findById(req.session.agent_id).then(agent => {
-    req.agent = agent;
+  models.Account.findById(req.session.account_id).then(account => {
+    req.account = account;
     next();
   }).catch(err => {
     next(err);

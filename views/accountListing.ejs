@@ -18,7 +18,7 @@
       </p>
       <h1>Accounts</h1>
       <h4>
-        <%= !agents.length ? 'No one has logged in' : '' %>
+        <%= !accounts.length ? 'No one has logged in' : '' %>
       </h4>
       <p>
         <a href="/transaction">
@@ -37,13 +37,13 @@
             </tr>
           </thead>
           <tbody>
-            <% for (let agent of agents) { %>
+            <% for (let account of accounts) { %>
             <tr>
-              <td><%= agent.name ? agent.name : '' %></td>
-              <td><%= agent.updatedAt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) %></td>
+              <td><%= account.name ? account.name : '' %></td>
+              <td><%= account.updatedAt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) %></td>
               <td>
-                <a href="/account/<%= agent.publicAddress %>">
-                  <%= `${agent.publicAddress.slice(0, 4)}...${agent.publicAddress.slice(-3)}` %>
+                <a href="/account/<%= account.publicAddress %>">
+                  <%= `${account.publicAddress.slice(0, 4)}...${account.publicAddress.slice(-3)}` %>
                 </a>
               </td>
             </tr>

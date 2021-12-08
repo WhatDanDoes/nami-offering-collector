@@ -45,26 +45,26 @@ function getSigningMessage(nonce, done) {
 };
 
 /**
- * The agent has introduced himself, create and return nonce message for signing
+ * The account has introduced himself, create and return nonce message for signing
  */
 router.post('/introduce', (req, res) => {
-  models.Agent.findOne({ publicAddress: req.body.publicAddress }).then(agent => {
+  models.Account.findOne({ publicAddress: req.body.publicAddress }).then(account => {
 
-    if (agent) {
+    if (account) {
       const nonce = Math.floor(Math.random() * 1000000).toString();
-      agent.nonce = nonce;
-      agent.save({ validateBeforeSave: false }).then(agent => {
+      account.nonce = nonce;
+      account.save({ validateBeforeSave: false }).then(account => {
 
         getSigningMessage(nonce, (err, message) => {
           if (err) return res.status(500).json({ message: err.message });
 
           if (req.headers['accept'] === 'application/json') {
-            return res.status(201).json({ typedData: message, publicAddress: agent.publicAddress });
+            return res.status(201).json({ typedData: message, publicAddress: account.publicAddress });
           }
           // 2021-10-4 https://gist.github.com/danschumann/ae0b5bdcf2e1cd1f4b61
           // You'd think stringifying JSON for this purpose would be simple....
           res.status(201).render('sign', {
-            publicAddress: agent.publicAddress,
+            publicAddress: account.publicAddress,
             typedData: JSON.stringify(message).replace(/\\/g, '\\\\').replace(/"/g, '\\\"'),
             messages: req.flash(),
             messageText: message.message.message,
@@ -76,12 +76,12 @@ router.post('/introduce', (req, res) => {
       });
     }
     else {
-      models.Agent.create({ publicAddress: req.body.publicAddress }).then(agent => {
-        getSigningMessage(agent.nonce, (err, message) => {
+      models.Account.create({ publicAddress: req.body.publicAddress }).then(account => {
+        getSigningMessage(account.nonce, (err, message) => {
           if (err) return res.status(500).json({ message: err.message });
 
           if (req.headers['accept'] === 'application/json') {
-            return res.status(201).json({ typedData: message, publicAddress: agent.publicAddress });
+            return res.status(201).json({ typedData: message, publicAddress: account.publicAddress });
           }
           res.status(201).render('sign', {
             publicAddress: req.body.publicAddress,
@@ -121,14 +121,14 @@ router.post('/introduce', (req, res) => {
  *
  */
 router.post('/prove', (req, res) => {
-  models.Agent.findOne({ publicAddress: req.body.publicAddress }).then(agent => {
-    getSigningMessage(agent.nonce, (err, message) => {
+  models.Account.findOne({ publicAddress: req.body.publicAddress }).then(account => {
+    getSigningMessage(account.nonce, (err, message) => {
       if (err) return res.status(500).json({ message: err.message });
 
       const address = sigUtil.recoverTypedSignature({ data: message, sig: req.body.signature, version: 'V1' });
 
-      if (address.toLowerCase() === agent.publicAddress.toLowerCase()) {
-        req.session.agent_id = agent._id;
+      if (address.toLowerCase() === account.publicAddress.toLowerCase()) {
+        req.session.account_id = account._id;
         req.session.save(err => {
           if (err) return res.status(500).json({ message: 'Could not establish session' });
 
@@ -136,7 +136,7 @@ router.post('/prove', (req, res) => {
             return res.status(201).json({ message: 'Welcome!' });
           }
 
-          if (agent.isSuper()) {
+          if (account.isSuper()) {
             req.flash('success', 'Welcome, root!');
             return res.redirect('/transaction');
           }

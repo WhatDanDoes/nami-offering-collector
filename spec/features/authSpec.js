@@ -151,9 +151,9 @@ describe('auth', () => {
               });
           });
 
-          it('creates a new Agent record', done => {
-            models.Agent.find({}).then(agents => {
-              expect(agents.length).toEqual(0);
+          it('creates a new Account record', done => {
+            models.Account.find({}).then(accounts => {
+              expect(accounts.length).toEqual(0);
 
               request(app)
                 .post('/auth/introduce')
@@ -164,12 +164,12 @@ describe('auth', () => {
                 .end((err, res) => {
                   if (err) return done.fail(err);
 
-                  models.Agent.find({}).then(agents => {
-                    expect(agents.length).toEqual(1);
-                    expect(agents[0].publicAddress).toEqual(_publicAddress);
+                  models.Account.find({}).then(accounts => {
+                    expect(accounts.length).toEqual(1);
+                    expect(accounts[0].publicAddress).toEqual(_publicAddress);
 
-                    expect(typeof BigInt(agents[0].nonce)).toEqual('bigint');
-                    expect(agents[0].nonce).toEqual(res.body.typedData.message.nonce);
+                    expect(typeof BigInt(accounts[0].nonce)).toEqual('bigint');
+                    expect(accounts[0].nonce).toEqual(res.body.typedData.message.nonce);
                     done();
                   }).catch(err => {
                     done.fail(err);
@@ -201,9 +201,9 @@ describe('auth', () => {
               });
           });
 
-          it('creates a new Agent record', done => {
-            models.Agent.find({}).then(agents => {
-              expect(agents.length).toEqual(0);
+          it('creates a new Account record', done => {
+            models.Account.find({}).then(accounts => {
+              expect(accounts.length).toEqual(0);
 
               request(app)
                 .post('/auth/introduce')
@@ -213,11 +213,11 @@ describe('auth', () => {
                 .end((err, res) => {
                   if (err) return done.fail(err);
 
-                  models.Agent.find({}).then(agents => {
-                    expect(agents.length).toEqual(1);
-                    expect(agents[0].publicAddress).toEqual(_publicAddress);
+                  models.Account.find({}).then(accounts => {
+                    expect(accounts.length).toEqual(1);
+                    expect(accounts[0].publicAddress).toEqual(_publicAddress);
 
-                    expect(typeof BigInt(agents[0].nonce)).toEqual('bigint');
+                    expect(typeof BigInt(accounts[0].nonce)).toEqual('bigint');
                     done();
                   }).catch(err => {
                     done.fail(err);
@@ -267,11 +267,11 @@ describe('auth', () => {
               });
           });
 
-          it('sets a new nonce in existing Agent record', done => {
-            models.Agent.find({}).then(agents => {
-              expect(agents.length).toEqual(1);
-              expect(agents[0].publicAddress).toEqual(_publicAddress);
-              const nonce = agents[0].nonce;
+          it('sets a new nonce in existing Account record', done => {
+            models.Account.find({}).then(accounts => {
+              expect(accounts.length).toEqual(1);
+              expect(accounts[0].publicAddress).toEqual(_publicAddress);
+              const nonce = accounts[0].nonce;
 
               request(app)
                 .post('/auth/introduce')
@@ -282,12 +282,12 @@ describe('auth', () => {
                 .end((err, res) => {
                   if (err) return done.fail(err);
 
-                  models.Agent.find({}).then(agents => {
-                    expect(agents.length).toEqual(1);
-                    expect(agents[0].publicAddress).toEqual(_publicAddress);
-                    expect(typeof BigInt(agents[0].nonce)).toEqual('bigint');
-                    expect(agents[0].nonce).not.toEqual(nonce);
-                    expect(agents[0].nonce).toEqual(res.body.typedData.message.nonce);
+                  models.Account.find({}).then(accounts => {
+                    expect(accounts.length).toEqual(1);
+                    expect(accounts[0].publicAddress).toEqual(_publicAddress);
+                    expect(typeof BigInt(accounts[0].nonce)).toEqual('bigint');
+                    expect(accounts[0].nonce).not.toEqual(nonce);
+                    expect(accounts[0].nonce).toEqual(res.body.typedData.message.nonce);
 
                     done();
                   }).catch(err => {
@@ -320,11 +320,11 @@ describe('auth', () => {
               });
           });
 
-          it('sets a new nonce in existing Agent record', done => {
-            models.Agent.find({}).then(agents => {
-              expect(agents.length).toEqual(1);
-              expect(agents[0].publicAddress).toEqual(_publicAddress);
-              const nonce = agents[0].nonce;
+          it('sets a new nonce in existing Account record', done => {
+            models.Account.find({}).then(accounts => {
+              expect(accounts.length).toEqual(1);
+              expect(accounts[0].publicAddress).toEqual(_publicAddress);
+              const nonce = accounts[0].nonce;
 
               request(app)
                 .post('/auth/introduce')
@@ -334,12 +334,12 @@ describe('auth', () => {
                 .end((err, res) => {
                   if (err) return done.fail(err);
 
-                  models.Agent.find({}).then(agents => {
-                    expect(agents.length).toEqual(1);
-                    expect(agents[0].publicAddress).toEqual(_publicAddress);
-                    expect(typeof BigInt(agents[0].nonce)).toEqual('bigint');
-                    expect(agents[0].nonce).not.toEqual(nonce);
-                    //expect(agents[0].nonce).toEqual(res.body.typedData.message.nonce);
+                  models.Account.find({}).then(accounts => {
+                    expect(accounts.length).toEqual(1);
+                    expect(accounts[0].publicAddress).toEqual(_publicAddress);
+                    expect(typeof BigInt(accounts[0].nonce)).toEqual('bigint');
+                    expect(accounts[0].nonce).not.toEqual(nonce);
+                    //expect(accounts[0].nonce).toEqual(res.body.typedData.message.nonce);
 
                     done();
                   }).catch(err => {
@@ -398,12 +398,12 @@ describe('auth', () => {
 
             });
 
-            it('attaches agent_id to the session', done => {
+            it('attaches account_id to the session', done => {
               models.mongoose.connection.db.collection('sessions').find({}).toArray((err, sessions) => {
                 if (err) return done.fail(err);
 
                 expect(sessions.length).toEqual(1);
-                expect(JSON.parse(sessions[0].session).agent_id).toBeUndefined();
+                expect(JSON.parse(sessions[0].session).account_id).toBeUndefined();
 
                 session
                   .post('/auth/prove')
@@ -419,13 +419,13 @@ describe('auth', () => {
                       if (err) return done.fail(err);
 
                       expect(sessions.length).toEqual(1);
-                      expect(JSON.parse(sessions[0].session).agent_id).toBeDefined();
+                      expect(JSON.parse(sessions[0].session).account_id).toBeDefined();
 
-                      models.Agent.find({}).then(agents => {
-                        expect(agents.length).toEqual(1);
-                        expect(agents[0].publicAddress).toEqual(_publicAddress);
+                      models.Account.find({}).then(accounts => {
+                        expect(accounts.length).toEqual(1);
+                        expect(accounts[0].publicAddress).toEqual(_publicAddress);
 
-                        expect(JSON.parse(sessions[0].session).agent_id).toEqual(agents[0]._id.toString());
+                        expect(JSON.parse(sessions[0].session).account_id).toEqual(accounts[0]._id.toString());
 
                         done();
                       }).catch(err => {
@@ -462,12 +462,12 @@ describe('auth', () => {
                 });
             });
 
-            it('attaches agent_id to the session', done => {
+            it('attaches account_id to the session', done => {
               models.mongoose.connection.db.collection('sessions').find({}).toArray((err, sessions) => {
                 if (err) return done.fail(err);
 
                 expect(sessions.length).toEqual(1);
-                expect(JSON.parse(sessions[0].session).agent_id).toBeUndefined();
+                expect(JSON.parse(sessions[0].session).account_id).toBeUndefined();
 
                 session
                   .post('/auth/prove')
@@ -482,13 +482,13 @@ describe('auth', () => {
                       if (err) return done.fail(err);
 
                       expect(sessions.length).toEqual(1);
-                      expect(JSON.parse(sessions[0].session).agent_id).toBeDefined();
+                      expect(JSON.parse(sessions[0].session).account_id).toBeDefined();
 
-                      models.Agent.find({}).then(agents => {
-                        expect(agents.length).toEqual(1);
-                        expect(agents[0].publicAddress).toEqual(_publicAddress);
+                      models.Account.find({}).then(accounts => {
+                        expect(accounts.length).toEqual(1);
+                        expect(accounts[0].publicAddress).toEqual(_publicAddress);
 
-                        expect(JSON.parse(sessions[0].session).agent_id).toEqual(agents[0]._id.toString());
+                        expect(JSON.parse(sessions[0].session).account_id).toEqual(accounts[0]._id.toString());
 
                         done();
                       }).catch(err => {
@@ -645,9 +645,9 @@ describe('auth', () => {
               });
           });
 
-          it('does not create a new Agent record', done => {
-            models.Agent.find({}).then(agents => {
-              expect(agents.length).toEqual(0);
+          it('does not create a new Account record', done => {
+            models.Account.find({}).then(accounts => {
+              expect(accounts.length).toEqual(0);
 
               request(app)
                 .post('/auth/introduce')
@@ -659,8 +659,8 @@ describe('auth', () => {
                 .end((err, res) => {
                   if (err) return done.fail(err);
 
-                  models.Agent.find({}).then(agents => {
-                    expect(agents.length).toEqual(0);
+                  models.Account.find({}).then(accounts => {
+                    expect(accounts.length).toEqual(0);
 
                     done();
                   }).catch(err => {
@@ -703,9 +703,9 @@ describe('auth', () => {
               });
           });
 
-          it('does not create a new Agent record', done => {
-            models.Agent.find({}).then(agents => {
-              expect(agents.length).toEqual(0);
+          it('does not create a new Account record', done => {
+            models.Account.find({}).then(accounts => {
+              expect(accounts.length).toEqual(0);
 
               request(app)
                 .post('/auth/introduce')
@@ -714,8 +714,8 @@ describe('auth', () => {
                 .end((err, res) => {
                   if (err) return done.fail(err);
 
-                  models.Agent.find({}).then(agents => {
-                    expect(agents.length).toEqual(0);
+                  models.Account.find({}).then(accounts => {
+                    expect(accounts.length).toEqual(0);
 
                     done();
                   }).catch(err => {

@@ -5,7 +5,7 @@ module.exports = function(mongoose) {
   const ethereum_address = require('ethereum-address');
   const Schema = mongoose.Schema;
 
-  const AgentSchema = new Schema({
+  const AccountSchema = new Schema({
     publicAddress: {
       type: String,
       trim: true,
@@ -20,8 +20,8 @@ module.exports = function(mongoose) {
         },
         {
           validator: async function(val) {
-            const agentExists = await this.model('Agent').findOne({ publicAddress: new RegExp(val, 'i') });
-            return !agentExists;
+            const accountExists = await this.model('Account').findOne({ publicAddress: new RegExp(val, 'i') });
+            return !accountExists;
           },
           message: 'That public address is already registered'
         }
@@ -109,9 +109,9 @@ module.exports = function(mongoose) {
     collation: { locale: 'en', strength: 1 }
   });
 
-  AgentSchema.methods.isSuper = function() {
+  AccountSchema.methods.isSuper = function() {
     return process.env.PUBLIC_ADDRESS.toLowerCase() === this.publicAddress.toLowerCase();
   };
 
-  return AgentSchema;
+  return AccountSchema;
 }
