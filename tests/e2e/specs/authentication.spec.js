@@ -31,14 +31,14 @@ context('authentication', () => {
 
     context('first visit', () => {
       it('shows the home page', () => {
-        cy.get('header nav').contains('Metamask Offering Collector');
+        cy.get('header nav').contains('Nami Offering Collector');
       });
 
       /**
-       * If I can find the public address, that means I can connect Metamask
+       * If I can find the public address, that means I can connect Nami
        */
       it('displays the confirm-identity button', () => {
-        cy.get('#introduction-form-top').contains('Confirm your identity with Metamask');
+        cy.get('#introduction-form-top').contains('Confirm your identity with Nami');
         cy.get('#introduction-form-bottom').contains('Confirm your identity');
       });
 
@@ -58,10 +58,10 @@ context('authentication', () => {
      * operation is performed before the client updates.
      */
     //it('disables the connect button when identifying', () => {
-    //  cy.task('activateCustomNonceInMetamask');
+    //  cy.task('activateCustomNonceInNami');
     //  cy.visit('/');
     //  cy.get('#connect-metamask-button').should('not.be.disabled');
-    //  cy.contains('Confirm your identity with Metamask').click();
+    //  cy.contains('Confirm your identity with Nami').click();
     //  cy.get('#connect-metamask-button').should('be.disabled');
     //});
   });
@@ -69,13 +69,13 @@ context('authentication', () => {
   describe('log in', () => {
     beforeEach(() => {
       cy.visit('/');
-      cy.contains('Confirm your identity with Metamask').click();
+      cy.contains('Confirm your identity with Nami').click();
     });
 
     context('signature request rejected', () => {
 
       beforeEach(() => {
-        cy.rejectMetamaskSignatureRequest();
+        cy.rejectNamiSignatureRequest();
       });
 
       it('lands in the right place', () => {
@@ -83,7 +83,7 @@ context('authentication', () => {
       });
 
       it('displays the login link', () => {
-        cy.get('#introduction-form-top').contains('Confirm your identity with Metamask');
+        cy.get('#introduction-form-top').contains('Confirm your identity with Nami');
         cy.get('#introduction-form-bottom').contains('Confirm your identity');
       });
     });
@@ -91,7 +91,7 @@ context('authentication', () => {
     context('signature request accepted', () => {
 
       beforeEach(() => {
-        cy.confirmMetamaskSignatureRequest();
+        cy.confirmNamiSignatureRequest();
       });
 
       it('lands in the right place', () => {
@@ -99,7 +99,7 @@ context('authentication', () => {
       });
 
       it('does not display the login link', () => {
-        cy.get('#connect-metamask').contains('Disconnect Metamask');
+        cy.get('#connect-metamask').contains('Disconnect Nami');
       });
 
       it('displays a friendly message', () => {
@@ -108,18 +108,18 @@ context('authentication', () => {
 
       it('maintains authenticated state upon app navigation', () => {
         cy.get('#home-link').click();
-        cy.get('#connect-metamask').contains('Disconnect Metamask');
+        cy.get('#connect-metamask').contains('Disconnect Nami');
       });
 
       it('maintains authenticated state upon reload', () => {
         cy.reload();
-        cy.get('#connect-metamask').contains('Disconnect Metamask');
+        cy.get('#connect-metamask').contains('Disconnect Nami');
       });
 
       describe('logging out', () => {
         beforeEach(() => {
           cy.visit('/');
-          cy.contains('Disconnect Metamask').click();
+          cy.contains('Disconnect Nami').click();
         });
 
         it('lands in the right place', () => {
@@ -127,7 +127,7 @@ context('authentication', () => {
         });
 
         it('displays the login link', () => {
-          cy.get('#introduction-form-top').contains('Confirm your identity with Metamask');
+          cy.get('#introduction-form-top').contains('Confirm your identity with Nami');
           cy.get('#introduction-form-bottom').contains('Confirm your identity');
         });
       });

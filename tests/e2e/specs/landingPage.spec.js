@@ -10,7 +10,7 @@ describe('landing page', () => {
     beforeEach(() => {
       cy.visit('/');
 
-      cy.fetchMetamaskWalletAddress().then(async result => {
+      cy.fetchNamiWalletAddress().then(async result => {
         address = result;
       });
     });
@@ -20,14 +20,14 @@ describe('landing page', () => {
     });
 
     it('authenticates with the top introduction buttom', () => {
-      cy.get('form#introduction-form-top').contains('Confirm your identity with Metamask').click();
-      cy.confirmMetamaskSignatureRequest();
+      cy.get('form#introduction-form-top').contains('Confirm your identity with Nami').click();
+      cy.confirmNamiSignatureRequest();
       cy.contains('Welcome!');
     });
 
     it('authenticates with the bottom introduction buttom', () => {
       cy.get('form#introduction-form-bottom').contains('Confirm your identity').click();
-      cy.confirmMetamaskSignatureRequest();
+      cy.confirmNamiSignatureRequest();
       cy.contains('Welcome!');
     });
   });

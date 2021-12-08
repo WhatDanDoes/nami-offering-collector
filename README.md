@@ -1,5 +1,5 @@
 nami-offering-collector
-===========================
+=======================
 
 A proof-of-concept web application that allows accepting ETH for ministry and fundraising purposes via [Nami](https://namiwallet.io/) wallet.
 
@@ -12,7 +12,7 @@ cp .env.example .env
 
 # Testing
 
-This app has a lot of moving parts, which are reflected in the tests themselves. There are two seperate test sets found in the `spec/` and `tests/` directories. The former depend upon Jasmine and Puppeteer while the latter use [Synpress](https://github.com/Synthetixio/synpress), which is a rather brittle marriage between Cypress, Puppeteer, and Metamask. I hope to simplify and consolidate these tests as I further develop my personal blockchain development workflow.
+This app has a lot of moving parts, which are reflected in the tests themselves. There are two seperate test sets found in the `spec/` and `tests/` directories. The former depend upon Jasmine and Puppeteer while the latter use [Synpress](https://github.com/Synthetixio/synpress), which is a rather brittle marriage between Cypress, Puppeteer, and Nami. I hope to simplify and consolidate these tests as I further develop my personal blockchain development workflow.
 
 For both test sets, start a MongoDB development server:
 
@@ -22,7 +22,7 @@ docker run --name dev-mongo -p 27017:27017 -d mongo
 
 ## `spec/`
 
-These are the Jasmine/Puppeteer tests, which perform some basic behavioural tests for when Metamask is not installed or disabled. It also performs database unit tests.
+These are the Jasmine/Puppeteer tests, which perform some basic behavioural tests for when Nami is not installed or disabled. It also performs database unit tests.
 
 ```
 npm test
@@ -32,7 +32,7 @@ These tests load the app internally, so the server must not be running when thes
 
 ## `tests/`
 
-These are the tests that include Metamask (I can't help but wonder if I should update [Dappeteer](https://github.com/decentraland/dappeteer) myself, because Synpress feels a bit clunky).
+These are the tests that include Nami (I can't help but wonder if I should update [Dappeteer](https://github.com/decentraland/dappeteer) myself, because Synpress feels a bit clunky).
 
 Start the local test chain:
 
@@ -82,7 +82,7 @@ Had trouble with Synpress not reloading the wallet on each try. Had to manually 
 
 ## 2021-10-14
 
-It would be nice if Synpress reset the wallet on open. Even pre-setting the _secret words_ on chain and on Synpress result in nonce misalignment when sending a transaction. Reset Synpress Metamask wallet manually on each new test/dev session. _Resetting_ in this case is not the same as an account recovery. Go into settings on the test wallet and reset it from there.
+It would be nice if Synpress reset the wallet on open. Even pre-setting the _secret words_ on chain and on Synpress result in nonce misalignment when sending a transaction. Reset Synpress Nami wallet manually on each new test/dev session. _Resetting_ in this case is not the same as an account recovery. Go into settings on the test wallet and reset it from there.
 
 # Production
 

@@ -19,17 +19,17 @@
       </p>
       <form id="introduction-form-top" class="introduction-form" action="/auth/introduce" method="post" onsubmit="return handleIdentification(event)">
         <input type="hidden" name="publicAddress">
-        <button class="connect-metamask-button" type="submit">Confirm your identity with Metamask</button>
+        <button class="connect-metamask-button" type="submit">Confirm your identity with Nami</button>
       </form>
     </header>
     <main>
       <section>
         <aside>
           <img src="/images/metamask-fox.svg" height="70">
-          <h3>What is Metamask?</h2>
+          <h3>What is Nami?</h2>
           <p>
-            Metamask is a plugin for your browser, e.g., Chrome or Firefox.
-            You can also download an app for your phone. Metamask allows you to
+            Nami is a plugin for your browser, e.g., Chrome or Firefox.
+            You can also download an app for your phone. Nami allows you to
             connect securely with your Ethereum account. You don't need logins or
             email addresses to use this application. You simply verify
             account ownership by clicking the button above.
@@ -90,9 +90,9 @@
           <img src="/images/broke.png" height="70">
           <h3>Can I try this app without giving?</h2>
           <p>
-            Yes, please do. You'll need to learn a bit about <a>Metamask</a>.
+            Yes, please do. You'll need to learn a bit about <a>Nami</a>.
             Don't worry, it's easy. This app will try to teach a bit too. After
-            you've installed Metamask,
+            you've installed Nami,
             <form id="introduction-form-bottom" action="/auth/introduce" method="post" onsubmit="return handleIdentification(event)">
               <input type="hidden" name="publicAddress">
               <button class="connect-metamask-button" type="submit">Confirm your identity</button>
@@ -136,7 +136,7 @@
           };
         }
         else {
-          document.getElementById('connect-metamask').innerHTML = '<br><mark>Install the <a href="https://metamask.io/" target="_blank">Metamask↗</a> browser plugin</mark>';
+          document.getElementById('connect-metamask').innerHTML = '<br><mark>Install the <a href="https://metamask.io/" target="_blank">Nami↗</a> browser plugin</mark>';
         }
       });
     </script>

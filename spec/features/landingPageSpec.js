@@ -33,7 +33,7 @@ describe('landing page', () => {
       const el = await page.$('header #connect-metamask');
 
       const warning = await el.evaluate(e => e.textContent);
-      expect(warning).toEqual('Install the Metamask↗ browser plugin');
+      expect(warning).toEqual('Install the Nami↗ browser plugin');
     });
 
     it('does not display a .messages element', async () => {
@@ -55,7 +55,7 @@ describe('landing page', () => {
 //    beforeEach(async () => {
 //
 //      browser = await dappeteer.launch(puppeteer)
-//      metamask = await dappeteer.getMetamask(browser)
+//      metamask = await dappeteer.getNami(browser)
 //
 //      await metamask.createAccount();
 //      metamask.addNetwork('127.0.0.1:8545');
@@ -73,7 +73,7 @@ describe('landing page', () => {
 //    it('displays a message to authenticate with metamask', async () => {
 //      const el = await page.$('header nav ul li');
 //      const warning = await el.evaluate(e => e.textContent);
-//      expect(warning).toEqual('Authenticate with Metamask');
+//      expect(warning).toEqual('Authenticate with Nami');
 //    });
 //  });
 });

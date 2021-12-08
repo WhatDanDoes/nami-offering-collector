@@ -7,8 +7,8 @@ context('transaction view', () => {
   beforeEach(() => {
     cy.task('dropDatabase');
     cy.visit('/');
-    cy.contains('Confirm your identity with Metamask').click();
-    cy.confirmMetamaskSignatureRequest();
+    cy.contains('Confirm your identity with Nami').click();
+    cy.confirmNamiSignatureRequest();
   });
 
   it('displays links to account and donate pages', () => {
@@ -34,7 +34,7 @@ context('transaction view', () => {
       cy.visit('/');
       cy.get('#eth-value-input').type('1');
       cy.get('form#send-eth #send-eth-button[type="submit"]').click();
-      cy.confirmMetamaskTransaction();
+      cy.confirmNamiTransaction();
     });
 
     it('shows the transaction details in a list', () => {
@@ -48,17 +48,17 @@ context('transaction view', () => {
       cy.visit('/');
       cy.get('#eth-value-input').type('1');
       cy.get('form#send-eth #send-eth-button[type="submit"]').click();
-      cy.confirmMetamaskTransaction();
+      cy.confirmNamiTransaction();
 
       cy.visit('/');
       cy.get('#eth-value-input').type('.1');
       cy.get('form#send-eth #send-eth-button[type="submit"]').click();
-      cy.confirmMetamaskTransaction();
+      cy.confirmNamiTransaction();
 
       cy.visit('/');
       cy.get('#eth-value-input').type('0.01');
       cy.get('form#send-eth #send-eth-button[type="submit"]').click();
-      cy.confirmMetamaskTransaction();
+      cy.confirmNamiTransaction();
     });
 
     it('shows the transaction details ordered by createdAt', () => {

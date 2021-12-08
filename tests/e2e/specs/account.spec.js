@@ -7,8 +7,8 @@ context('account managment', () => {
   beforeEach(() => {
     cy.task('dropDatabase');
     cy.visit('/');
-    cy.contains('Confirm your identity with Metamask').click();
-    cy.confirmMetamaskSignatureRequest();
+    cy.contains('Confirm your identity with Nami').click();
+    cy.confirmNamiSignatureRequest();
     cy.get('a[href="/account"]:first-child').click();
   });
 
@@ -20,7 +20,7 @@ context('account managment', () => {
   describe('Account Details form', () => {
 
     it('displays all the expected contact form components', () => {
-      cy.fetchMetamaskWalletAddress().then(address => {
+      cy.fetchNamiWalletAddress().then(address => {
         // Form action
         cy.get('form#account-details').should('have.attr', 'action', '/account?_method=PUT');
         cy.get('form#account-details').should('have.attr', 'method', 'post');
@@ -131,7 +131,7 @@ context('account managment', () => {
       });
 
       it('shows an error when all input is malformed', () => {
-        cy.fetchMetamaskWalletAddress().then(address => {
+        cy.fetchNamiWalletAddress().then(address => {
           // Public address
           cy.get('form#account-details input#address-dummy').should('have.value', address.toLowerCase());
 

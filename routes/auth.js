@@ -17,7 +17,7 @@ function getSigningMessage(nonce, done) {
         // Defining the chain aka Rinkeby testnet or Ethereum Main Net
         //chainId: 1337,
         // Give a user friendly name to the specific contract you are signing for.
-        //name: 'Metamask Offering Collector',
+        //name: 'Nami Offering Collector',
         // If name isn't enough add verifying contract to make sure you are establishing contracts with the proper entity
         //verifyingContract: '0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC',
         // Just let's you know the latest version. Definitely make sure the field name is correct.
@@ -102,7 +102,7 @@ router.post('/introduce', (req, res) => {
         }
         else {
           if (err.errors['publicAddress']) {
-            req.flash('error', 'I don\'t think you have Metamask installed');
+            req.flash('error', 'I don\'t think you have Nami installed');
           }
           else {
             req.flash('error', err.message);

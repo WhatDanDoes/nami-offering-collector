@@ -7,12 +7,12 @@ context('transfer eth', () => {
   beforeEach(() => {
     cy.task('dropDatabase');
     cy.visit('/');
-    cy.contains('Confirm your identity with Metamask').click();
-    cy.confirmMetamaskSignatureRequest();
+    cy.contains('Confirm your identity with Nami').click();
+    cy.confirmNamiSignatureRequest();
   });
 
   it('displays the connected wallet', () => {
-    cy.fetchMetamaskWalletAddress().then(address => {
+    cy.fetchNamiWalletAddress().then(address => {
       cy.get('body header h1').contains('You are connected with:');
       cy.get('body header h4 a[href="/account"]').contains(address.toLowerCase());
     });
@@ -28,7 +28,7 @@ context('transfer eth', () => {
     let address, balance, serverAddress;
     beforeEach(() => {
 
-      cy.fetchMetamaskWalletAddress().then(async result => {
+      cy.fetchNamiWalletAddress().then(async result => {
         address = result;
         cy.task('getBalance', address).then(result => {
           balance = result;
@@ -128,7 +128,7 @@ context('transfer eth', () => {
            *
            * `ganache` doesn't really let you reset the state of the chain
            * on every test. Even if it did, `synpress` does not reset the
-           * that state of the Metamask wallet (though there is a task that
+           * that state of the Nami wallet (though there is a task that
            * does this). In any case, this test is designed so that there
            * can be a bunch of runs before the relevant accounts are depleted
            * of eth.
@@ -140,7 +140,7 @@ context('transfer eth', () => {
               //expect(balance).to.equal('0.0');
               cy.get('#eth-value-input').type('1');
               cy.get('form#send-eth #send-eth-button[type="submit"]').click();
-              cy.confirmMetamaskTransaction();
+              cy.confirmNamiTransaction();
               cy.task('getBalance', 'CONFIGURED').then(result => {
                 // As above...
                 //expect(balance).to.equal('1.0');
@@ -152,14 +152,14 @@ context('transfer eth', () => {
           it('displays a friendly message', () => {
             cy.get('#eth-value-input').type('1');
             cy.get('form#send-eth #send-eth-button[type="submit"]').click();
-            cy.confirmMetamaskTransaction();
+            cy.confirmNamiTransaction();
             cy.get('.alert.alert-success').contains('Transaction recorded. Update your account details to receive a tax receipt.');
           });
 
           it('lands in the right place', () => {
             cy.get('#eth-value-input').type('1');
             cy.get('form#send-eth #send-eth-button[type="submit"]').click();
-            cy.confirmMetamaskTransaction();
+            cy.confirmNamiTransaction();
             cy.url().should('include', '/transaction');
           });
         });
