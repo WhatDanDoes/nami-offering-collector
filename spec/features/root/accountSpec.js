@@ -6,7 +6,7 @@ const request = require('supertest-session');
 const app = require('../../../app');
 const models = require('../../../models');
 
-fdescribe('root account management', () => {
+describe('root account management', () => {
 
   jasmine.DEFAULT_TIMEOUT_INTERVAL = 10000;
 

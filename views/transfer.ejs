@@ -19,7 +19,7 @@
       <h1>You are connected with:</h1>
       <h4>
         <a href="/account">
-          <%= agent.publicAddress %>
+          <%= account.publicAddress %>
         </a>
       </h4>
       <p>
@@ -31,7 +31,7 @@
           <i id="transaction-button">History</i>
         </a>
         <a href="/account">
-          <i id="account-button">Account<%= agent.isSuper() ? 's' : '' %></i>
+          <i id="account-button">Account<%= account.isSuper() ? 's' : '' %></i>
         </a>
       </p>
     </header>
@@ -43,7 +43,7 @@
             <h3 id="wallet-balance"></h3>
           </header>
           <label for="from">From your address:</label>
-          <input class="address-input send-eth-input" type="text" name="from" value="<%= agent.publicAddress %>" disabled>
+          <input class="address-input send-eth-input" type="text" name="from" value="<%= account.publicAddress %>" disabled>
           <label for="to">To my address:</label>
           <input class="address-input send-eth-input" type="text" name="to" value="<%= process.env.PUBLIC_ADDRESS %>" disabled>
           <br>
@@ -89,7 +89,7 @@
             console.log('Ethereum successfully detected!');
             // Access the decentralized web!
 
-            ethereum.request({ method: 'eth_getBalance', params: ['<%= agent.publicAddress %>', 'latest'] }).then(result => {
+            ethereum.request({ method: 'eth_getBalance', params: ['<%= account.publicAddress %>', 'latest'] }).then(result => {
               balance = result;
               console.log('Balance');
               console.log(ethers.utils.formatEther(balance));
@@ -127,7 +127,7 @@
 
           const transactionParams = {
             to: '<%= process.env.PUBLIC_ADDRESS %>',
-            from: '<%= agent.publicAddress %>',
+            from: '<%= account.publicAddress %>',
             value: value.toHexString(),
           };
 
