@@ -20,6 +20,14 @@ For both test sets, start a MongoDB development server:
 docker run --name dev-mongo -p 27017:27017 -d mongo
 ```
 
+Local Cardano environment node:
+
+```
+NETWORK=testnet docker-compose -f docker-compose.test.yml up
+
+#docker run -v /data -e NETWORK=localhost inputoutput/cardano-node
+```
+
 ## `spec/`
 
 These are the Jasmine/Puppeteer tests, which perform some basic behavioural tests for when Nami is not installed or disabled. It also performs database unit tests.
