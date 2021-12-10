@@ -23,11 +23,12 @@
     "method-override": "^3.0.0",
     "mongoose": "^6.0.7",
     "morgan": "~1.9.1",
-    "multicoin-address-validator": "^0.5.6",
+    "multicoin-address-validator": "git@github.com:krgizdov/multicoin-address-validator.git",
     "validator": "^13.6.0"
   },
   "devDependencies": {
     "@synthetixio/synpress": "^0.9.25-beta.12",
+    "cardano-wallet-js": "^1.2.3",
     "cheerio": "*",
     "ganache-cli": "^6.12.2",
     "jasmine": "^3.9.0",
