@@ -6,14 +6,21 @@ const ethUtil = require('ethereumjs-util');
 const request = require('supertest-session');
 const app = require('../../app');
 const models = require('../../models');
+const cardanoUtils = require('cardano-crypto.js')
 
 describe('auth', () => {
 
-  jasmine.DEFAULT_TIMEOUT_INTERVAL = 10000;
+  let parentWalletSecret, parentWalletPublic, signingMessage;
 
-  // These were provided by ganache-cli
-  const _publicAddress = '0x034F8c5c8381Bf45511d071875333Eba143Bd10e';
-  const _privateAddress = '0xb30b64470fe770bbe8e9ff6478e550ce99e7f38d8e07ec2dbe27e8ff45742cf6';
+  beforeAll(async () => {
+
+    const mnemonic = 'logic easily waste eager injury oval sentence wine bomb embrace gossip supreme'
+    parentWalletSecret = await cardanoUtils.mnemonicToRootKeypair(mnemonic, 1)
+    let parentWalletPublicExt = cardanoUtils.bech32.encode('addr_test', parentWalletSecret.slice(64, 128));
+    parentWalletPublic = cardanoUtils.bech32.encode('addr_test', parentWalletSecret.slice(64, 96));
+
+    signingMessage = fs.readFileSync('./message.txt', 'utf8');
+  });
 
   afterEach(done => {
     models.mongoose.connection.db.dropDatabase().then((err, result) => {
@@ -25,17 +32,12 @@ describe('auth', () => {
 
   describe('POST /introduce', () => {
 
-    let signingMessage;
-    beforeEach(async () => {
-      signingMessage = fs.readFileSync('./message.txt', 'utf8');
-    });
-
     it('starts a session on API access', done => {
       const session = request(app);
       expect(session.cookies.length).toEqual(0);
       session
         .post('/auth/introduce')
-        .send({ publicAddress: _publicAddress })
+        .send({ publicAddress: parentWalletPublic })
         .set('Accept', 'application/json')
         .expect('Content-Type', /json/)
         .expect(201)
@@ -75,7 +77,7 @@ describe('auth', () => {
       expect(session.cookies.length).toEqual(0);
       session
         .post('/auth/introduce')
-        .send({ publicAddress: _publicAddress })
+        .send({ publicAddress: parentWalletPublic })
         .set('Accept', 'text/html')
         .expect('Content-Type', /html/)
         .expect(201)
@@ -115,7 +117,7 @@ describe('auth', () => {
       const session = request(app);
       session
         .post('/auth/introduce')
-        .send({ publicAddress: _publicAddress })
+        .send({ publicAddress: parentWalletPublic })
         .set('Accept', 'application/json')
         .expect('Content-Type', /json/)
         .expect(201)
@@ -136,16 +138,16 @@ describe('auth', () => {
           it('returns a public address and message with nonce for signing', done => {
             request(app)
               .post('/auth/introduce')
-              .send({ publicAddress: _publicAddress })
+              .send({ publicAddress: parentWalletPublic })
               .set('Accept', 'application/json')
               .expect('Content-Type', /json/)
               .expect(201)
               .end((err, res) => {
                 if (err) return done.fail(err);
                 expect(Object.keys(res.body.typedData.message).length).toEqual(2);
-                expect(res.body.typedData.message.message).toEqual(signingMessage);
+                expect(res.body.typedData.message.message).toEqual(signingMessage.toString('utf8'));
                 expect(typeof BigInt(res.body.typedData.message.nonce)).toEqual('bigint');
-                expect(res.body.publicAddress).toEqual(_publicAddress);
+                expect(res.body.publicAddress).toEqual(parentWalletPublic);
 
                 done();
               });
@@ -157,7 +159,7 @@ describe('auth', () => {
 
               request(app)
                 .post('/auth/introduce')
-                .send({ publicAddress: _publicAddress })
+                .send({ publicAddress: parentWalletPublic })
                 .set('Accept', 'application/json')
                 .expect('Content-Type', /json/)
                 .expect(201)
@@ -166,7 +168,7 @@ describe('auth', () => {
 
                   models.Account.find({}).then(accounts => {
                     expect(accounts.length).toEqual(1);
-                    expect(accounts[0].publicAddress).toEqual(_publicAddress);
+                    expect(accounts[0].publicAddress).toEqual(parentWalletPublic);
 
                     expect(typeof BigInt(accounts[0].nonce)).toEqual('bigint');
                     expect(accounts[0].nonce).toEqual(res.body.typedData.message.nonce);
@@ -187,14 +189,14 @@ describe('auth', () => {
           it('renders an instruction page with form-embedded public address', done => {
             request(app)
               .post('/auth/introduce')
-              .send({ publicAddress: _publicAddress })
+              .send({ publicAddress: parentWalletPublic })
               .expect('Content-Type', /html/)
               .expect(201)
               .end((err, res) => {
                 if (err) return done.fail(err);
 
                 const $ = cheerio.load(res.text);
-                expect($('#signed-message-form input[name="publicAddress"]').attr('value')).toContain(_publicAddress);
+                expect($('#signed-message-form input[name="publicAddress"]').attr('value')).toContain(parentWalletPublic);
                 expect($('#signed-message-form input[name="signature"]').attr('value')).toBeUndefined();
 
                 done();
@@ -207,7 +209,7 @@ describe('auth', () => {
 
               request(app)
                 .post('/auth/introduce')
-                .send({ publicAddress: _publicAddress })
+                .send({ publicAddress: parentWalletPublic })
                 .expect('Content-Type', /html/)
                 .expect(201)
                 .end((err, res) => {
@@ -215,7 +217,7 @@ describe('auth', () => {
 
                   models.Account.find({}).then(accounts => {
                     expect(accounts.length).toEqual(1);
-                    expect(accounts[0].publicAddress).toEqual(_publicAddress);
+                    expect(accounts[0].publicAddress).toEqual(parentWalletPublic);
 
                     expect(typeof BigInt(accounts[0].nonce)).toEqual('bigint');
                     done();
@@ -236,7 +238,7 @@ describe('auth', () => {
         beforeEach(done => {
           request(app)
             .post('/auth/introduce')
-            .send({ publicAddress: _publicAddress })
+            .send({ publicAddress: parentWalletPublic })
             .set('Accept', 'application/json')
             .expect('Content-Type', /json/)
             .expect(201)
@@ -251,7 +253,7 @@ describe('auth', () => {
           it('returns a public address and message with nonce for signing', done => {
             request(app)
               .post('/auth/introduce')
-              .send({ publicAddress: _publicAddress })
+              .send({ publicAddress: parentWalletPublic })
               .set('Accept', 'application/json')
               .expect('Content-Type', /json/)
               .expect(201)
@@ -259,9 +261,9 @@ describe('auth', () => {
                 if (err) return done.fail(err);
 
                 expect(Object.keys(res.body.typedData.message).length).toEqual(2);
-                expect(res.body.typedData.message.message).toEqual(signingMessage);
+                expect(res.body.typedData.message.message).toEqual(signingMessage.toString('utf8'));
                 expect(typeof BigInt(res.body.typedData.message.nonce)).toEqual('bigint');
-                expect(res.body.publicAddress).toEqual(_publicAddress);
+                expect(res.body.publicAddress).toEqual(parentWalletPublic);
 
                 done();
               });
@@ -270,12 +272,12 @@ describe('auth', () => {
           it('sets a new nonce in existing Account record', done => {
             models.Account.find({}).then(accounts => {
               expect(accounts.length).toEqual(1);
-              expect(accounts[0].publicAddress).toEqual(_publicAddress);
+              expect(accounts[0].publicAddress).toEqual(parentWalletPublic);
               const nonce = accounts[0].nonce;
 
               request(app)
                 .post('/auth/introduce')
-                .send({ publicAddress: _publicAddress })
+                .send({ publicAddress: parentWalletPublic })
                 .set('Accept', 'application/json')
                 .expect('Content-Type', /json/)
                 .expect(201)
@@ -284,7 +286,7 @@ describe('auth', () => {
 
                   models.Account.find({}).then(accounts => {
                     expect(accounts.length).toEqual(1);
-                    expect(accounts[0].publicAddress).toEqual(_publicAddress);
+                    expect(accounts[0].publicAddress).toEqual(parentWalletPublic);
                     expect(typeof BigInt(accounts[0].nonce)).toEqual('bigint');
                     expect(accounts[0].nonce).not.toEqual(nonce);
                     expect(accounts[0].nonce).toEqual(res.body.typedData.message.nonce);
@@ -306,14 +308,14 @@ describe('auth', () => {
           it('renders an instruction page with form-embedded public address', done => {
             request(app)
               .post('/auth/introduce')
-              .send({ publicAddress: _publicAddress })
+              .send({ publicAddress: parentWalletPublic })
               .expect('Content-Type', /html/)
               .expect(201)
               .end((err, res) => {
                 if (err) return done.fail(err);
 
                 const $ = cheerio.load(res.text);
-                expect($('#signed-message-form input[name="publicAddress"]').attr('value')).toContain(_publicAddress);
+                expect($('#signed-message-form input[name="publicAddress"]').attr('value')).toContain(parentWalletPublic);
                 expect($('#signed-message-form input[name="signature"]').attr('value')).toBeUndefined();
 
                 done();
@@ -323,12 +325,12 @@ describe('auth', () => {
           it('sets a new nonce in existing Account record', done => {
             models.Account.find({}).then(accounts => {
               expect(accounts.length).toEqual(1);
-              expect(accounts[0].publicAddress).toEqual(_publicAddress);
+              expect(accounts[0].publicAddress).toEqual(parentWalletPublic);
               const nonce = accounts[0].nonce;
 
               request(app)
                 .post('/auth/introduce')
-                .send({ publicAddress: _publicAddress })
+                .send({ publicAddress: parentWalletPublic })
                 .expect('Content-Type', /html/)
                 .expect(201)
                 .end((err, res) => {
@@ -336,7 +338,7 @@ describe('auth', () => {
 
                   models.Account.find({}).then(accounts => {
                     expect(accounts.length).toEqual(1);
-                    expect(accounts[0].publicAddress).toEqual(_publicAddress);
+                    expect(accounts[0].publicAddress).toEqual(parentWalletPublic);
                     expect(typeof BigInt(accounts[0].nonce)).toEqual('bigint');
                     expect(accounts[0].nonce).not.toEqual(nonce);
                     //expect(accounts[0].nonce).toEqual(res.body.typedData.message.nonce);
@@ -362,13 +364,14 @@ describe('auth', () => {
           session = request(app);
           session
             .post('/auth/introduce')
-            .send({ publicAddress: _publicAddress })
+            .send({ publicAddress: parentWalletPublic })
             .set('Accept', 'application/json')
             .expect('Content-Type', /json/)
             .expect(201)
             .end((err, res) => {
               if (err) return done.fail(err);
               ({ publicAddress, typedData } = res.body);
+
               done();
             });
         });
@@ -376,8 +379,10 @@ describe('auth', () => {
         describe('success', () => {
 
           let signed;
-          beforeEach(() => {
-            signed = sigUtil.signTypedData(ethUtil.toBuffer(_privateAddress), {privateKey: _privateAddress, data: typedData, version: 'V3' });
+          beforeEach(async () => {
+            const typedDataStr =  typedData.message.nonce;
+            let signature = cardanoUtils.sign(Buffer.from(typedDataStr, 'utf8'), parentWalletSecret);
+            signed = cardanoUtils.sign(Buffer.from(typedDataStr, 'utf8'), parentWalletSecret).toString('hex');
           });
 
           describe('api', () => {
@@ -385,7 +390,7 @@ describe('auth', () => {
             it('returns 201 status with message', done => {
               session
                 .post('/auth/prove')
-                .send({ publicAddress: _publicAddress, signature: signed })
+                .send({ publicAddress: parentWalletPublic, signature: signed })
                 .set('Content-Type', 'application/json')
                 .set('Accept', 'application/json')
                 .expect('Content-Type', /json/)
@@ -407,7 +412,7 @@ describe('auth', () => {
 
                 session
                   .post('/auth/prove')
-                  .send({ publicAddress: _publicAddress, signature: signed })
+                  .send({ publicAddress: parentWalletPublic, signature: signed })
                   .set('Accept', 'application/json')
                   .set('Content-Type', 'application/json')
                   .expect('Content-Type', /json/)
@@ -423,7 +428,7 @@ describe('auth', () => {
 
                       models.Account.find({}).then(accounts => {
                         expect(accounts.length).toEqual(1);
-                        expect(accounts[0].publicAddress).toEqual(_publicAddress);
+                        expect(accounts[0].publicAddress).toEqual(parentWalletPublic);
 
                         expect(JSON.parse(sessions[0].session).account_id).toEqual(accounts[0]._id.toString());
 
@@ -443,7 +448,7 @@ describe('auth', () => {
               session
                 .post('/auth/prove')
                 .set('Content-Type', 'application/json')
-                .send({ publicAddress: _publicAddress, signature: signed })
+                .send({ publicAddress: parentWalletPublic, signature: signed })
                 .expect(302)
                 .expect('Location', /\/$/)
                 .end((err, res) => {
@@ -472,7 +477,7 @@ describe('auth', () => {
                 session
                   .post('/auth/prove')
                   .set('Accept', 'text/html')
-                  .send({ publicAddress: _publicAddress, signature: signed })
+                  .send({ publicAddress: parentWalletPublic, signature: signed })
                   .expect(302)
                   .expect('Location', /\/$/)
                   .end((err, res) => {
@@ -486,7 +491,7 @@ describe('auth', () => {
 
                       models.Account.find({}).then(accounts => {
                         expect(accounts.length).toEqual(1);
-                        expect(accounts[0].publicAddress).toEqual(_publicAddress);
+                        expect(accounts[0].publicAddress).toEqual(parentWalletPublic);
 
                         expect(JSON.parse(sessions[0].session).account_id).toEqual(accounts[0]._id.toString());
 
@@ -507,10 +512,13 @@ describe('auth', () => {
 
             let signed;
 
-            beforeEach(() => {
-              // Bad private key obtained from ganache-cli
-              signed = sigUtil.signTypedData(ethUtil.toBuffer('0x0fb6b6f3f49a79f5b49bd71386cc5016762a07340d903a5590a9433253779d8b'),
-                { privateKey: '0x0fb6b6f3f49a79f5b49bd71386cc5016762a07340d903a5590a9433253779d8b', data: typedData, version: 'V3' });
+            beforeEach(async () => {
+              const mnemonic = 'crowd captain hungry tray powder motor coast oppose month shed parent mystery torch resemble index';
+              let someOtherSecret = await cardanoUtils.mnemonicToRootKeypair(mnemonic, 1)
+
+              const typedDataStr =  typedData.message.nonce;
+              const signature = cardanoUtils.sign(Buffer.from(typedDataStr, 'utf8'), someOtherSecret);
+              signed = cardanoUtils.sign(Buffer.from(typedDataStr, 'utf8'), someOtherSecret).toString('hex');
             });
 
             describe('api', () => {
@@ -518,7 +526,7 @@ describe('auth', () => {
               it('returns 401 status with message', done => {
                 request(app)
                   .post('/auth/prove')
-                  .send({ publicAddress: _publicAddress, signature: signed })
+                  .send({ publicAddress: parentWalletPublic, signature: signed })
                   .set('Content-Type', 'application/json')
                   .set('Accept', 'application/json')
                   .expect('Content-Type', /json/)
@@ -538,7 +546,7 @@ describe('auth', () => {
                 session = request(app);
                 session
                   .post('/auth/prove')
-                  .send({ publicAddress: _publicAddress, signature: signed })
+                  .send({ publicAddress: parentWalletPublic, signature: signed })
                   .expect(302)
                   .end((err, res) => {
                     if (err) return done.fail(err);
@@ -563,17 +571,14 @@ describe('auth', () => {
             describe('api', () => {
 
               it('returns 401 status with message', done => {
-                typedData.message.nonce = Math.floor(Math.random() * 1000000).toString();
-
-                signed = sigUtil.signTypedData(ethUtil.toBuffer(_privateAddress), {
-                  privateKey: _privateAddress,
-                  data: typedData,
-                  version: 'V3'
-                });
+                const typedDataStr = Math.floor(Math.random() * 1000000).toString();
+                const signature = cardanoUtils.sign(Buffer.from(typedDataStr, 'utf8'), parentWalletSecret);
+                signed = cardanoUtils.sign(Buffer.from(typedDataStr, 'utf8'), parentWalletSecret).toString('hex');
 
                 request(app)
                   .post('/auth/prove')
-                  .send({ publicAddress: _publicAddress, signature: signed })
+                  //.send({ publicAddress: parentWalletPublic, signature: signed })
+                  .send({ publicAddress: parentWalletPublic, signature: signed })
                   .set('Content-Type', 'application/json')
                   .set('Accept', 'application/json')
                   .expect('Content-Type', /json/)
@@ -589,19 +594,14 @@ describe('auth', () => {
             describe('browser', () => {
 
               it('returns 302 status with message', done => {
-                typedData.message.nonce = Math.floor(Math.random() * 1000000).toString();
-
-                signed = sigUtil.signTypedData(ethUtil.toBuffer(_privateAddress), {
-                  privateKey: _privateAddress,
-                  data: typedData,
-                  version: 'V3'
-                });
-
+                const typedDataStr = Math.floor(Math.random() * 1000000).toString();
+                const signature = cardanoUtils.sign(Buffer.from(typedDataStr, 'utf8'), parentWalletSecret);
+                signed = cardanoUtils.sign(Buffer.from(typedDataStr, 'utf8'), parentWalletSecret).toString('hex');
 
                 session = request(app)
                 session
                   .post('/auth/prove')
-                  .send({ publicAddress: _publicAddress, signature: signed })
+                  .send({ publicAddress: parentWalletPublic, signature: signed })
                   .expect(302)
                   .end((err, res) => {
                     if (err) return done.fail(err);
@@ -739,7 +739,7 @@ describe('auth', () => {
       session = request(app);
       session
         .post('/auth/introduce')
-        .send({ publicAddress: _publicAddress })
+        .send({ publicAddress: parentWalletPublic })
         .set('Accept', 'application/json')
         .expect('Content-Type', /json/)
         .expect(201)

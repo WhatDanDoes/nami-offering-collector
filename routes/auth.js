@@ -2,8 +2,7 @@ const fs = require('fs');
 const express = require('express');
 const router = express.Router();
 const models = require('../models');
-
-const sigUtil = require('eth-sig-util');
+const cardanoUtils = require('cardano-crypto.js')
 
 /**
  * Ensures the message stays the same on signature verification
@@ -125,9 +124,13 @@ router.post('/prove', (req, res) => {
     getSigningMessage(account.nonce, (err, message) => {
       if (err) return res.status(500).json({ message: err.message });
 
-      const address = sigUtil.recoverTypedSignature({ data: message, sig: req.body.signature, version: 'V1' });
+      const msgBuf = Buffer.from(message.message.nonce, 'utf8');
 
-      if (address.toLowerCase() === account.publicAddress.toLowerCase()) {
+      const publicBuf = cardanoUtils.bech32.decode(req.body.publicAddress).data;
+      const sigBuf = Buffer.from(req.body.signature, 'hex');
+      const signatureVerified = cardanoUtils.verify(msgBuf, publicBuf, sigBuf);
+
+      if (signatureVerified) {
         req.session.account_id = account._id;
         req.session.save(err => {
           if (err) return res.status(500).json({ message: 'Could not establish session' });
