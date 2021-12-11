@@ -7,9 +7,7 @@ const models = require('../../models');
 const cardanoUtils = require('cardano-crypto.js');
 const setupWallet = require('../support/setupWallet');
 
-
-
-fdescribe('auth', () => {
+describe('auth', () => {
 
   let parentWalletSecret, parentWalletPublic, signingMessage;
 
