@@ -5,14 +5,16 @@ const ethers = require('ethers');
 describe('Transaction', () => {
 
   const _tx = {
-    // Swiped from `ganache`
+    // 2021-12-9
+    // This was originally swiped from `ganache` for the Ethereum Metamask
+    // offering collector. It might not matter yet, but this will need to
+    // be updated.
     hash: '0x81a0a82dfbb7f818e9bbaf1050194bcaf8dd91d2ebf07e72cabe58a7b4174df7',
     value: ethers.utils.parseEther('100'),
   };
 
   const _account = {
-    // Likewise
-    publicAddress: '0x0eDB511d9434452D24a3Eeb47E3d02Fda903A73a',
+    publicAddress: 'addr_test1qp0pc4ud4d2rntrv5455669tz999u862f08tr6083r9dxkzkdvtuf8jgxv2mv4l5tsesqdesx7zl08esymvg76656qss80jvf6',
   };
 
 
