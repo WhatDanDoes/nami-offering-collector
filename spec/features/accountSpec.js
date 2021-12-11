@@ -1,18 +1,17 @@
-const sigUtil = require('eth-sig-util');
-const ethUtil = require('ethereumjs-util');
-const ethers = require('ethers');
 const cheerio = require('cheerio');
 const request = require('supertest-session');
 const app = require('../../app');
 const models = require('../../models');
+const cardanoUtils = require('cardano-crypto.js');
+const setupWallet = require('../support/setupWallet');
 
 describe('account management', () => {
 
-  jasmine.DEFAULT_TIMEOUT_INTERVAL = 10000;
+  let parentWalletSecret, parentWalletPublic, signingMessage;
 
-  // These were provided by ganache-cli
-  const _publicAddress = '0x034F8c5c8381Bf45511d071875333Eba143Bd10e';
-  const _privateAddress = '0xb30b64470fe770bbe8e9ff6478e550ce99e7f38d8e07ec2dbe27e8ff45742cf6';
+  beforeAll(async () => {
+    ({ parentWalletSecret, parentWalletPublic, signingMessage } = await setupWallet());
+  });
 
   afterEach(done => {
     models.mongoose.connection.db.dropDatabase().then((err, result) => {
@@ -32,7 +31,7 @@ describe('account management', () => {
         session = request(app);
         session
           .post('/auth/introduce')
-          .send({ publicAddress: _publicAddress })
+          .send({ publicAddress: parentWalletPublic })
           .set('Accept', 'application/json')
           .expect('Content-Type', /json/)
           .expect(201)
@@ -40,11 +39,13 @@ describe('account management', () => {
             if (err) return done.fail(err);
             ({ publicAddress, typedData } = res.body);
 
-            const signed = sigUtil.signTypedData(ethUtil.toBuffer(_privateAddress), {privateKey: _privateAddress, data: typedData, version: 'V3' });
+            const typedDataStr = typedData.message.nonce;
+            let signature = cardanoUtils.sign(Buffer.from(typedDataStr, 'utf8'), parentWalletSecret);
+            const signed = cardanoUtils.sign(Buffer.from(typedDataStr, 'utf8'), parentWalletSecret).toString('hex');
 
             session
               .post('/auth/prove')
-              .send({ publicAddress: _publicAddress, signature: signed })
+              .send({ publicAddress: parentWalletPublic, signature: signed })
               .set('Content-Type', 'application/json')
               .set('Accept', 'application/json')
               .expect('Content-Type', /json/)
@@ -54,7 +55,7 @@ describe('account management', () => {
 
                 expect(res.body.message).toEqual('Welcome!');
 
-                models.Account.findOne({ where: { publicAddress: _publicAddress } }).then(result => {
+                models.Account.findOne({ where: { publicAddress: parentWalletPublic } }).then(result => {
                   account = result;
 
                   done();
@@ -150,7 +151,7 @@ describe('account management', () => {
         session = request(app);
         session
           .post('/auth/introduce')
-          .send({ publicAddress: _publicAddress })
+          .send({ publicAddress: parentWalletPublic })
           .set('Accept', 'application/json')
           .expect('Content-Type', /json/)
           .expect(201)
@@ -158,11 +159,13 @@ describe('account management', () => {
             if (err) return done.fail(err);
             ({ publicAddress, typedData } = res.body);
 
-            const signed = sigUtil.signTypedData(ethUtil.toBuffer(_privateAddress), {privateKey: _privateAddress, data: typedData, version: 'V3' });
+            const typedDataStr = typedData.message.nonce;
+            let signature = cardanoUtils.sign(Buffer.from(typedDataStr, 'utf8'), parentWalletSecret);
+            const signed = cardanoUtils.sign(Buffer.from(typedDataStr, 'utf8'), parentWalletSecret).toString('hex');
 
             session
               .post('/auth/prove')
-              .send({ publicAddress: _publicAddress, signature: signed })
+              .send({ publicAddress: parentWalletPublic, signature: signed })
               .set('Content-Type', 'application/json')
               .set('Accept', 'application/json')
               .expect('Content-Type', /json/)
@@ -172,7 +175,7 @@ describe('account management', () => {
 
                 expect(res.body.message).toEqual('Welcome!');
 
-                models.Account.findOne({ where: { publicAddress: _publicAddress } }).then(result => {
+                models.Account.findOne({ where: { publicAddress: parentWalletPublic } }).then(result => {
                   account = result;
 
                   done();
@@ -187,7 +190,7 @@ describe('account management', () => {
 
         it('returns successfully', done => {
           session
-           .get(`/account/${_publicAddress}`)
+           .get(`/account/${parentWalletPublic}`)
            .set('Accept', 'application/json')
            .expect('Content-Type', /json/)
            .expect(200)
@@ -203,7 +206,7 @@ describe('account management', () => {
 
         it('returns successfully', done => {
           session
-           .get(`/account/${_publicAddress}`)
+           .get(`/account/${parentWalletPublic}`)
            .expect('Content-Type', /text/)
            .expect(200)
            .end((err, res) => {
@@ -260,7 +263,7 @@ describe('account management', () => {
         session = request(app);
         session
           .post('/auth/introduce')
-          .send({ publicAddress: _publicAddress })
+          .send({ publicAddress: parentWalletPublic })
           .set('Accept', 'application/json')
           .expect('Content-Type', /json/)
           .expect(201)
@@ -268,11 +271,13 @@ describe('account management', () => {
             if (err) return done.fail(err);
             ({ publicAddress, typedData } = res.body);
 
-            const signed = sigUtil.signTypedData(ethUtil.toBuffer(_privateAddress), {privateKey: _privateAddress, data: typedData, version: 'V3' });
+            const typedDataStr = typedData.message.nonce;
+            let signature = cardanoUtils.sign(Buffer.from(typedDataStr, 'utf8'), parentWalletSecret);
+            const signed = cardanoUtils.sign(Buffer.from(typedDataStr, 'utf8'), parentWalletSecret).toString('hex');
 
             session
               .post('/auth/prove')
-              .send({ publicAddress: _publicAddress, signature: signed })
+              .send({ publicAddress: parentWalletPublic, signature: signed })
               .set('Content-Type', 'application/json')
               .set('Accept', 'application/json')
               .expect('Content-Type', /json/)
@@ -282,7 +287,7 @@ describe('account management', () => {
 
                 expect(res.body.message).toEqual('Welcome!');
 
-                models.Account.findOne({ where: { publicAddress: _publicAddress } }).then(result => {
+                models.Account.findOne({ where: { publicAddress: parentWalletPublic } }).then(result => {
                   account = result;
 
                   done();
@@ -326,7 +331,7 @@ describe('account management', () => {
                 models.Account.find({}).then(accounts => {
                   expect(accounts.length).toEqual(1);
                   expect(accounts[0].name).toEqual('Some Guy');
-                  expect(accounts[0].publicAddress).toEqual(_publicAddress);
+                  expect(accounts[0].publicAddress).toEqual(parentWalletPublic);
 
                   done();
                 }).catch(err => {
@@ -339,7 +344,7 @@ describe('account management', () => {
         describe('failure', () => {
 
           it('does not allow modifying publicAddress', done => {
-            expect(account.publicAddress).toEqual(_publicAddress);
+            expect(account.publicAddress).toEqual(parentWalletPublic);
             session
               .put('/account')
               .send({ publicAddress: '0x4D8B94b1358DB655aCAdcCF43768b9AbA00b2e74' })
@@ -353,7 +358,7 @@ describe('account management', () => {
 
                 models.Account.find({}).then(accounts => {
                   expect(accounts.length).toEqual(1);
-                  expect(accounts[0].publicAddress).toEqual(_publicAddress);
+                  expect(accounts[0].publicAddress).toEqual(parentWalletPublic);
 
                   done();
                 }).catch(err => {
@@ -421,7 +426,7 @@ describe('account management', () => {
                 models.Account.find({}).then(accounts => {
                   expect(accounts.length).toEqual(1);
                   expect(accounts[0].name).toEqual('Some Guy');
-                  expect(accounts[0].publicAddress).toEqual(_publicAddress);
+                  expect(accounts[0].publicAddress).toEqual(parentWalletPublic);
 
                   done();
                 }).catch(err => {
@@ -434,7 +439,7 @@ describe('account management', () => {
         describe('failure', () => {
 
           it('does not allow modifying publicAddress', done => {
-            expect(account.publicAddress).toEqual(_publicAddress);
+            expect(account.publicAddress).toEqual(parentWalletPublic);
             session
               .put('/account')
               .send({ publicAddress: '0x4D8B94b1358DB655aCAdcCF43768b9AbA00b2e74' })
@@ -445,7 +450,7 @@ describe('account management', () => {
 
                 models.Account.find({}).then(accounts => {
                   expect(accounts.length).toEqual(1);
-                  expect(accounts[0].publicAddress).toEqual(_publicAddress);
+                  expect(accounts[0].publicAddress).toEqual(parentWalletPublic);
 
                   done();
                 }).catch(err => {
@@ -579,7 +584,7 @@ describe('account management', () => {
       session = request(app);
       session
         .post('/auth/introduce')
-        .send({ publicAddress: _publicAddress })
+        .send({ publicAddress: parentWalletPublic })
         .set('Accept', 'application/json')
         .expect('Content-Type', /json/)
         .expect(201)
@@ -587,11 +592,13 @@ describe('account management', () => {
           if (err) return done.fail(err);
           ({ publicAddress, typedData } = res.body);
 
-          const signed = sigUtil.signTypedData(ethUtil.toBuffer(_privateAddress), {privateKey: _privateAddress, data: typedData, version: 'V3' });
+          const typedDataStr = typedData.message.nonce;
+          let signature = cardanoUtils.sign(Buffer.from(typedDataStr, 'utf8'), parentWalletSecret);
+          const signed = cardanoUtils.sign(Buffer.from(typedDataStr, 'utf8'), parentWalletSecret).toString('hex');
 
           session
             .post('/auth/prove')
-            .send({ publicAddress: _publicAddress, signature: signed })
+            .send({ publicAddress: parentWalletPublic, signature: signed })
             .set('Content-Type', 'application/json')
             .set('Accept', 'application/json')
             .expect('Content-Type', /json/)
@@ -601,7 +608,7 @@ describe('account management', () => {
 
               expect(res.body.message).toEqual('Welcome!');
 
-              models.Account.findOne({ where: { publicAddress: _publicAddress } }).then(result => {
+              models.Account.findOne({ where: { publicAddress: parentWalletPublic } }).then(result => {
                 account = result;
 
                 done();
@@ -647,7 +654,7 @@ describe('account management', () => {
                 models.Account.find({}).then(accounts => {
                   expect(accounts.length).toEqual(1);
                   expect(accounts[0].name).toEqual('Some Guy');
-                  expect(accounts[0].publicAddress).toEqual(_publicAddress);
+                  expect(accounts[0].publicAddress).toEqual(parentWalletPublic);
 
                   done();
                 }).catch(err => {
@@ -660,7 +667,7 @@ describe('account management', () => {
         describe('failure', () => {
 
           it('does not allow modifying publicAddress', done => {
-            expect(account.publicAddress).toEqual(_publicAddress);
+            expect(account.publicAddress).toEqual(parentWalletPublic);
             session
               .put(`/account/${account.publicAddress}`)
               .send({ publicAddress: '0x4D8B94b1358DB655aCAdcCF43768b9AbA00b2e74' })
@@ -674,7 +681,7 @@ describe('account management', () => {
 
                 models.Account.find({}).then(accounts => {
                   expect(accounts.length).toEqual(1);
-                  expect(accounts[0].publicAddress).toEqual(_publicAddress);
+                  expect(accounts[0].publicAddress).toEqual(parentWalletPublic);
 
                   done();
                 }).catch(err => {
@@ -742,7 +749,7 @@ describe('account management', () => {
                 models.Account.find({}).then(accounts => {
                   expect(accounts.length).toEqual(1);
                   expect(accounts[0].name).toEqual('Some Guy');
-                  expect(accounts[0].publicAddress).toEqual(_publicAddress);
+                  expect(accounts[0].publicAddress).toEqual(parentWalletPublic);
 
                   done();
                 }).catch(err => {
@@ -755,7 +762,7 @@ describe('account management', () => {
         describe('failure', () => {
 
           it('does not allow modifying publicAddress', done => {
-            expect(account.publicAddress).toEqual(_publicAddress);
+            expect(account.publicAddress).toEqual(parentWalletPublic);
             session
               .put(`/account/${account.publicAddress}`)
               .send({ publicAddress: '0x4D8B94b1358DB655aCAdcCF43768b9AbA00b2e74' })
@@ -766,7 +773,7 @@ describe('account management', () => {
 
                 models.Account.find({}).then(accounts => {
                   expect(accounts.length).toEqual(1);
-                  expect(accounts[0].publicAddress).toEqual(_publicAddress);
+                  expect(accounts[0].publicAddress).toEqual(parentWalletPublic);
 
                   done();
                 }).catch(err => {
@@ -805,9 +812,18 @@ describe('account management', () => {
 
       let anotherAccount;
       beforeEach(done => {
-        models.Account.create({ publicAddress: '0xE40153f2428846Ce1FFB7B4169ce08c9374b1187' }).then(result => {
-          anotherAccount = result;
-          done();
+
+        const mnemonic = 'crowd captain hungry tray powder motor coast oppose month shed parent mystery torch resemble index';
+        cardanoUtils.mnemonicToRootKeypair(mnemonic, 1).then(someOtherSecret => {
+
+          const parentWalletPublicExt = cardanoUtils.bech32.encode('addr_test', someOtherSecret.slice(64, 128));
+
+          models.Account.create({ publicAddress: parentWalletPublicExt }).then(result => {
+            anotherAccount = result;
+            done();
+          }).catch(err => {
+            done.fail(err);
+          });
         }).catch(err => {
           done.fail(err);
         });
