@@ -1,25 +1,20 @@
 const _appName = require('../../package.json').name;
 const fs = require('fs');
 const cheerio = require('cheerio');
-const sigUtil = require('eth-sig-util');
-const ethUtil = require('ethereumjs-util');
 const request = require('supertest-session');
 const app = require('../../app');
 const models = require('../../models');
-const cardanoUtils = require('cardano-crypto.js')
+const cardanoUtils = require('cardano-crypto.js');
+const setupWallet = require('../support/setupWallet');
 
-describe('auth', () => {
+
+
+fdescribe('auth', () => {
 
   let parentWalletSecret, parentWalletPublic, signingMessage;
 
   beforeAll(async () => {
-
-    const mnemonic = 'logic easily waste eager injury oval sentence wine bomb embrace gossip supreme'
-    parentWalletSecret = await cardanoUtils.mnemonicToRootKeypair(mnemonic, 1)
-    let parentWalletPublicExt = cardanoUtils.bech32.encode('addr_test', parentWalletSecret.slice(64, 128));
-    parentWalletPublic = cardanoUtils.bech32.encode('addr_test', parentWalletSecret.slice(64, 96));
-
-    signingMessage = fs.readFileSync('./message.txt', 'utf8');
+    ({ parentWalletSecret, parentWalletPublic, signingMessage } = await setupWallet());
   });
 
   afterEach(done => {
