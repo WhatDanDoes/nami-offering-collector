@@ -618,14 +618,14 @@ describe('auth', () => {
 
     describe('failure', () => {
 
-      describe('invalid ethereum address', () => {
+      describe('invalid Cardano address', () => {
 
         describe('api', () => {
 
           it('returns an error', done => {
             request(app)
               .post('/auth/introduce')
-              .send({ publicAddress: 'invalid ethereum address' })
+              .send({ publicAddress: 'invalid Cardano address' })
               .set('Content-Type', 'application/json')
               .set('Accept', 'application/json')
               .expect('Content-Type', /json/)
@@ -643,7 +643,7 @@ describe('auth', () => {
 
               request(app)
                 .post('/auth/introduce')
-                .send({ publicAddress: 'invalid ethereum address' })
+                .send({ publicAddress: 'invalid Cardano address' })
                 .set('Content-Type', 'application/json')
                 .set('Accept', 'application/json')
                 .expect('Content-Type', /json/)
@@ -677,7 +677,7 @@ describe('auth', () => {
             session = request(app)
             session
               .post('/auth/introduce')
-              .send({ publicAddress: 'invalid ethereum address' })
+              .send({ publicAddress: 'invalid Cardano address' })
               .expect(302)
               .end((err, res) => {
                 if (err) return done.fail(err);
@@ -701,7 +701,7 @@ describe('auth', () => {
 
               request(app)
                 .post('/auth/introduce')
-                .send({ publicAddress: 'invalid ethereum address' })
+                .send({ publicAddress: 'invalid Cardano address' })
                 .expect(302)
                 .end((err, res) => {
                   if (err) return done.fail(err);
