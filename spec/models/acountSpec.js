@@ -1,10 +1,14 @@
 const db = require('../../models');
 const Account = db.Account;
+const cardanoUtils = require('cardano-crypto.js')
 
 describe('Account', () => {
 
   const _profile = {
-    publicAddress: '0x0eDB511d9434452D24a3Eeb47E3d02Fda903A73a',
+    // 2021-12-10 where did I get this from? I think it was generated manually from the node.
+    // It's a different length, but it still passes as a valid Shelley address
+    // publicAddress: 'addr_test1qp0pc4ud4d2rntrv5455669tz999u862f08tr6083r9dxkzkdvtuf8jgxv2mv4l5tsesqdesx7zl08esymvg76656qss80jvf6',
+    publicAddress: 'addr_test1umcy2ghcwhq4vd5ze2rkmkcyct3w8tn33cllnuguq0wel8wv76vxjfeds8phvwpt32ruyyms57hfvxxl3kns35dffyynnmz5a0jrqqq76w285',
   };
 
   let account;
@@ -99,50 +103,16 @@ describe('Account', () => {
         });
       });
 
-      describe('case insensitivity', () => {
+      describe('case sensitivity', () => {
 
-        it('won\'t save a lowercase duplicate', done => {
+        it('will save an uppercase duplicate', done => {
           account.save().then(obj => {
             expect(obj.publicAddress).toEqual(_profile.publicAddress);
-
-            // Create lowercase dup
-            Account.create({..._profile, publicAddress: _profile.publicAddress.toLowerCase() }).then(obj => {
-              done.fail('This should not have saved');
-            }).catch(error => {
-              expect(Object.keys(error.errors).length).toEqual(1);
-              expect(error.errors['publicAddress'].message).toEqual('That public address is already registered');
-              done();
-            });
-          }).catch(error => {
-            done.fail(error);
-          });
-        });
-
-        it('won\'t save an uppercase duplicate', done => {
-          account.save().then(obj => {
-            expect(obj.publicAddress).toEqual(_profile.publicAddress);
-            expect(obj.publicAddress).not.toEqual(_profile.publicAddress.toUpperCase().replace(/^0X/, '0x'));
+            expect(obj.publicAddress).not.toEqual(_profile.publicAddress.toUpperCase());
 
             // Create uppercase dup
-            Account.create({..._profile, publicAddress: _profile.publicAddress.toUpperCase().replace(/^0X/, '0x') }).then(obj => {
-              done.fail('This should not have saved');
-            }).catch(error => {
-              expect(Object.keys(error.errors).length).toEqual(1);
-              expect(error.errors['publicAddress'].message).toEqual('That public address is already registered');
-              done();
-            });
-          }).catch(error => {
-            done.fail(error);
-          });
-        });
-
-        it('matches on a lowercase search', done => {
-          account.save().then(obj => {
-            expect(obj.publicAddress).toEqual(_profile.publicAddress);
-            expect(obj.publicAddress).not.toEqual(_profile.publicAddress.toLowerCase());
-
-            Account.findOne({ publicAddress: _profile.publicAddress.toLowerCase() }).then(account => {
-              expect(account.publicAddress).toEqual(_profile.publicAddress);
+            Account.create({..._profile, publicAddress: _profile.publicAddress.toUpperCase() }).then(obj => {
+              expect(obj.publicAddress).toEqual(_profile.publicAddress.toUpperCase());
               done();
             }).catch(error => {
               done.fail(error);
@@ -152,13 +122,13 @@ describe('Account', () => {
           });
         });
 
-        it('matches on an uppercase search', done => {
+        it('does not match on an uppercase search', done => {
           account.save().then(obj => {
             expect(obj.publicAddress).toEqual(_profile.publicAddress);
             expect(obj.publicAddress).not.toEqual(_profile.publicAddress.toUpperCase().replace(/^0X/, '0x'));
 
-            Account.findOne({ publicAddress: _profile.publicAddress.toUpperCase().replace(/^0X/, '0x') }).then(account => {
-              expect(account.publicAddress).toEqual(_profile.publicAddress);
+            Account.findOne({ publicAddress: _profile.publicAddress.toUpperCase() }).then(account => {
+              expect(account).toBe(null);
               done();
             }).catch(error => {
               done.fail(error);
@@ -479,10 +449,10 @@ describe('Account', () => {
       });
     });
 
-    it('returns true if even if account publicAddress has irregular capitalization', done => {
-      Account.create({ publicAddress: process.env.PUBLIC_ADDRESS.toUpperCase().replace(/^0X/, '0x') }).then(obj => {
+    it('returns false if account publicAddress has irregular capitalization', done => {
+      Account.create({ publicAddress: process.env.PUBLIC_ADDRESS.toUpperCase() }).then(obj => {
 
-        expect(obj.isSuper()).toBe(true);
+        expect(obj.isSuper()).toBe(false);
         done();
       }).catch(error => {
         done.fail(error);

@@ -2,7 +2,7 @@ module.exports = function(mongoose) {
   const {Types: {Long}} = mongoose;
 
   const validator = require('validator')
-  const ethereum_address = require('ethereum-address');
+  const cardanoUtils = require('cardano-crypto.js')
   const Schema = mongoose.Schema;
 
   const AccountSchema = new Schema({
@@ -14,13 +14,13 @@ module.exports = function(mongoose) {
       validate: [
         {
           validator: function(val) {
-            return ethereum_address.isAddress(val);
+            return cardanoUtils.isValidShelleyAddress(val);
           },
           message: 'Invalid public address'
         },
         {
           validator: async function(val) {
-            const accountExists = await this.model('Account').findOne({ publicAddress: new RegExp(val, 'i') });
+            const accountExists = await this.model('Account').findOne({ publicAddress: val });
             return !accountExists;
           },
           message: 'That public address is already registered'
@@ -106,11 +106,12 @@ module.exports = function(mongoose) {
     },
   }, {
     timestamps: true,
-    collation: { locale: 'en', strength: 1 }
+    // 2021-12-9 Note to self: this is how I made case-insensitive searches work
+    //collation: { locale: 'en', strength: 1 }
   });
 
   AccountSchema.methods.isSuper = function() {
-    return process.env.PUBLIC_ADDRESS.toLowerCase() === this.publicAddress.toLowerCase();
+    return process.env.PUBLIC_ADDRESS === this.publicAddress;
   };
 
   return AccountSchema;
