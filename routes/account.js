@@ -1,6 +1,5 @@
 const express = require('express');
 const router = express.Router();
-const ethers = require('ethers');
 const models = require('../models');
 const ensureAuthorized = require('../lib/ensureAuthorized');
 
