@@ -105,7 +105,6 @@ describe('auth', () => {
         });
     });
 
-
     it('sets maximum cookie age to one hour', done => {
       const session = request(app);
       session
