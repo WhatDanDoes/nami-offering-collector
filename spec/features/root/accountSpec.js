@@ -7,14 +7,7 @@ const cardanoUtils = require('cardano-crypto.js');
 const setupWallet = require('../../support/setupWallet');
 const { Seed } = require('cardano-wallet-js');
 const cardanoMnemonic =  require('cardano-mnemonic');
-
-const randomHex = () => {
-  const S = 'abcdefABCDEF0123456789';
-  const N = 41;
-  return Array.from(Array(N))
-    .map(() => S[Math.floor(Math.random() * S.length)])
-    .join('');
-};
+const randomHex = require('../../support/randomHex');
 
 describe('root account management', () => {
 
