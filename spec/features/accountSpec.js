@@ -4,6 +4,8 @@ const app = require('../../app');
 const models = require('../../models');
 const cardanoUtils = require('cardano-crypto.js');
 const setupWallet = require('../support/setupWallet');
+const randomHex = require('../support/randomHex');
+const cardanoMnemonic =  require('cardano-mnemonic');
 
 describe('account management', () => {
 
@@ -811,14 +813,10 @@ describe('account management', () => {
     describe('unauthorized', () => {
 
       let anotherAccount;
+
       beforeEach(done => {
-
-        const mnemonic = 'crowd captain hungry tray powder motor coast oppose month shed parent mystery torch resemble index';
-        cardanoUtils.mnemonicToRootKeypair(mnemonic, 1).then(someOtherSecret => {
-
-          const parentWalletPublicExt = cardanoUtils.bech32.encode('addr_test', someOtherSecret.slice(64, 128));
-
-          models.Account.create({ publicAddress: parentWalletPublicExt }).then(result => {
+        setupWallet(cardanoMnemonic.entropyToMnemonic(randomHex())).then(wallet => {
+          models.Account.create({ publicAddress: wallet.parentWalletPublic }).then(result => {
             anotherAccount = result;
             done();
           }).catch(err => {

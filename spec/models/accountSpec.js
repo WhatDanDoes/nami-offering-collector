@@ -1,15 +1,17 @@
 const db = require('../../models');
 const Account = db.Account;
 const cardanoUtils = require('cardano-crypto.js')
+const setupWallet = require('../support/setupWallet');
 
 describe('Account', () => {
 
-  const _profile = {
-    // 2021-12-10 where did I get this from? I think it was generated manually from the node.
-    // It's a different length, but it still passes as a valid Shelley address
-    // publicAddress: 'addr_test1qp0pc4ud4d2rntrv5455669tz999u862f08tr6083r9dxkzkdvtuf8jgxv2mv4l5tsesqdesx7zl08esymvg76656qss80jvf6',
-    publicAddress: 'addr_test1umcy2ghcwhq4vd5ze2rkmkcyct3w8tn33cllnuguq0wel8wv76vxjfeds8phvwpt32ruyyms57hfvxxl3kns35dffyynnmz5a0jrqqq76w285',
-  };
+  const _profile = {};
+
+  let parentWalletSecret, parentWalletPublicExt, parentWalletPublic, signingMessage;
+  beforeAll(async () => {
+    ({ parentWalletSecret, parentWalletPublic, parentWalletPublicExt, signingMessage } = await setupWallet());
+    _profile.publicAddress = parentWalletPublic;
+  });
 
   let account;
   beforeEach(() => {
