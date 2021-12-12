@@ -8,7 +8,9 @@
     "test": "npx jasmine"
   },
   "dependencies": {
+    "@abx/multicoin-address-validator": "github:krgizdov/multicoin-address-validator",
     "cardano-crypto.js": "^6.1.0",
+    "cardano-mnemonic": "^1.0.0",
     "connect-flash": "^0.1.1",
     "connect-mongo": "^4.6.0",
     "cookie-parser": "~1.4.4",
