@@ -1,18 +1,20 @@
-const sigUtil = require('eth-sig-util');
-const ethUtil = require('ethereumjs-util');
 const ethers = require('ethers');
 const request = require('supertest-session');
 const cheerio = require('cheerio');
 const app = require('../../app');
 const models = require('../../models');
+const cardanoUtils = require('cardano-crypto.js');
+const setupWallet = require('../support/setupWallet');
+const cardanoMnemonic =  require('cardano-mnemonic');
+const randomHex = require('../support/randomHex');
 
 describe('transactions', () => {
 
-  jasmine.DEFAULT_TIMEOUT_INTERVAL = 10000;
+  let parentWalletSecret, parentWalletPublic, signingMessage;
 
-  // These were provided by ganache-cli
-  const _publicAddress = '0x034F8c5c8381Bf45511d071875333Eba143Bd10e';
-  const _privateAddress = '0xb30b64470fe770bbe8e9ff6478e550ce99e7f38d8e07ec2dbe27e8ff45742cf6';
+  beforeAll(async () => {
+    ({ parentWalletSecret, parentWalletPublic, signingMessage } = await setupWallet());
+  });
 
   afterEach(done => {
     models.mongoose.connection.db.dropDatabase().then((err, result) => {
@@ -32,7 +34,7 @@ describe('transactions', () => {
         session = request(app);
         session
           .post('/auth/introduce')
-          .send({ publicAddress: _publicAddress })
+          .send({ publicAddress: parentWalletPublic })
           .set('Accept', 'application/json')
           .expect('Content-Type', /json/)
           .expect(201)
@@ -40,11 +42,12 @@ describe('transactions', () => {
             if (err) return done.fail(err);
             ({ publicAddress, typedData } = res.body);
 
-            const signed = sigUtil.signTypedData(ethUtil.toBuffer(_privateAddress), {privateKey: _privateAddress, data: typedData, version: 'V3' });
+            let signature = cardanoUtils.sign(Buffer.from(typedData.message.nonce, 'utf8'), parentWalletSecret);
+            signed = cardanoUtils.sign(Buffer.from(typedData.message.nonce, 'utf8'), parentWalletSecret).toString('hex');
 
             session
               .post('/auth/prove')
-              .send({ publicAddress: _publicAddress, signature: signed })
+              .send({ publicAddress: parentWalletPublic, signature: signed })
               .set('Content-Type', 'application/json')
               .set('Accept', 'application/json')
               .expect('Content-Type', /json/)
@@ -54,7 +57,7 @@ describe('transactions', () => {
 
                 expect(res.body.message).toEqual('Welcome!');
 
-                models.Account.findOne({ where: { publicAddress: _publicAddress } }).then(result => {
+                models.Account.findOne({ where: { publicAddress: parentWalletPublic } }).then(result => {
                   account = result;
 
                   done();
@@ -114,19 +117,24 @@ describe('transactions', () => {
 
         beforeEach(done => {
           // Create hypothetical unrelated account
-          models.Account.create({ publicAddress: '0x3D2fA3e5C6e41d4D8b710f3C18c761AD3BB31da1'}).then(anotherAccount => {
+          setupWallet(cardanoMnemonic.entropyToMnemonic(randomHex())).then(wallet => {
 
-            const txs = [
-              { hash: '0x5f77236022ded48a79ad2f98e646141aedc239db377a2b9a2376eb8a7b0a1014', value: ethers.utils.parseEther('1'), account: account },
-              { hash: '0x29d184278c1bb10aed0ab4c56ac22c89009efe58e370c99951bca17f34ffd562', value: ethers.utils.parseEther('88'), account: anotherAccount },
-            ];
-            models.Transaction.insertMany(txs).then(result => {
-              transactions = result;
+            models.Account.create({ publicAddress: wallet.parentWalletPublic }).then(anotherAccount => {
 
-              models.Transaction.findOne({ account: account }).then(result => {
-                tx = result;
+              const txs = [
+                { hash: '0x5f77236022ded48a79ad2f98e646141aedc239db377a2b9a2376eb8a7b0a1014', value: ethers.utils.parseEther('1'), account: account },
+                { hash: '0x29d184278c1bb10aed0ab4c56ac22c89009efe58e370c99951bca17f34ffd562', value: ethers.utils.parseEther('88'), account: anotherAccount },
+              ];
+              models.Transaction.insertMany(txs).then(result => {
+                transactions = result;
 
-                done();
+                models.Transaction.findOne({ account: account }).then(result => {
+                  tx = result;
+
+                  done();
+                }).catch(err => {
+                  done.fail(err);
+                });
               }).catch(err => {
                 done.fail(err);
               });
@@ -255,7 +263,7 @@ describe('transactions', () => {
         session = request(app);
         session
           .post('/auth/introduce')
-          .send({ publicAddress: _publicAddress })
+          .send({ publicAddress: parentWalletPublic })
           .set('Accept', 'application/json')
           .expect('Content-Type', /json/)
           .expect(201)
@@ -263,11 +271,12 @@ describe('transactions', () => {
             if (err) return done.fail(err);
             ({ publicAddress, typedData } = res.body);
 
-            const signed = sigUtil.signTypedData(ethUtil.toBuffer(_privateAddress), {privateKey: _privateAddress, data: typedData, version: 'V3' });
+            let signature = cardanoUtils.sign(Buffer.from(typedData.message.nonce, 'utf8'), parentWalletSecret);
+            signed = cardanoUtils.sign(Buffer.from(typedData.message.nonce, 'utf8'), parentWalletSecret).toString('hex');
 
             session
               .post('/auth/prove')
-              .send({ publicAddress: _publicAddress, signature: signed })
+              .send({ publicAddress: parentWalletPublic, signature: signed })
               .set('Content-Type', 'application/json')
               .set('Accept', 'application/json')
               .expect('Content-Type', /json/)
@@ -277,7 +286,7 @@ describe('transactions', () => {
 
                 expect(res.body.message).toEqual('Welcome!');
 
-                models.Account.findOne({ where: { publicAddress: _publicAddress } }).then(result => {
+                models.Account.findOne({ where: { publicAddress: parentWalletPublic } }).then(result => {
                   account = result;
 
                   done();
