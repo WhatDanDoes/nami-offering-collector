@@ -1,18 +1,25 @@
-const sigUtil = require('eth-sig-util');
-const ethUtil = require('ethereumjs-util');
 const ethers = require('ethers');
 const cheerio = require('cheerio');
 const request = require('supertest-session');
 const app = require('../../../app');
 const models = require('../../../models');
+const cardanoUtils = require('cardano-crypto.js');
+const setupWallet = require('../../support/setupWallet');
+const { Seed } = require('cardano-wallet-js');
+const cardanoMnemonic =  require('cardano-mnemonic');
+
+const randomHex = () => {
+  const S = 'abcdefABCDEF0123456789';
+  const N = 41;
+  return Array.from(Array(N))
+    .map(() => S[Math.floor(Math.random() * S.length)])
+    .join('');
+};
 
 describe('root account management', () => {
 
   jasmine.DEFAULT_TIMEOUT_INTERVAL = 10000;
 
-  // These were provided by ganache-cli
-  const _publicAddress = '0x034F8c5c8381Bf45511d071875333Eba143Bd10e';
-  const _privateAddress = '0xb30b64470fe770bbe8e9ff6478e550ce99e7f38d8e07ec2dbe27e8ff45742cf6';
 
   /**
    * Swap out existing public address in `.env`.
@@ -20,9 +27,12 @@ describe('root account management', () => {
    * `root` is whoever is configured there.
    */
   let _PUBLIC_ADDRESS;
-  beforeAll(() => {
+  let parentWalletSecret, parentWalletPublicExt, parentWalletPublic, signingMessage;
+
+  beforeAll(async () => {
+    ({ parentWalletSecret, parentWalletPublic, parentWalletPublicExt, signingMessage } = await setupWallet());
     _PUBLIC_ADDRESS = process.env.PUBLIC_ADDRESS;
-    process.env.PUBLIC_ADDRESS = _publicAddress;
+    process.env.PUBLIC_ADDRESS = parentWalletPublic;
   });
 
   afterAll(() => {
@@ -47,7 +57,7 @@ describe('root account management', () => {
         session = request(app);
         session
           .post('/auth/introduce')
-          .send({ publicAddress: _publicAddress })
+          .send({ publicAddress: parentWalletPublic })
           .set('Accept', 'application/json')
           .expect('Content-Type', /json/)
           .expect(201)
@@ -55,11 +65,13 @@ describe('root account management', () => {
             if (err) return done.fail(err);
             ({ publicAddress, typedData } = res.body);
 
-            const signed = sigUtil.signTypedData(ethUtil.toBuffer(_privateAddress), {privateKey: _privateAddress, data: typedData, version: 'V3' });
+            const typedDataStr = typedData.message.nonce;
+            let signature = cardanoUtils.sign(Buffer.from(typedDataStr, 'utf8'), parentWalletSecret);
+            const signed = cardanoUtils.sign(Buffer.from(typedDataStr, 'utf8'), parentWalletSecret).toString('hex');
 
             session
               .post('/auth/prove')
-              .send({ publicAddress: _publicAddress, signature: signed })
+              .send({ publicAddress: parentWalletPublic, signature: signed })
               .set('Content-Type', 'application/json')
               .set('Accept', 'application/json')
               .expect('Content-Type', /json/)
@@ -69,13 +81,17 @@ describe('root account management', () => {
 
                 expect(res.body.message).toEqual('Welcome!');
 
-                models.Account.findOne({ where: { publicAddress: _publicAddress } }).then(result => {
+                models.Account.findOne({ where: { publicAddress: parentWalletPublic } }).then(async result => {
                   root = result;
 
+                  let wallet0 = await setupWallet(cardanoMnemonic.entropyToMnemonic(randomHex()));
+                  let wallet1 = await setupWallet(cardanoMnemonic.entropyToMnemonic(randomHex()));
+                  let wallet2 = await setupWallet(cardanoMnemonic.entropyToMnemonic(randomHex()));
+
                   const regularAccounts = [
-                    { publicAddress: '0x07D740737b08BB0B041C15E94C5f87BC689909d5' },
-                    { publicAddress: '0xE40153f2428846Ce1FFB7B4169ce08c9374b1187', name: 'Some Guy' },
-                    { publicAddress: '0x3A267fe13E7d856E129A92b7661666b6078528E5' },
+                    { publicAddress: wallet0.parentWalletPublic },
+                    { publicAddress: wallet1.parentWalletPublic, name: 'Some Guy' },
+                    { publicAddress: wallet2.parentWalletPublic },
                   ];
 
                   // Doing this one-at-a-time (as opposed to `insertMany`) so that `updatedAt` is different for each
@@ -92,7 +108,6 @@ describe('root account management', () => {
                     }).catch(err => {
                       done.fail(err);
                     });
-
                   }).catch(err => {
                     done.fail(err);
                   });
@@ -108,7 +123,7 @@ describe('root account management', () => {
         let accounts;
         beforeEach(done => {
           models.Account.find().sort({ updatedAt: -1 }).then(results => {
-            accounts = results.filter(a => a.publicAddress !== _publicAddress);
+            accounts = results.filter(a => a.publicAddress !== parentWalletPublic);
 
             done();
           }).catch(err => {
@@ -195,7 +210,7 @@ describe('root account management', () => {
         session = request(app);
         session
           .post('/auth/introduce')
-          .send({ publicAddress: _publicAddress })
+          .send({ publicAddress: parentWalletPublic })
           .set('Accept', 'application/json')
           .expect('Content-Type', /json/)
           .expect(201)
@@ -203,11 +218,12 @@ describe('root account management', () => {
             if (err) return done.fail(err);
             ({ publicAddress, typedData } = res.body);
 
-            const signed = sigUtil.signTypedData(ethUtil.toBuffer(_privateAddress), {privateKey: _privateAddress, data: typedData, version: 'V3' });
+            let signature = cardanoUtils.sign(Buffer.from(typedData.message.nonce, 'utf8'), parentWalletSecret);
+            const signed = cardanoUtils.sign(Buffer.from(typedData.message.nonce, 'utf8'), parentWalletSecret).toString('hex');
 
             session
               .post('/auth/prove')
-              .send({ publicAddress: _publicAddress, signature: signed })
+              .send({ publicAddress: parentWalletPublic, signature: signed })
               .set('Content-Type', 'application/json')
               .set('Accept', 'application/json')
               .expect('Content-Type', /json/)
@@ -217,13 +233,16 @@ describe('root account management', () => {
 
                 expect(res.body.message).toEqual('Welcome!');
 
-                models.Account.findOne({ where: { publicAddress: _publicAddress } }).then(result => {
+                models.Account.findOne({ where: { publicAddress: parentWalletPublic } }).then(async result => {
                   root = result;
 
+                  let wallet0 = await setupWallet(cardanoMnemonic.entropyToMnemonic(randomHex()));
+                  let wallet1 = await setupWallet(cardanoMnemonic.entropyToMnemonic(randomHex()));
+                  let wallet2 = await setupWallet(cardanoMnemonic.entropyToMnemonic(randomHex()));
                   regularAccounts = [
-                    { publicAddress: '0x07D740737b08BB0B041C15E94C5f87BC689909d5' },
-                    { publicAddress: '0xE40153f2428846Ce1FFB7B4169ce08c9374b1187', name: 'Some Guy' },
-                    { publicAddress: '0x07D740737b08BB0B041C15E94C5f87BC689909d5' },
+                    { publicAddress: wallet0.parentWalletPublic },
+                    { publicAddress: wallet1.parentWalletPublic, name: 'Some Guy' },
+                    { publicAddress: wallet2.parentWalletPublic },
                   ];
 
                   models.Account.insertMany(regularAccounts).then(accounts => {
@@ -255,7 +274,7 @@ describe('root account management', () => {
 
         it('returns successfully with root\'s own info', done => {
           session
-           .get(`/account/${_publicAddress}`)
+           .get(`/account/${parentWalletPublic}`)
            .set('Accept', 'application/json')
            .expect('Content-Type', /json/)
            .expect(200)
@@ -287,7 +306,7 @@ describe('root account management', () => {
 
         it('returns successfully with root\'s own info', done => {
           session
-           .get(`/account/${_publicAddress}`)
+           .get(`/account/${parentWalletPublic}`)
            .expect('Content-Type', /text/)
            .expect(200)
            .end((err, res) => {
@@ -296,7 +315,7 @@ describe('root account management', () => {
              const $ = cheerio.load(res.text);
              expect($('header a[href="/"] #donate-button').length).toEqual(0);
              expect($('header a[href="/account"] #account-button').length).toEqual(1);
-             expect($(`form#account-details[action="/account/${_publicAddress}?_method=PUT"]`).length).toEqual(1);
+             expect($(`form#account-details[action="/account/${parentWalletPublic}?_method=PUT"]`).length).toEqual(1);
 
              done();
            });
@@ -332,7 +351,7 @@ describe('root account management', () => {
         session = request(app);
         session
           .post('/auth/introduce')
-          .send({ publicAddress: _publicAddress })
+          .send({ publicAddress: parentWalletPublic })
           .set('Accept', 'application/json')
           .expect('Content-Type', /json/)
           .expect(201)
@@ -340,11 +359,12 @@ describe('root account management', () => {
             if (err) return done.fail(err);
             ({ publicAddress, typedData } = res.body);
 
-            const signed = sigUtil.signTypedData(ethUtil.toBuffer(_privateAddress), {privateKey: _privateAddress, data: typedData, version: 'V3' });
+            let signature = cardanoUtils.sign(Buffer.from(typedData.message.nonce, 'utf8'), parentWalletSecret);
+            const signed = cardanoUtils.sign(Buffer.from(typedData.message.nonce, 'utf8'), parentWalletSecret).toString('hex');
 
             session
               .post('/auth/prove')
-              .send({ publicAddress: _publicAddress, signature: signed })
+              .send({ publicAddress: parentWalletPublic, signature: signed })
               .set('Content-Type', 'application/json')
               .set('Accept', 'application/json')
               .expect('Content-Type', /json/)
@@ -354,13 +374,16 @@ describe('root account management', () => {
 
                 expect(res.body.message).toEqual('Welcome!');
 
-                models.Account.findOne({ where: { publicAddress: _publicAddress } }).then(result => {
+                models.Account.findOne({ where: { publicAddress: parentWalletPublic } }).then(async result => {
                   root = result;
 
+                  let wallet0 = await setupWallet(cardanoMnemonic.entropyToMnemonic(randomHex()));
+                  let wallet1 = await setupWallet(cardanoMnemonic.entropyToMnemonic(randomHex()));
+                  let wallet2 = await setupWallet(cardanoMnemonic.entropyToMnemonic(randomHex()));
                   regularAccounts = [
-                    { publicAddress: '0x07D740737b08BB0B041C15E94C5f87BC689909d5' },
-                    { publicAddress: '0xE40153f2428846Ce1FFB7B4169ce08c9374b1187', name: 'Some Guy' },
-                    { publicAddress: '0x07D740737b08BB0B041C15E94C5f87BC689909d5' },
+                    { publicAddress: wallet0.parentWalletPublic },
+                    { publicAddress: wallet1.parentWalletPublic, name: 'Some Guy' },
+                    { publicAddress: wallet2.parentWalletPublic },
                   ];
 
                   models.Account.insertMany(regularAccounts).then(accounts => {
@@ -489,7 +512,7 @@ describe('root account management', () => {
           describe('root\'s own data', () => {
 
             it('does not allow modifying publicAddress', done => {
-              expect(root.publicAddress).toEqual(_publicAddress);
+              expect(root.publicAddress).toEqual(parentWalletPublic);
               session
                 .put('/account')
                 .send({ publicAddress: '0x4D8B94b1358DB655aCAdcCF43768b9AbA00b2e74' })
@@ -698,7 +721,7 @@ describe('root account management', () => {
           describe('root\'s own data', () => {
 
             it('does not allow modifying publicAddress', done => {
-              expect(root.publicAddress).toEqual(_publicAddress);
+              expect(root.publicAddress).toEqual(parentWalletPublic);
               session
                 .put('/account')
                 .send({ publicAddress: '0x4D8B94b1358DB655aCAdcCF43768b9AbA00b2e74' })
