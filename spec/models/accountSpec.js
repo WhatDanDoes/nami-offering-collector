@@ -2,7 +2,7 @@ const db = require('../../models');
 const Account = db.Account;
 const setupWallet = require('../support/setupWallet');
 
-fdescribe('Account', () => {
+describe('Account', () => {
 
   const _profile = {};
 
