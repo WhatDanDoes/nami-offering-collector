@@ -1,9 +1,8 @@
 const db = require('../../models');
 const Account = db.Account;
-const cardanoUtils = require('cardano-crypto.js')
 const setupWallet = require('../support/setupWallet');
 
-describe('Account', () => {
+fdescribe('Account', () => {
 
   const _profile = {};
 
@@ -102,42 +101,6 @@ describe('Account', () => {
           done();
         }).catch(error => {
           done.fail(error);
-        });
-      });
-
-      describe('case sensitivity', () => {
-
-        it('will save an uppercase duplicate', done => {
-          account.save().then(obj => {
-            expect(obj.publicAddress).toEqual(_profile.publicAddress);
-            expect(obj.publicAddress).not.toEqual(_profile.publicAddress.toUpperCase());
-
-            // Create uppercase dup
-            Account.create({..._profile, publicAddress: _profile.publicAddress.toUpperCase() }).then(obj => {
-              expect(obj.publicAddress).toEqual(_profile.publicAddress.toUpperCase());
-              done();
-            }).catch(error => {
-              done.fail(error);
-            });
-          }).catch(error => {
-            done.fail(error);
-          });
-        });
-
-        it('does not match on an uppercase search', done => {
-          account.save().then(obj => {
-            expect(obj.publicAddress).toEqual(_profile.publicAddress);
-            expect(obj.publicAddress).not.toEqual(_profile.publicAddress.toUpperCase().replace(/^0X/, '0x'));
-
-            Account.findOne({ publicAddress: _profile.publicAddress.toUpperCase() }).then(account => {
-              expect(account).toBe(null);
-              done();
-            }).catch(error => {
-              done.fail(error);
-            });
-          }).catch(error => {
-            done.fail(error);
-          });
         });
       });
     });
@@ -445,16 +408,6 @@ describe('Account', () => {
       Account.create({ publicAddress: process.env.PUBLIC_ADDRESS }).then(obj => {
 
         expect(obj.isSuper()).toBe(true);
-        done();
-      }).catch(error => {
-        done.fail(error);
-      });
-    });
-
-    it('returns false if account publicAddress has irregular capitalization', done => {
-      Account.create({ publicAddress: process.env.PUBLIC_ADDRESS.toUpperCase() }).then(obj => {
-
-        expect(obj.isSuper()).toBe(false);
         done();
       }).catch(error => {
         done.fail(error);

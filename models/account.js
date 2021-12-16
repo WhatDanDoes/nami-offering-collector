@@ -2,9 +2,9 @@ module.exports = function(mongoose) {
   const {Types: {Long}} = mongoose;
 
   const validator = require('validator')
-  const cardanoUtils = require('cardano-crypto.js')
   const Schema = mongoose.Schema;
-  const mav = require('@abx/multicoin-address-validator');
+
+  const cardanoAddresses = require('cardano-addresses')
 
   const AccountSchema = new Schema({
     publicAddress: {
@@ -14,9 +14,14 @@ module.exports = function(mongoose) {
       empty: [false, 'Public address required'],
       validate: [
         {
-          validator: function(val) {
-            return mav.validate(val, 'ada', 'testnet');
-            //return cardanoUtils.isValidShelleyAddress(val);
+          validator: async function(val) {
+            try {
+              const info = await cardanoAddresses.inspectAddress(val);
+              return true;
+            }
+            catch (err) {
+              return false;
+            }
           },
           message: 'Invalid public address'
         },
