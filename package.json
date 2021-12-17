@@ -9,8 +9,12 @@
   },
   "dependencies": {
     "@abx/multicoin-address-validator": "github:krgizdov/multicoin-address-validator",
+    "@emurgo/cardano-serialization-lib-nodejs": "^9.1.2",
+    "bip39": "^3.0.4",
+    "cardano-addresses": "^3.6.0",
     "cardano-crypto.js": "^6.1.0",
     "cardano-mnemonic": "^1.0.0",
+    "cardano-wallet-js": "^1.2.3",
     "connect-flash": "^0.1.1",
     "connect-mongo": "^4.6.0",
     "cookie-parser": "~1.4.4",
@@ -30,7 +34,6 @@
   },
   "devDependencies": {
     "@synthetixio/synpress": "^0.9.25-beta.12",
-    "cardano-wallet-js": "^1.2.3",
     "cheerio": "*",
     "ganache-cli": "^6.12.2",
     "jasmine": "^3.9.0",
