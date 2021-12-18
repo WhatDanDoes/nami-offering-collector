@@ -2,7 +2,10 @@ const fs = require('fs');
 const express = require('express');
 const router = express.Router();
 const models = require('../models');
-const cardanoUtils = require('cardano-crypto.js')
+
+const SignedData = require('../lib/SignedData');
+const { Address } = require('@emurgo/cardano-serialization-lib-nodejs');
+
 
 /**
  * Ensures the message stays the same on signature verification
@@ -60,11 +63,12 @@ router.post('/introduce', (req, res) => {
           if (req.headers['accept'] === 'application/json') {
             return res.status(201).json({ typedData: message, publicAddress: account.publicAddress });
           }
-          // 2021-10-4 https://gist.github.com/danschumann/ae0b5bdcf2e1cd1f4b61
-          // You'd think stringifying JSON for this purpose would be simple....
+
+          let typedData = Buffer.from(`${message.message.message} ${nonce}`, 'utf8');
+
           res.status(201).render('sign', {
             publicAddress: account.publicAddress,
-            typedData: JSON.stringify(message).replace(/\\/g, '\\\\').replace(/"/g, '\\\"'),
+            typedData: typedData.toString('hex'),
             messages: req.flash(),
             messageText: message.message.message,
             nonce: message.message.nonce,
@@ -79,12 +83,14 @@ router.post('/introduce', (req, res) => {
         getSigningMessage(account.nonce, (err, message) => {
           if (err) return res.status(500).json({ message: err.message });
 
+          let typedData = Buffer.from(`${message.message.message} ${account.nonce}`, 'utf8');
+
           if (req.headers['accept'] === 'application/json') {
             return res.status(201).json({ typedData: message, publicAddress: account.publicAddress });
           }
           res.status(201).render('sign', {
             publicAddress: req.body.publicAddress,
-            typedData: JSON.stringify(message).replace(/\\/g, '\\\\').replace(/"/g, '\\\"'),
+            typedData: typedData.toString('hex'),
             messages: req.flash(),
             messageText: message.message.message,
             nonce: message.message.nonce,
@@ -126,11 +132,17 @@ router.post('/prove', (req, res) => {
 
       const msgBuf = Buffer.from(message.message.nonce, 'utf8');
 
-      const publicBuf = cardanoUtils.bech32.decode(req.body.publicAddress).data;
-      const sigBuf = Buffer.from(req.body.signature, 'hex');
-      const signatureVerified = cardanoUtils.verify(msgBuf, publicBuf, sigBuf);
+      let typedData = Buffer.from(`${message.message.message} ${message.message.nonce}`, 'utf8');
+      let signedData = new SignedData(req.body.signature);
 
-      if (signatureVerified) {
+      /**
+       * `req.body.publicAddress` comes in Bech32 format. The verification
+       * function requires hex encoding
+       */
+      let publicAddress = Address.from_bech32(req.body.publicAddress);
+      publicAddress = Buffer.from(publicAddress.to_bytes()).toString('hex');
+
+      if (signedData.verify(publicAddress, `${message.message.message} ${message.message.nonce}`)) {
         req.session.account_id = account._id;
         req.session.save(err => {
           if (err) return res.status(500).json({ message: 'Could not establish session' });
