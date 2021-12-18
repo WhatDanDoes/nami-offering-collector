@@ -130,8 +130,6 @@ router.post('/prove', (req, res) => {
     getSigningMessage(account.nonce, (err, message) => {
       if (err) return res.status(500).json({ message: err.message });
 
-      const msgBuf = Buffer.from(message.message.nonce, 'utf8');
-
       let typedData = Buffer.from(`${message.message.message} ${message.message.nonce}`, 'utf8');
       let signedData = new SignedData(req.body.signature);
 
@@ -142,25 +140,27 @@ router.post('/prove', (req, res) => {
       let publicAddress = Address.from_bech32(req.body.publicAddress);
       publicAddress = Buffer.from(publicAddress.to_bytes()).toString('hex');
 
-      if (signedData.verify(publicAddress, `${message.message.message} ${message.message.nonce}`)) {
-        req.session.account_id = account._id;
-        req.session.save(err => {
-          if (err) return res.status(500).json({ message: 'Could not establish session' });
+      try {
+        if (signedData.verify(publicAddress, `${message.message.message} ${message.message.nonce}`)) {
+          req.session.account_id = account._id;
+          req.session.save(err => {
+            if (err) return res.status(500).json({ message: 'Could not establish session' });
 
-          if (req.headers['accept'] === 'application/json') {
-            return res.status(201).json({ message: 'Welcome!' });
-          }
+            if (req.headers['accept'] === 'application/json') {
+              return res.status(201).json({ message: 'Welcome!' });
+            }
 
-          if (account.isSuper()) {
-            req.flash('success', 'Welcome, root!');
-            return res.redirect('/transaction');
-          }
+            if (account.isSuper()) {
+              req.flash('success', 'Welcome, root!');
+              return res.redirect('/transaction');
+            }
 
-          req.flash('success', 'Welcome!');
-          res.redirect('/');
-        });
+            req.flash('success', 'Welcome!');
+            res.redirect('/');
+          });
+        }
       }
-      else {
+      catch(err) {
         if (req.headers['accept'] === 'application/json') {
           return res.status(401).json({ message: 'Signature verification failed' });
         }
