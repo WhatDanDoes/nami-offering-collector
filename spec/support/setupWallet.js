@@ -44,13 +44,14 @@ function setupWallet(mnemonic = 'logic easily waste eager injury oval sentence w
 
   const parentWalletSecret = rootKey.to_bech32();
 
-  //const parentWalletPublic = baseAddr.to_address().to_bech32();
+  const parentWalletPublicBech32 = baseAddr.to_address().to_bech32();
   const parentWalletPublic = Buffer.from(baseAddr.to_address().to_bytes()).toString('hex');
   const signingMessage = fs.readFileSync('./message.txt', 'utf8');
 
   return {
     parentWalletSecret,
     parentWalletPublic,
+    parentWalletPublicBech32,
     signingMessage,
   };
 };
