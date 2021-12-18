@@ -8,8 +8,6 @@
  * These are primitive behavioural tests that were discerned on the fly.
  * I have no idea how any of this actually works.
  */
-const { PublicKey } = require('@emurgo/cardano-serialization-lib-nodejs');
-
 const dataSigner = require('../../lib/dataSigner');
 const SignedData = require('../../lib/SignedData');
 const setupWallet = require('../support/setupWallet');
