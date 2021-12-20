@@ -1,3 +1,4 @@
+const ethers = require('ethers');
 const cheerio = require('cheerio');
 const request = require('supertest-session');
 const app = require('../../../app');
@@ -15,12 +16,12 @@ describe('root account management', () => {
    * `root` is whoever is configured there.
    */
   let _PUBLIC_ADDRESS;
-  let parentWalletSecret, parentWalletPublic, signingMessage, parentWalletPublicBech32;
+  let secret, publicHex, signingMessage, publicBech32;
 
   beforeAll(() => {
-    ({ parentWalletSecret, parentWalletPublic, signingMessage, parentWalletPublicBech32 } = setupWallet());
+    ({ secret, publicHex, signingMessage, publicBech32 } = setupWallet());
     _PUBLIC_ADDRESS = process.env.PUBLIC_ADDRESS;
-    process.env.PUBLIC_ADDRESS = parentWalletPublicBech32;
+    process.env.PUBLIC_ADDRESS = publicBech32;
   });
 
   afterAll(() => {
@@ -45,7 +46,7 @@ describe('root account management', () => {
         session = request(app);
         session
           .post('/auth/introduce')
-          .send({ publicAddress: parentWalletPublicBech32 })
+          .send({ publicAddress: publicHex })
           .set('Accept', 'application/json')
           .expect('Content-Type', /json/)
           .expect(201)
@@ -53,11 +54,11 @@ describe('root account management', () => {
             if (err) return done.fail(err);
             ({ publicAddress, typedData } = res.body);
 
-            let signed = dataSigner(`${typedData.message.message} ${typedData.message.nonce}`, parentWalletSecret, parentWalletPublic);
+            let signed = dataSigner(`${typedData.message.message} ${typedData.message.nonce}`, secret, publicHex);
 
             session
               .post('/auth/prove')
-              .send({ publicAddress: parentWalletPublicBech32, signature: signed })
+              .send({ publicAddress: publicHex, signature: signed })
               .set('Content-Type', 'application/json')
               .set('Accept', 'application/json')
               .expect('Content-Type', /json/)
@@ -67,7 +68,7 @@ describe('root account management', () => {
 
                 expect(res.body.message).toEqual('Welcome!');
 
-                models.Account.findOne({ where: { publicAddress: parentWalletPublicBech32 } }).then(result => {
+                models.Account.findOne({ where: { publicAddress: publicBech32 } }).then(result => {
                   root = result;
 
                   let wallet0 = setupWallet(cardanoMnemonic.entropyToMnemonic(randomHex()));
@@ -75,9 +76,9 @@ describe('root account management', () => {
                   let wallet2 = setupWallet(cardanoMnemonic.entropyToMnemonic(randomHex()));
 
                   const regularAccounts = [
-                    { publicAddress: wallet0.parentWalletPublicBech32 },
-                    { publicAddress: wallet1.parentWalletPublicBech32, name: 'Some Guy' },
-                    { publicAddress: wallet2.parentWalletPublicBech32 },
+                    { publicAddress: wallet0.publicBech32 },
+                    { publicAddress: wallet1.publicBech32, name: 'Some Guy' },
+                    { publicAddress: wallet2.publicBech32 },
                   ];
 
                   // Doing this one-at-a-time (as opposed to `insertMany`) so that `updatedAt` is different for each
@@ -109,7 +110,7 @@ describe('root account management', () => {
         let accounts;
         beforeEach(done => {
           models.Account.find().sort({ updatedAt: -1 }).then(results => {
-            accounts = results.filter(a => a.publicAddress !== parentWalletPublicBech32);
+            accounts = results.filter(a => a.publicAddress !== publicBech32);
 
             done();
           }).catch(err => {
@@ -196,7 +197,7 @@ describe('root account management', () => {
         session = request(app);
         session
           .post('/auth/introduce')
-          .send({ publicAddress: parentWalletPublicBech32 })
+          .send({ publicAddress: publicHex })
           .set('Accept', 'application/json')
           .expect('Content-Type', /json/)
           .expect(201)
@@ -204,11 +205,11 @@ describe('root account management', () => {
             if (err) return done.fail(err);
             ({ publicAddress, typedData } = res.body);
 
-            let signed = dataSigner(`${typedData.message.message} ${typedData.message.nonce}`, parentWalletSecret, parentWalletPublic);
+            let signed = dataSigner(`${typedData.message.message} ${typedData.message.nonce}`, secret, publicHex);
 
             session
               .post('/auth/prove')
-              .send({ publicAddress: parentWalletPublicBech32, signature: signed })
+              .send({ publicAddress: publicHex, signature: signed })
               .set('Content-Type', 'application/json')
               .set('Accept', 'application/json')
               .expect('Content-Type', /json/)
@@ -218,16 +219,16 @@ describe('root account management', () => {
 
                 expect(res.body.message).toEqual('Welcome!');
 
-                models.Account.findOne({ where: { publicAddress: parentWalletPublicBech32 } }).then(result => {
+                models.Account.findOne({ where: { publicAddress: publicBech32 } }).then(result => {
                   root = result;
 
                   let wallet0 = setupWallet(cardanoMnemonic.entropyToMnemonic(randomHex()));
                   let wallet1 = setupWallet(cardanoMnemonic.entropyToMnemonic(randomHex()));
                   let wallet2 = setupWallet(cardanoMnemonic.entropyToMnemonic(randomHex()));
                   regularAccounts = [
-                    { publicAddress: wallet0.parentWalletPublicBech32 },
-                    { publicAddress: wallet1.parentWalletPublicBech32, name: 'Some Guy' },
-                    { publicAddress: wallet2.parentWalletPublicBech32 },
+                    { publicAddress: wallet0.publicBech32 },
+                    { publicAddress: wallet1.publicBech32, name: 'Some Guy' },
+                    { publicAddress: wallet2.publicBech32 },
                   ];
 
                   models.Account.insertMany(regularAccounts).then(accounts => {
@@ -259,7 +260,7 @@ describe('root account management', () => {
 
         it('returns successfully with root\'s own info', done => {
           session
-           .get(`/account/${parentWalletPublicBech32}`)
+           .get(`/account/${publicBech32}`)
            .set('Accept', 'application/json')
            .expect('Content-Type', /json/)
            .expect(200)
@@ -291,7 +292,7 @@ describe('root account management', () => {
 
         it('returns successfully with root\'s own info', done => {
           session
-           .get(`/account/${parentWalletPublicBech32}`)
+           .get(`/account/${publicBech32}`)
            .expect('Content-Type', /text/)
            .expect(200)
            .end((err, res) => {
@@ -300,7 +301,7 @@ describe('root account management', () => {
              const $ = cheerio.load(res.text);
              expect($('header a[href="/"] #donate-button').length).toEqual(0);
              expect($('header a[href="/account"] #account-button').length).toEqual(1);
-             expect($(`form#account-details[action="/account/${parentWalletPublicBech32}?_method=PUT"]`).length).toEqual(1);
+             expect($(`form#account-details[action="/account/${publicBech32}?_method=PUT"]`).length).toEqual(1);
 
              done();
            });
@@ -336,7 +337,7 @@ describe('root account management', () => {
         session = request(app);
         session
           .post('/auth/introduce')
-          .send({ publicAddress: parentWalletPublicBech32 })
+          .send({ publicAddress: publicHex })
           .set('Accept', 'application/json')
           .expect('Content-Type', /json/)
           .expect(201)
@@ -344,11 +345,11 @@ describe('root account management', () => {
             if (err) return done.fail(err);
             ({ publicAddress, typedData } = res.body);
 
-            let signed = dataSigner(`${typedData.message.message} ${typedData.message.nonce}`, parentWalletSecret, parentWalletPublic);
+            let signed = dataSigner(`${typedData.message.message} ${typedData.message.nonce}`, secret, publicHex);
 
             session
               .post('/auth/prove')
-              .send({ publicAddress: parentWalletPublicBech32, signature: signed })
+              .send({ publicAddress: publicHex, signature: signed })
               .set('Content-Type', 'application/json')
               .set('Accept', 'application/json')
               .expect('Content-Type', /json/)
@@ -358,16 +359,16 @@ describe('root account management', () => {
 
                 expect(res.body.message).toEqual('Welcome!');
 
-                models.Account.findOne({ where: { publicAddress: parentWalletPublicBech32 } }).then(result => {
+                models.Account.findOne({ where: { publicAddress: publicBech32 } }).then(result => {
                   root = result;
 
                   let wallet0 = setupWallet(cardanoMnemonic.entropyToMnemonic(randomHex()));
                   let wallet1 = setupWallet(cardanoMnemonic.entropyToMnemonic(randomHex()));
                   let wallet2 = setupWallet(cardanoMnemonic.entropyToMnemonic(randomHex()));
                   regularAccounts = [
-                    { publicAddress: wallet0.parentWalletPublicBech32 },
-                    { publicAddress: wallet1.parentWalletPublicBech32, name: 'Some Guy' },
-                    { publicAddress: wallet2.parentWalletPublicBech32 },
+                    { publicAddress: wallet0.publicBech32 },
+                    { publicAddress: wallet1.publicBech32, name: 'Some Guy' },
+                    { publicAddress: wallet2.publicBech32 },
                   ];
 
                   models.Account.insertMany(regularAccounts).then(accounts => {
@@ -496,7 +497,7 @@ describe('root account management', () => {
           describe('root\'s own data', () => {
 
             it('does not allow modifying publicAddress', done => {
-              expect(root.publicAddress).toEqual(parentWalletPublicBech32);
+              expect(root.publicAddress).toEqual(publicBech32);
               session
                 .put('/account')
                 .send({ publicAddress: '0x4D8B94b1358DB655aCAdcCF43768b9AbA00b2e74' })
@@ -705,7 +706,7 @@ describe('root account management', () => {
           describe('root\'s own data', () => {
 
             it('does not allow modifying publicAddress', done => {
-              expect(root.publicAddress).toEqual(parentWalletPublicBech32);
+              expect(root.publicAddress).toEqual(publicBech32);
               session
                 .put('/account')
                 .send({ publicAddress: '0x4D8B94b1358DB655aCAdcCF43768b9AbA00b2e74' })

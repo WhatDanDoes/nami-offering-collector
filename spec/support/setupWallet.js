@@ -42,16 +42,16 @@ function setupWallet(mnemonic = 'logic easily waste eager injury oval sentence w
     cardano.StakeCredential.from_keyhash(stakeKey.to_raw_key().hash()),
   );
 
-  const parentWalletSecret = rootKey.to_bech32();
+  const secret = rootKey.to_bech32();
 
-  const parentWalletPublicBech32 = baseAddr.to_address().to_bech32();
-  const parentWalletPublic = Buffer.from(baseAddr.to_address().to_bytes()).toString('hex');
+  const publicBech32 = baseAddr.to_address().to_bech32();
+  const publicHex = Buffer.from(baseAddr.to_address().to_bytes()).toString('hex');
   const signingMessage = fs.readFileSync('./message.txt', 'utf8');
 
   return {
-    parentWalletSecret,
-    parentWalletPublic,
-    parentWalletPublicBech32,
+    secret,
+    publicHex,
+    publicBech32,
     signingMessage,
   };
 };

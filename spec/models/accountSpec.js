@@ -6,10 +6,10 @@ describe('Account', () => {
 
   const _profile = {};
 
-  let parentWalletSecret, parentWalletPublicExt, parentWalletPublic, signingMessage;
-  beforeAll(async () => {
-    ({ parentWalletSecret, parentWalletPublic, parentWalletPublicExt, signingMessage } = await setupWallet());
-    _profile.publicAddress = parentWalletPublic;
+  let secret, publicHex, signingMessage, publicBech32;
+  beforeAll(() => {
+    ({ secret, publicHex, signingMessage, publicBech32 } = setupWallet());
+    _profile.publicAddress = publicHex;
   });
 
   let account;

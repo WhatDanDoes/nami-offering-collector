@@ -15,12 +15,12 @@ describe('root transactions', () => {
    *
    * `root` is whoever is configured there.
    */
-  let parentWalletSecret, parentWalletPublic, signingMessage, parentWalletPublicBech32;
+  let secret, publicHex, signingMessage, publicBech32;
 
   beforeAll(async () => {
-    ({ parentWalletSecret, parentWalletPublic, signingMessage, parentWalletPublicBech32 } = setupWallet());
+    ({ secret, publicHex, signingMessage, publicBech32 } = await setupWallet());
     _PUBLIC_ADDRESS = process.env.PUBLIC_ADDRESS;
-    process.env.PUBLIC_ADDRESS = parentWalletPublicBech32;
+    process.env.PUBLIC_ADDRESS = publicBech32;
   });
 
   afterAll(() => {
@@ -45,7 +45,7 @@ describe('root transactions', () => {
         session = request(app);
         session
           .post('/auth/introduce')
-          .send({ publicAddress: parentWalletPublicBech32 })
+          .send({ publicAddress: publicHex })
           .set('Accept', 'application/json')
           .expect('Content-Type', /json/)
           .expect(201)
@@ -53,11 +53,11 @@ describe('root transactions', () => {
             if (err) return done.fail(err);
             ({ publicAddress, typedData } = res.body);
 
-            let signed = dataSigner(`${typedData.message.message} ${typedData.message.nonce}`, parentWalletSecret, parentWalletPublic);
+            let signed = dataSigner(`${typedData.message.message} ${typedData.message.nonce}`, secret, publicHex);
 
             session
               .post('/auth/prove')
-              .send({ publicAddress: parentWalletPublicBech32, signature: signed })
+              .send({ publicAddress: publicHex, signature: signed })
               .set('Content-Type', 'application/json')
               .set('Accept', 'application/json')
               .expect('Content-Type', /json/)
@@ -67,7 +67,7 @@ describe('root transactions', () => {
 
                 expect(res.body.message).toEqual('Welcome!');
 
-                models.Account.findOne({ where: { publicAddress: parentWalletPublicBech32 } }).then(result => {
+                models.Account.findOne({ where: { publicAddress: publicBech32 } }).then(result => {
                   root = result;
 
                   done();
@@ -129,14 +129,14 @@ describe('root transactions', () => {
             let wallet2 = await setupWallet(cardanoMnemonic.entropyToMnemonic(randomHex()));
 
             regularAccounts = [
-              { publicAddress: wallet0.parentWalletPublicBech32 },
-              { publicAddress: wallet1.parentWalletPublicBech32, name: 'Some Guy' },
-              { publicAddress: wallet2.parentWalletPublicBech32 },
+              { publicAddress: wallet0.publicBech32 },
+              { publicAddress: wallet1.publicBech32, name: 'Some Guy' },
+              { publicAddress: wallet2.publicBech32 },
             ];
         });
 
         beforeEach(done => {
-          models.Account.findOne({ where: { publicAddress: parentWalletPublicBech32 } }).then(result => {
+          models.Account.findOne({ where: { publicAddress: publicBech32 } }).then(result => {
             root = result;
 
             models.Account.insertMany(regularAccounts).then(accounts => {
@@ -310,7 +310,7 @@ describe('root transactions', () => {
         session = request(app);
         session
           .post('/auth/introduce')
-          .send({ publicAddress: parentWalletPublicBech32 })
+          .send({ publicAddress: publicHex })
           .set('Accept', 'application/json')
           .expect('Content-Type', /json/)
           .expect(201)
@@ -318,11 +318,11 @@ describe('root transactions', () => {
             if (err) return done.fail(err);
             ({ publicAddress, typedData } = res.body);
 
-            let signed = dataSigner(`${typedData.message.message} ${typedData.message.nonce}`, parentWalletSecret, parentWalletPublic);
+            let signed = dataSigner(`${typedData.message.message} ${typedData.message.nonce}`, secret, publicHex);
 
             session
               .post('/auth/prove')
-              .send({ publicAddress: parentWalletPublicBech32, signature: signed })
+              .send({ publicAddress: publicHex, signature: signed })
               .set('Content-Type', 'application/json')
               .set('Accept', 'application/json')
               .expect('Content-Type', /json/)
@@ -332,7 +332,7 @@ describe('root transactions', () => {
 
                 expect(res.body.message).toEqual('Welcome!');
 
-                models.Account.findOne({ where: { publicAddress: parentWalletPublicBech32 } }).then(result => {
+                models.Account.findOne({ where: { publicAddress: publicBech32 } }).then(result => {
                   account = result;
 
                   done();

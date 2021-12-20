@@ -14,14 +14,14 @@ const setupWallet = require('../support/setupWallet');
 
 describe('dataSigner', () => {
 
-  let parentWalletSecret, parentWalletPublic, signingMessage;
+  let secret, publicHex, signingMessage, publicBech32;
   beforeAll(() => {
-    ({ parentWalletSecret, parentWalletPublic, signingMessage } = setupWallet());
+    ({ secret, publicHex, signingMessage, publicBech32 } = setupWallet());
   });
 
   let signedMessage;
   beforeEach(() => {
-    signedMessage = dataSigner(signingMessage, parentWalletSecret, parentWalletPublic);
+    signedMessage = dataSigner(signingMessage, secret, publicHex);
   });
 
   describe('exploratory smoke testing', () => {
@@ -40,7 +40,7 @@ describe('dataSigner', () => {
 
     // The public address param comes hex-encoded from the Nami wallet
     it('can be validated', () => {
-      expect(signedData.verify(parentWalletPublic, signingMessage)).toBe(true);
+      expect(signedData.verify(publicHex, signingMessage)).toBe(true);
     });
   });
 });

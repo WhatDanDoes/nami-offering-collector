@@ -7,13 +7,13 @@ const cardanoUtils = require('cardano-crypto.js');
 const setupWallet = require('../support/setupWallet');
 const cardanoMnemonic =  require('cardano-mnemonic');
 const randomHex = require('../support/randomHex');
+const dataSigner = require('../../lib/dataSigner');
 
 describe('transactions', () => {
 
-  let parentWalletSecret, parentWalletPublic, signingMessage;
-
-  beforeAll(async () => {
-    ({ parentWalletSecret, parentWalletPublic, signingMessage } = await setupWallet());
+  let secret, publicHex, signingMessage, publicBech32;
+  beforeAll(() => {
+    ({ secret, publicHex, signingMessage, publicBech32 } = setupWallet());
   });
 
   afterEach(done => {
@@ -34,7 +34,7 @@ describe('transactions', () => {
         session = request(app);
         session
           .post('/auth/introduce')
-          .send({ publicAddress: parentWalletPublic })
+          .send({ publicAddress: publicHex })
           .set('Accept', 'application/json')
           .expect('Content-Type', /json/)
           .expect(201)
@@ -42,12 +42,11 @@ describe('transactions', () => {
             if (err) return done.fail(err);
             ({ publicAddress, typedData } = res.body);
 
-            let signature = cardanoUtils.sign(Buffer.from(typedData.message.nonce, 'utf8'), parentWalletSecret);
-            signed = cardanoUtils.sign(Buffer.from(typedData.message.nonce, 'utf8'), parentWalletSecret).toString('hex');
+            let signed = dataSigner(`${typedData.message.message} ${typedData.message.nonce}`, secret, publicHex);
 
             session
               .post('/auth/prove')
-              .send({ publicAddress: parentWalletPublic, signature: signed })
+              .send({ publicAddress: publicHex, signature: signed })
               .set('Content-Type', 'application/json')
               .set('Accept', 'application/json')
               .expect('Content-Type', /json/)
@@ -57,7 +56,7 @@ describe('transactions', () => {
 
                 expect(res.body.message).toEqual('Welcome!');
 
-                models.Account.findOne({ where: { publicAddress: parentWalletPublic } }).then(result => {
+                models.Account.findOne({ where: { publicAddress: publicBech32 } }).then(result => {
                   account = result;
 
                   done();
@@ -117,24 +116,21 @@ describe('transactions', () => {
 
         beforeEach(done => {
           // Create hypothetical unrelated account
-          setupWallet(cardanoMnemonic.entropyToMnemonic(randomHex())).then(wallet => {
+          let wallet = setupWallet(cardanoMnemonic.entropyToMnemonic(randomHex()));
 
-            models.Account.create({ publicAddress: wallet.parentWalletPublic }).then(anotherAccount => {
+          models.Account.create({ publicAddress: wallet.publicBech32 }).then(anotherAccount => {
 
-              const txs = [
-                { hash: '0x5f77236022ded48a79ad2f98e646141aedc239db377a2b9a2376eb8a7b0a1014', value: ethers.utils.parseEther('1'), account: account },
-                { hash: '0x29d184278c1bb10aed0ab4c56ac22c89009efe58e370c99951bca17f34ffd562', value: ethers.utils.parseEther('88'), account: anotherAccount },
-              ];
-              models.Transaction.insertMany(txs).then(result => {
-                transactions = result;
+            const txs = [
+              { hash: '0x5f77236022ded48a79ad2f98e646141aedc239db377a2b9a2376eb8a7b0a1014', value: ethers.utils.parseEther('1'), account: account },
+              { hash: '0x29d184278c1bb10aed0ab4c56ac22c89009efe58e370c99951bca17f34ffd562', value: ethers.utils.parseEther('88'), account: anotherAccount },
+            ];
+            models.Transaction.insertMany(txs).then(result => {
+              transactions = result;
 
-                models.Transaction.findOne({ account: account }).then(result => {
-                  tx = result;
+              models.Transaction.findOne({ account: account }).then(result => {
+                tx = result;
 
-                  done();
-                }).catch(err => {
-                  done.fail(err);
-                });
+                done();
               }).catch(err => {
                 done.fail(err);
               });
@@ -263,7 +259,7 @@ describe('transactions', () => {
         session = request(app);
         session
           .post('/auth/introduce')
-          .send({ publicAddress: parentWalletPublic })
+          .send({ publicAddress: publicHex })
           .set('Accept', 'application/json')
           .expect('Content-Type', /json/)
           .expect(201)
@@ -271,12 +267,11 @@ describe('transactions', () => {
             if (err) return done.fail(err);
             ({ publicAddress, typedData } = res.body);
 
-            let signature = cardanoUtils.sign(Buffer.from(typedData.message.nonce, 'utf8'), parentWalletSecret);
-            signed = cardanoUtils.sign(Buffer.from(typedData.message.nonce, 'utf8'), parentWalletSecret).toString('hex');
+            let signed = dataSigner(`${typedData.message.message} ${typedData.message.nonce}`, secret, publicHex);
 
             session
               .post('/auth/prove')
-              .send({ publicAddress: parentWalletPublic, signature: signed })
+              .send({ publicAddress: publicHex, signature: signed })
               .set('Content-Type', 'application/json')
               .set('Accept', 'application/json')
               .expect('Content-Type', /json/)
@@ -286,7 +281,7 @@ describe('transactions', () => {
 
                 expect(res.body.message).toEqual('Welcome!');
 
-                models.Account.findOne({ where: { publicAddress: parentWalletPublic } }).then(result => {
+                models.Account.findOne({ where: { publicAddress: publicBech32 } }).then(result => {
                   account = result;
 
                   done();

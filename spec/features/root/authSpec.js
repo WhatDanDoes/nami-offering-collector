@@ -14,11 +14,11 @@ describe('root auth', () => {
    * `root` is whoever is configured there.
    */
   let _PUBLIC_ADDRESS;
-  let parentWalletSecret, parentWalletPublic, signingMessage, parentWalletPublicBech32;
-  beforeAll(async () => {
-    ({ parentWalletSecret, parentWalletPublic, signingMessage, parentWalletPublicBech32 } = setupWallet());
+  let secret, publicHex, signingMessage, publicBech32;
+  beforeAll(() => {
+    ({ secret, publicHex, signingMessage, publicBech32 } = setupWallet());
     _PUBLIC_ADDRESS = process.env.PUBLIC_ADDRESS;
-    process.env.PUBLIC_ADDRESS = parentWalletPublicBech32;
+    process.env.PUBLIC_ADDRESS = publicBech32;
   });
 
   afterAll(() => {
@@ -43,18 +43,18 @@ describe('root auth', () => {
         session = request(app);
         session
           .post('/auth/introduce')
-          .send({ publicAddress: parentWalletPublicBech32 })
+          .send({ publicAddress: publicHex })
           .set('Accept', 'application/json')
           .expect('Content-Type', /json/)
           .end((err, res) => {
             if (err) return done.fail(err);
             ({ publicAddress, typedData } = res.body);
 
-            let signed = dataSigner(`${typedData.message.message} ${typedData.message.nonce}`, parentWalletSecret, parentWalletPublic);
+            let signed = dataSigner(`${typedData.message.message} ${typedData.message.nonce}`, secret, publicHex);
 
             session
               .post('/auth/prove')
-              .send({ publicAddress: parentWalletPublicBech32, signature: signed })
+              .send({ publicAddress: publicHex, signature: signed })
               .expect('Content-Type', /text/)
               .expect(302)
               .end((err, res) => {
@@ -62,7 +62,7 @@ describe('root auth', () => {
 
                 response = res;
 
-                models.Account.findOne({ where: { publicAddress: parentWalletPublicBech32 } }).then(result => {
+                models.Account.findOne({ where: { publicAddress: publicBech32 } }).then(result => {
                   root = result;
 
                   done();
