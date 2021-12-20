@@ -1,19 +1,20 @@
 const _appName = require('../../package.json').name;
 const fs = require('fs');
 const cheerio = require('cheerio');
-const sigUtil = require('eth-sig-util');
-const ethUtil = require('ethereumjs-util');
 const request = require('supertest-session');
 const app = require('../../app');
 const models = require('../../models');
+const cardanoUtils = require('cardano-crypto.js');
+const setupWallet = require('../support/setupWallet');
+const dataSigner = require('../../lib/dataSigner');
 
 describe('auth', () => {
 
-  jasmine.DEFAULT_TIMEOUT_INTERVAL = 10000;
+  let secret, publicHex, signingMessage, publicBech32;
 
-  // These were provided by ganache-cli
-  const _publicAddress = '0x034F8c5c8381Bf45511d071875333Eba143Bd10e';
-  const _privateAddress = '0xb30b64470fe770bbe8e9ff6478e550ce99e7f38d8e07ec2dbe27e8ff45742cf6';
+  beforeAll(() => {
+    ({ secret, publicHex, signingMessage, publicBech32 } = setupWallet());
+  });
 
   afterEach(done => {
     models.mongoose.connection.db.dropDatabase().then((err, result) => {
@@ -25,17 +26,12 @@ describe('auth', () => {
 
   describe('POST /introduce', () => {
 
-    let signingMessage;
-    beforeEach(async () => {
-      signingMessage = fs.readFileSync('./message.txt', 'utf8');
-    });
-
     it('starts a session on API access', done => {
       const session = request(app);
       expect(session.cookies.length).toEqual(0);
       session
         .post('/auth/introduce')
-        .send({ publicAddress: _publicAddress })
+        .send({ publicAddress: publicHex })
         .set('Accept', 'application/json')
         .expect('Content-Type', /json/)
         .expect(201)
@@ -75,7 +71,7 @@ describe('auth', () => {
       expect(session.cookies.length).toEqual(0);
       session
         .post('/auth/introduce')
-        .send({ publicAddress: _publicAddress })
+        .send({ publicAddress: publicHex })
         .set('Accept', 'text/html')
         .expect('Content-Type', /html/)
         .expect(201)
@@ -110,12 +106,11 @@ describe('auth', () => {
         });
     });
 
-
     it('sets maximum cookie age to one hour', done => {
       const session = request(app);
       session
         .post('/auth/introduce')
-        .send({ publicAddress: _publicAddress })
+        .send({ publicAddress: publicHex })
         .set('Accept', 'application/json')
         .expect('Content-Type', /json/)
         .expect(201)
@@ -136,40 +131,40 @@ describe('auth', () => {
           it('returns a public address and message with nonce for signing', done => {
             request(app)
               .post('/auth/introduce')
-              .send({ publicAddress: _publicAddress })
+              .send({ publicAddress: publicHex })
               .set('Accept', 'application/json')
               .expect('Content-Type', /json/)
               .expect(201)
               .end((err, res) => {
                 if (err) return done.fail(err);
                 expect(Object.keys(res.body.typedData.message).length).toEqual(2);
-                expect(res.body.typedData.message.message).toEqual(signingMessage);
+                expect(res.body.typedData.message.message).toEqual(signingMessage.toString('utf8'));
                 expect(typeof BigInt(res.body.typedData.message.nonce)).toEqual('bigint');
-                expect(res.body.publicAddress).toEqual(_publicAddress);
+                expect(res.body.publicAddress).toEqual(publicBech32);
 
                 done();
               });
           });
 
-          it('creates a new Agent record', done => {
-            models.Agent.find({}).then(agents => {
-              expect(agents.length).toEqual(0);
+          it('creates a new Account record', done => {
+            models.Account.find({}).then(accounts => {
+              expect(accounts.length).toEqual(0);
 
               request(app)
                 .post('/auth/introduce')
-                .send({ publicAddress: _publicAddress })
+                .send({ publicAddress: publicHex })
                 .set('Accept', 'application/json')
                 .expect('Content-Type', /json/)
                 .expect(201)
                 .end((err, res) => {
                   if (err) return done.fail(err);
 
-                  models.Agent.find({}).then(agents => {
-                    expect(agents.length).toEqual(1);
-                    expect(agents[0].publicAddress).toEqual(_publicAddress);
+                  models.Account.find({}).then(accounts => {
+                    expect(accounts.length).toEqual(1);
+                    expect(accounts[0].publicAddress).toEqual(publicBech32);
 
-                    expect(typeof BigInt(agents[0].nonce)).toEqual('bigint');
-                    expect(agents[0].nonce).toEqual(res.body.typedData.message.nonce);
+                    expect(typeof BigInt(accounts[0].nonce)).toEqual('bigint');
+                    expect(accounts[0].nonce).toEqual(res.body.typedData.message.nonce);
                     done();
                   }).catch(err => {
                     done.fail(err);
@@ -187,37 +182,37 @@ describe('auth', () => {
           it('renders an instruction page with form-embedded public address', done => {
             request(app)
               .post('/auth/introduce')
-              .send({ publicAddress: _publicAddress })
+              .send({ publicAddress: publicHex })
               .expect('Content-Type', /html/)
               .expect(201)
               .end((err, res) => {
                 if (err) return done.fail(err);
 
                 const $ = cheerio.load(res.text);
-                expect($('#signed-message-form input[name="publicAddress"]').attr('value')).toContain(_publicAddress);
+                expect($('#signed-message-form input[name="publicAddress"]').attr('value')).toContain(publicHex);
                 expect($('#signed-message-form input[name="signature"]').attr('value')).toBeUndefined();
 
                 done();
               });
           });
 
-          it('creates a new Agent record', done => {
-            models.Agent.find({}).then(agents => {
-              expect(agents.length).toEqual(0);
+          it('creates a new Account record', done => {
+            models.Account.find({}).then(accounts => {
+              expect(accounts.length).toEqual(0);
 
               request(app)
                 .post('/auth/introduce')
-                .send({ publicAddress: _publicAddress })
+                .send({ publicAddress: publicHex })
                 .expect('Content-Type', /html/)
                 .expect(201)
                 .end((err, res) => {
                   if (err) return done.fail(err);
 
-                  models.Agent.find({}).then(agents => {
-                    expect(agents.length).toEqual(1);
-                    expect(agents[0].publicAddress).toEqual(_publicAddress);
+                  models.Account.find({}).then(accounts => {
+                    expect(accounts.length).toEqual(1);
+                    expect(accounts[0].publicAddress).toEqual(publicBech32);
 
-                    expect(typeof BigInt(agents[0].nonce)).toEqual('bigint');
+                    expect(typeof BigInt(accounts[0].nonce)).toEqual('bigint');
                     done();
                   }).catch(err => {
                     done.fail(err);
@@ -236,7 +231,7 @@ describe('auth', () => {
         beforeEach(done => {
           request(app)
             .post('/auth/introduce')
-            .send({ publicAddress: _publicAddress })
+            .send({ publicAddress: publicHex })
             .set('Accept', 'application/json')
             .expect('Content-Type', /json/)
             .expect(201)
@@ -251,7 +246,7 @@ describe('auth', () => {
           it('returns a public address and message with nonce for signing', done => {
             request(app)
               .post('/auth/introduce')
-              .send({ publicAddress: _publicAddress })
+              .send({ publicAddress: publicHex })
               .set('Accept', 'application/json')
               .expect('Content-Type', /json/)
               .expect(201)
@@ -259,35 +254,35 @@ describe('auth', () => {
                 if (err) return done.fail(err);
 
                 expect(Object.keys(res.body.typedData.message).length).toEqual(2);
-                expect(res.body.typedData.message.message).toEqual(signingMessage);
+                expect(res.body.typedData.message.message).toEqual(signingMessage.toString('utf8'));
                 expect(typeof BigInt(res.body.typedData.message.nonce)).toEqual('bigint');
-                expect(res.body.publicAddress).toEqual(_publicAddress);
+                expect(res.body.publicAddress).toEqual(publicBech32);
 
                 done();
               });
           });
 
-          it('sets a new nonce in existing Agent record', done => {
-            models.Agent.find({}).then(agents => {
-              expect(agents.length).toEqual(1);
-              expect(agents[0].publicAddress).toEqual(_publicAddress);
-              const nonce = agents[0].nonce;
+          it('sets a new nonce in existing Account record', done => {
+            models.Account.find({}).then(accounts => {
+              expect(accounts.length).toEqual(1);
+              expect(accounts[0].publicAddress).toEqual(publicBech32);
+              const nonce = accounts[0].nonce;
 
               request(app)
                 .post('/auth/introduce')
-                .send({ publicAddress: _publicAddress })
+                .send({ publicAddress: publicHex })
                 .set('Accept', 'application/json')
                 .expect('Content-Type', /json/)
                 .expect(201)
                 .end((err, res) => {
                   if (err) return done.fail(err);
 
-                  models.Agent.find({}).then(agents => {
-                    expect(agents.length).toEqual(1);
-                    expect(agents[0].publicAddress).toEqual(_publicAddress);
-                    expect(typeof BigInt(agents[0].nonce)).toEqual('bigint');
-                    expect(agents[0].nonce).not.toEqual(nonce);
-                    expect(agents[0].nonce).toEqual(res.body.typedData.message.nonce);
+                  models.Account.find({}).then(accounts => {
+                    expect(accounts.length).toEqual(1);
+                    expect(accounts[0].publicAddress).toEqual(publicBech32);
+                    expect(typeof BigInt(accounts[0].nonce)).toEqual('bigint');
+                    expect(accounts[0].nonce).not.toEqual(nonce);
+                    expect(accounts[0].nonce).toEqual(res.body.typedData.message.nonce);
 
                     done();
                   }).catch(err => {
@@ -303,43 +298,43 @@ describe('auth', () => {
 
         describe('browser', () => {
 
-          it('renders an instruction page with form-embedded public address', done => {
+          it('renders an instruction page with form-embedded public hex address', done => {
             request(app)
               .post('/auth/introduce')
-              .send({ publicAddress: _publicAddress })
+              .send({ publicAddress: publicHex })
               .expect('Content-Type', /html/)
               .expect(201)
               .end((err, res) => {
                 if (err) return done.fail(err);
 
                 const $ = cheerio.load(res.text);
-                expect($('#signed-message-form input[name="publicAddress"]').attr('value')).toContain(_publicAddress);
+                expect($('#signed-message-form input[name="publicAddress"]').attr('value')).toContain(publicHex);
                 expect($('#signed-message-form input[name="signature"]').attr('value')).toBeUndefined();
 
                 done();
               });
           });
 
-          it('sets a new nonce in existing Agent record', done => {
-            models.Agent.find({}).then(agents => {
-              expect(agents.length).toEqual(1);
-              expect(agents[0].publicAddress).toEqual(_publicAddress);
-              const nonce = agents[0].nonce;
+          it('sets a new nonce in existing Account record', done => {
+            models.Account.find({}).then(accounts => {
+              expect(accounts.length).toEqual(1);
+              expect(accounts[0].publicAddress).toEqual(publicBech32);
+              const nonce = accounts[0].nonce;
 
               request(app)
                 .post('/auth/introduce')
-                .send({ publicAddress: _publicAddress })
+                .send({ publicAddress: publicHex })
                 .expect('Content-Type', /html/)
                 .expect(201)
                 .end((err, res) => {
                   if (err) return done.fail(err);
 
-                  models.Agent.find({}).then(agents => {
-                    expect(agents.length).toEqual(1);
-                    expect(agents[0].publicAddress).toEqual(_publicAddress);
-                    expect(typeof BigInt(agents[0].nonce)).toEqual('bigint');
-                    expect(agents[0].nonce).not.toEqual(nonce);
-                    //expect(agents[0].nonce).toEqual(res.body.typedData.message.nonce);
+                  models.Account.find({}).then(accounts => {
+                    expect(accounts.length).toEqual(1);
+                    expect(accounts[0].publicAddress).toEqual(publicBech32);
+                    expect(typeof BigInt(accounts[0].nonce)).toEqual('bigint');
+                    expect(accounts[0].nonce).not.toEqual(nonce);
+                    //expect(accounts[0].nonce).toEqual(res.body.typedData.message.nonce);
 
                     done();
                   }).catch(err => {
@@ -362,13 +357,14 @@ describe('auth', () => {
           session = request(app);
           session
             .post('/auth/introduce')
-            .send({ publicAddress: _publicAddress })
+            .send({ publicAddress: publicHex })
             .set('Accept', 'application/json')
             .expect('Content-Type', /json/)
             .expect(201)
             .end((err, res) => {
               if (err) return done.fail(err);
               ({ publicAddress, typedData } = res.body);
+
               done();
             });
         });
@@ -377,7 +373,7 @@ describe('auth', () => {
 
           let signed;
           beforeEach(() => {
-            signed = sigUtil.signTypedData(ethUtil.toBuffer(_privateAddress), {privateKey: _privateAddress, data: typedData, version: 'V3' });
+            signed = dataSigner(`${typedData.message.message} ${typedData.message.nonce}`, secret, publicHex);
           });
 
           describe('api', () => {
@@ -385,7 +381,7 @@ describe('auth', () => {
             it('returns 201 status with message', done => {
               session
                 .post('/auth/prove')
-                .send({ publicAddress: _publicAddress, signature: signed })
+                .send({ publicAddress: publicHex, signature: signed })
                 .set('Content-Type', 'application/json')
                 .set('Accept', 'application/json')
                 .expect('Content-Type', /json/)
@@ -398,16 +394,16 @@ describe('auth', () => {
 
             });
 
-            it('attaches agent_id to the session', done => {
+            it('attaches account_id to the session', done => {
               models.mongoose.connection.db.collection('sessions').find({}).toArray((err, sessions) => {
                 if (err) return done.fail(err);
 
                 expect(sessions.length).toEqual(1);
-                expect(JSON.parse(sessions[0].session).agent_id).toBeUndefined();
+                expect(JSON.parse(sessions[0].session).account_id).toBeUndefined();
 
                 session
                   .post('/auth/prove')
-                  .send({ publicAddress: _publicAddress, signature: signed })
+                  .send({ publicAddress: publicHex, signature: signed })
                   .set('Accept', 'application/json')
                   .set('Content-Type', 'application/json')
                   .expect('Content-Type', /json/)
@@ -419,13 +415,13 @@ describe('auth', () => {
                       if (err) return done.fail(err);
 
                       expect(sessions.length).toEqual(1);
-                      expect(JSON.parse(sessions[0].session).agent_id).toBeDefined();
+                      expect(JSON.parse(sessions[0].session).account_id).toBeDefined();
 
-                      models.Agent.find({}).then(agents => {
-                        expect(agents.length).toEqual(1);
-                        expect(agents[0].publicAddress).toEqual(_publicAddress);
+                      models.Account.find({}).then(accounts => {
+                        expect(accounts.length).toEqual(1);
+                        expect(accounts[0].publicAddress).toEqual(publicBech32);
 
-                        expect(JSON.parse(sessions[0].session).agent_id).toEqual(agents[0]._id.toString());
+                        expect(JSON.parse(sessions[0].session).account_id).toEqual(accounts[0]._id.toString());
 
                         done();
                       }).catch(err => {
@@ -443,7 +439,7 @@ describe('auth', () => {
               session
                 .post('/auth/prove')
                 .set('Content-Type', 'application/json')
-                .send({ publicAddress: _publicAddress, signature: signed })
+                .send({ publicAddress: publicHex, signature: signed })
                 .expect(302)
                 .expect('Location', /\/$/)
                 .end((err, res) => {
@@ -462,17 +458,17 @@ describe('auth', () => {
                 });
             });
 
-            it('attaches agent_id to the session', done => {
+            it('attaches account_id to the session', done => {
               models.mongoose.connection.db.collection('sessions').find({}).toArray((err, sessions) => {
                 if (err) return done.fail(err);
 
                 expect(sessions.length).toEqual(1);
-                expect(JSON.parse(sessions[0].session).agent_id).toBeUndefined();
+                expect(JSON.parse(sessions[0].session).account_id).toBeUndefined();
 
                 session
                   .post('/auth/prove')
                   .set('Accept', 'text/html')
-                  .send({ publicAddress: _publicAddress, signature: signed })
+                  .send({ publicAddress: publicHex, signature: signed })
                   .expect(302)
                   .expect('Location', /\/$/)
                   .end((err, res) => {
@@ -482,13 +478,13 @@ describe('auth', () => {
                       if (err) return done.fail(err);
 
                       expect(sessions.length).toEqual(1);
-                      expect(JSON.parse(sessions[0].session).agent_id).toBeDefined();
+                      expect(JSON.parse(sessions[0].session).account_id).toBeDefined();
 
-                      models.Agent.find({}).then(agents => {
-                        expect(agents.length).toEqual(1);
-                        expect(agents[0].publicAddress).toEqual(_publicAddress);
+                      models.Account.find({}).then(accounts => {
+                        expect(accounts.length).toEqual(1);
+                        expect(accounts[0].publicAddress).toEqual(publicBech32);
 
-                        expect(JSON.parse(sessions[0].session).agent_id).toEqual(agents[0]._id.toString());
+                        expect(JSON.parse(sessions[0].session).account_id).toEqual(accounts[0]._id.toString());
 
                         done();
                       }).catch(err => {
@@ -503,14 +499,14 @@ describe('auth', () => {
 
         describe('failure', () => {
 
-          describe('bad private key', () => {
+          describe('bad signature', () => {
 
             let signed;
 
-            beforeEach(() => {
-              // Bad private key obtained from ganache-cli
-              signed = sigUtil.signTypedData(ethUtil.toBuffer('0x0fb6b6f3f49a79f5b49bd71386cc5016762a07340d903a5590a9433253779d8b'),
-                { privateKey: '0x0fb6b6f3f49a79f5b49bd71386cc5016762a07340d903a5590a9433253779d8b', data: typedData, version: 'V3' });
+            beforeEach(async () => {
+              const mnemonic = 'crowd captain hungry tray powder motor coast oppose month shed parent mystery torch resemble index';
+              const { secret: someOtherSecret, publicHex: someOtherPublic } = setupWallet(mnemonic);
+              signed = dataSigner(`${typedData.message.message} ${typedData.message.nonce}`, someOtherSecret, someOtherPublic);
             });
 
             describe('api', () => {
@@ -518,7 +514,7 @@ describe('auth', () => {
               it('returns 401 status with message', done => {
                 request(app)
                   .post('/auth/prove')
-                  .send({ publicAddress: _publicAddress, signature: signed })
+                  .send({ publicAddress: publicHex, signature: signed })
                   .set('Content-Type', 'application/json')
                   .set('Accept', 'application/json')
                   .expect('Content-Type', /json/)
@@ -538,7 +534,7 @@ describe('auth', () => {
                 session = request(app);
                 session
                   .post('/auth/prove')
-                  .send({ publicAddress: _publicAddress, signature: signed })
+                  .send({ publicAddress: publicHex, signature: signed })
                   .expect(302)
                   .end((err, res) => {
                     if (err) return done.fail(err);
@@ -563,17 +559,12 @@ describe('auth', () => {
             describe('api', () => {
 
               it('returns 401 status with message', done => {
-                typedData.message.nonce = Math.floor(Math.random() * 1000000).toString();
-
-                signed = sigUtil.signTypedData(ethUtil.toBuffer(_privateAddress), {
-                  privateKey: _privateAddress,
-                  data: typedData,
-                  version: 'V3'
-                });
+                const badNonce = Math.floor(Math.random() * 1000000).toString();
+                signed = dataSigner(`${typedData.message.message} ${badNonce}`, secret, publicHex);
 
                 request(app)
                   .post('/auth/prove')
-                  .send({ publicAddress: _publicAddress, signature: signed })
+                  .send({ publicAddress: publicHex, signature: signed })
                   .set('Content-Type', 'application/json')
                   .set('Accept', 'application/json')
                   .expect('Content-Type', /json/)
@@ -589,19 +580,13 @@ describe('auth', () => {
             describe('browser', () => {
 
               it('returns 302 status with message', done => {
-                typedData.message.nonce = Math.floor(Math.random() * 1000000).toString();
-
-                signed = sigUtil.signTypedData(ethUtil.toBuffer(_privateAddress), {
-                  privateKey: _privateAddress,
-                  data: typedData,
-                  version: 'V3'
-                });
-
+                const badNonce = Math.floor(Math.random() * 1000000).toString();
+                signed = dataSigner(`${typedData.message.message} ${badNonce}`, secret, publicHex);
 
                 session = request(app)
                 session
                   .post('/auth/prove')
-                  .send({ publicAddress: _publicAddress, signature: signed })
+                  .send({ publicAddress: publicHex, signature: signed })
                   .expect(302)
                   .end((err, res) => {
                     if (err) return done.fail(err);
@@ -626,14 +611,14 @@ describe('auth', () => {
 
     describe('failure', () => {
 
-      describe('invalid ethereum address', () => {
+      describe('invalid Cardano address', () => {
 
         describe('api', () => {
 
           it('returns an error', done => {
             request(app)
               .post('/auth/introduce')
-              .send({ publicAddress: 'invalid ethereum address' })
+              .send({ publicAddress: 'invalid Cardano address' })
               .set('Content-Type', 'application/json')
               .set('Accept', 'application/json')
               .expect('Content-Type', /json/)
@@ -645,13 +630,13 @@ describe('auth', () => {
               });
           });
 
-          it('does not create a new Agent record', done => {
-            models.Agent.find({}).then(agents => {
-              expect(agents.length).toEqual(0);
+          it('does not create a new Account record', done => {
+            models.Account.find({}).then(accounts => {
+              expect(accounts.length).toEqual(0);
 
               request(app)
                 .post('/auth/introduce')
-                .send({ publicAddress: 'invalid ethereum address' })
+                .send({ publicAddress: 'invalid Cardano address' })
                 .set('Content-Type', 'application/json')
                 .set('Accept', 'application/json')
                 .expect('Content-Type', /json/)
@@ -659,8 +644,8 @@ describe('auth', () => {
                 .end((err, res) => {
                   if (err) return done.fail(err);
 
-                  models.Agent.find({}).then(agents => {
-                    expect(agents.length).toEqual(0);
+                  models.Account.find({}).then(accounts => {
+                    expect(accounts.length).toEqual(0);
 
                     done();
                   }).catch(err => {
@@ -685,7 +670,7 @@ describe('auth', () => {
             session = request(app)
             session
               .post('/auth/introduce')
-              .send({ publicAddress: 'invalid ethereum address' })
+              .send({ publicAddress: 'invalid Cardano address' })
               .expect(302)
               .end((err, res) => {
                 if (err) return done.fail(err);
@@ -697,25 +682,25 @@ describe('auth', () => {
                   .end((err, res) => {
 
                     const $ = cheerio.load(res.text);
-                    expect($('#messages .alert.alert-error').text()).toContain('I don\'t think you have Metamask installed');
+                    expect($('#messages .alert.alert-error').text()).toContain('Invalid public address');
                     done();
                   });
               });
           });
 
-          it('does not create a new Agent record', done => {
-            models.Agent.find({}).then(agents => {
-              expect(agents.length).toEqual(0);
+          it('does not create a new Account record', done => {
+            models.Account.find({}).then(accounts => {
+              expect(accounts.length).toEqual(0);
 
               request(app)
                 .post('/auth/introduce')
-                .send({ publicAddress: 'invalid ethereum address' })
+                .send({ publicAddress: 'invalid Cardano address' })
                 .expect(302)
                 .end((err, res) => {
                   if (err) return done.fail(err);
 
-                  models.Agent.find({}).then(agents => {
-                    expect(agents.length).toEqual(0);
+                  models.Account.find({}).then(accounts => {
+                    expect(accounts.length).toEqual(0);
 
                     done();
                   }).catch(err => {
@@ -739,7 +724,7 @@ describe('auth', () => {
       session = request(app);
       session
         .post('/auth/introduce')
-        .send({ publicAddress: _publicAddress })
+        .send({ publicAddress: publicHex })
         .set('Accept', 'application/json')
         .expect('Content-Type', /json/)
         .expect(201)

@@ -1,18 +1,20 @@
-const sigUtil = require('eth-sig-util');
-const ethUtil = require('ethereumjs-util');
 const ethers = require('ethers');
 const request = require('supertest-session');
 const cheerio = require('cheerio');
 const app = require('../../app');
 const models = require('../../models');
+const cardanoUtils = require('cardano-crypto.js');
+const setupWallet = require('../support/setupWallet');
+const cardanoMnemonic =  require('cardano-mnemonic');
+const randomHex = require('../support/randomHex');
+const dataSigner = require('../../lib/dataSigner');
 
 describe('transactions', () => {
 
-  jasmine.DEFAULT_TIMEOUT_INTERVAL = 10000;
-
-  // These were provided by ganache-cli
-  const _publicAddress = '0x034F8c5c8381Bf45511d071875333Eba143Bd10e';
-  const _privateAddress = '0xb30b64470fe770bbe8e9ff6478e550ce99e7f38d8e07ec2dbe27e8ff45742cf6';
+  let secret, publicHex, signingMessage, publicBech32;
+  beforeAll(() => {
+    ({ secret, publicHex, signingMessage, publicBech32 } = setupWallet());
+  });
 
   afterEach(done => {
     models.mongoose.connection.db.dropDatabase().then((err, result) => {
@@ -26,13 +28,13 @@ describe('transactions', () => {
 
     describe('authorized', () => {
 
-      let session, agent, transactions;
+      let session, account, transactions;
 
       beforeEach(done => {
         session = request(app);
         session
           .post('/auth/introduce')
-          .send({ publicAddress: _publicAddress })
+          .send({ publicAddress: publicHex })
           .set('Accept', 'application/json')
           .expect('Content-Type', /json/)
           .expect(201)
@@ -40,11 +42,11 @@ describe('transactions', () => {
             if (err) return done.fail(err);
             ({ publicAddress, typedData } = res.body);
 
-            const signed = sigUtil.signTypedData(ethUtil.toBuffer(_privateAddress), {privateKey: _privateAddress, data: typedData, version: 'V3' });
+            let signed = dataSigner(`${typedData.message.message} ${typedData.message.nonce}`, secret, publicHex);
 
             session
               .post('/auth/prove')
-              .send({ publicAddress: _publicAddress, signature: signed })
+              .send({ publicAddress: publicHex, signature: signed })
               .set('Content-Type', 'application/json')
               .set('Accept', 'application/json')
               .expect('Content-Type', /json/)
@@ -54,8 +56,8 @@ describe('transactions', () => {
 
                 expect(res.body.message).toEqual('Welcome!');
 
-                models.Agent.findOne({ where: { publicAddress: _publicAddress } }).then(result => {
-                  agent = result;
+                models.Account.findOne({ where: { publicAddress: publicBech32 } }).then(result => {
+                  account = result;
 
                   done();
                 }).catch(err => {
@@ -99,7 +101,7 @@ describe('transactions', () => {
                 // Link to accounts
                 expect($('header a[href="/account"] #account-button').text()).toEqual('Account');
 
-                expect($('header h4').text().trim()).toEqual('You have not sent any ETH yet');
+                expect($('header h4').text().trim()).toEqual('You have not sent any ADA yet');
                 expect($('#transaction-table tbody tr').length).toEqual(0);
 
                 done();
@@ -114,16 +116,18 @@ describe('transactions', () => {
 
         beforeEach(done => {
           // Create hypothetical unrelated account
-          models.Agent.create({ publicAddress: '0x3D2fA3e5C6e41d4D8b710f3C18c761AD3BB31da1'}).then(anotherAgent => {
+          let wallet = setupWallet(cardanoMnemonic.entropyToMnemonic(randomHex()));
+
+          models.Account.create({ publicAddress: wallet.publicBech32 }).then(anotherAccount => {
 
             const txs = [
-              { hash: '0x5f77236022ded48a79ad2f98e646141aedc239db377a2b9a2376eb8a7b0a1014', value: ethers.utils.parseEther('1'), account: agent },
-              { hash: '0x29d184278c1bb10aed0ab4c56ac22c89009efe58e370c99951bca17f34ffd562', value: ethers.utils.parseEther('88'), account: anotherAgent },
+              { hash: '0x5f77236022ded48a79ad2f98e646141aedc239db377a2b9a2376eb8a7b0a1014', value: ethers.utils.parseEther('1'), account: account },
+              { hash: '0x29d184278c1bb10aed0ab4c56ac22c89009efe58e370c99951bca17f34ffd562', value: ethers.utils.parseEther('88'), account: anotherAccount },
             ];
             models.Transaction.insertMany(txs).then(result => {
               transactions = result;
 
-              models.Transaction.findOne({ account: agent }).then(result => {
+              models.Transaction.findOne({ account: account }).then(result => {
                 tx = result;
 
                 done();
@@ -249,13 +253,13 @@ describe('transactions', () => {
 
     describe('authorized', () => {
 
-      let session, agent;
+      let session, account;
 
       beforeEach(done => {
         session = request(app);
         session
           .post('/auth/introduce')
-          .send({ publicAddress: _publicAddress })
+          .send({ publicAddress: publicHex })
           .set('Accept', 'application/json')
           .expect('Content-Type', /json/)
           .expect(201)
@@ -263,11 +267,11 @@ describe('transactions', () => {
             if (err) return done.fail(err);
             ({ publicAddress, typedData } = res.body);
 
-            const signed = sigUtil.signTypedData(ethUtil.toBuffer(_privateAddress), {privateKey: _privateAddress, data: typedData, version: 'V3' });
+            let signed = dataSigner(`${typedData.message.message} ${typedData.message.nonce}`, secret, publicHex);
 
             session
               .post('/auth/prove')
-              .send({ publicAddress: _publicAddress, signature: signed })
+              .send({ publicAddress: publicHex, signature: signed })
               .set('Content-Type', 'application/json')
               .set('Accept', 'application/json')
               .expect('Content-Type', /json/)
@@ -277,8 +281,8 @@ describe('transactions', () => {
 
                 expect(res.body.message).toEqual('Welcome!');
 
-                models.Agent.findOne({ where: { publicAddress: _publicAddress } }).then(result => {
-                  agent = result;
+                models.Account.findOne({ where: { publicAddress: publicBech32 } }).then(result => {
+                  account = result;
 
                   done();
                 }).catch(err => {
@@ -328,7 +332,7 @@ describe('transactions', () => {
 
                   models.Transaction.find({}).then(transactions => {
                     expect(transactions.length).toEqual(1);
-                    expect(transactions[0].account).toEqual(agent._id);
+                    expect(transactions[0].account).toEqual(account._id);
                     expect(transactions[0].value).toEqual('100.0');
 
                     done();
@@ -342,7 +346,7 @@ describe('transactions', () => {
           });
 
           it('updates the account\'s `updatedAt` field', done => {
-            const oldDate = agent.updatedAt;
+            const oldDate = account.updatedAt;
             session
               .post('/transaction')
               .send({
@@ -355,7 +359,7 @@ describe('transactions', () => {
               .end((err, res) => {
                 if (err) return done.fail(err);
 
-                models.Agent.findOne({ publicAddress: agent.publicAddress}).then(result => {
+                models.Account.findOne({ publicAddress: account.publicAddress}).then(result => {
                   expect(oldDate < result.updatedAt).toBe(true);
 
                   done();
@@ -416,7 +420,7 @@ describe('transactions', () => {
 
 
           it('does not update the account\'s `updatedAt` field', done => {
-            const oldDate = agent.updatedAt;
+            const oldDate = account.updatedAt;
             session
               .post('/transaction')
               .send({
@@ -428,7 +432,7 @@ describe('transactions', () => {
               .end((err, res) => {
                 if (err) return done.fail(err);
 
-                models.Agent.findOne({ publicAddress: agent.publicAddress}).then(result => {
+                models.Account.findOne({ publicAddress: account.publicAddress}).then(result => {
                   expect(oldDate).toEqual(result.updatedAt);
 
                   done();
@@ -478,7 +482,7 @@ describe('transactions', () => {
 
                   models.Transaction.find({}).then(transactions => {
                     expect(transactions.length).toEqual(1);
-                    expect(transactions[0].account).toEqual(agent._id);
+                    expect(transactions[0].account).toEqual(account._id);
                     expect(transactions[0].value).toEqual('100.0');
 
                     done();
@@ -492,7 +496,7 @@ describe('transactions', () => {
           });
 
           it('updates the account\'s `updatedAt` field', done => {
-            const oldDate = agent.updatedAt;
+            const oldDate = account.updatedAt;
             session
               .post('/transaction')
               .send({
@@ -504,7 +508,7 @@ describe('transactions', () => {
               .end((err, res) => {
                 if (err) return done.fail(err);
 
-                models.Agent.findOne({ publicAddress: agent.publicAddress}).then(result => {
+                models.Account.findOne({ publicAddress: account.publicAddress}).then(result => {
                   expect(oldDate < result.updatedAt).toBe(true);
 
                   done();
@@ -560,7 +564,7 @@ describe('transactions', () => {
           });
 
           it('does not update the account\'s `updatedAt` field', done => {
-            const oldDate = agent.updatedAt;
+            const oldDate = account.updatedAt;
             session
               .post('/transaction')
               .send({
@@ -571,7 +575,7 @@ describe('transactions', () => {
               .end((err, res) => {
                 if (err) return done.fail(err);
 
-                models.Agent.findOne({ publicAddress: agent.publicAddress}).then(result => {
+                models.Account.findOne({ publicAddress: account.publicAddress}).then(result => {
                   expect(oldDate).toEqual(result.updatedAt);
 
                   done();

@@ -6,9 +6,9 @@
           <img alt="Logo" src="/images/offering-plate.png" height="70">
         </a>
         <ul>
-          <li id="connect-metamask">
+          <li id="connect-nami">
             <a href="/auth/disconnect">
-              <button id="disconnect-metamask-button" type="submit">Disconnect Metamask</button>
+              <button id="disconnect-nami-button" type="submit">Disconnect Nami</button>
             </a>
           </li>
         </ul>
@@ -18,16 +18,16 @@
       </p>
       <h1>Tithing History</h1>
       <h4>
-        <%= !transactions.length ? agent.isSuper() ? 'No transactions' : 'You have not sent any ETH yet': '' %>
+        <%= !transactions.length ? account.isSuper() ? 'No transactions' : 'You have not sent any ADA yet': '' %>
       </h4>
       <p>
-        <% if (!agent.isSuper()) { %>
+        <% if (!account.isSuper()) { %>
         <a href="/">
           <i id="donate-button">Donate</i>
         </a>
         <% } %>
         <a href="/account">
-          <i id="account-button">Account<%= agent.isSuper() ? 's' : '' %></i>
+          <i id="account-button">Account<%= account.isSuper() ? 's' : '' %></i>
         </a>
       </p>
     </header>
@@ -38,7 +38,7 @@
             <tr>
               <th>Date</th>
               <th>Value</th>
-              <%- agent.isSuper() ? '<th>Donor</th>' : '' %>
+              <%- account.isSuper() ? '<th>Donor</th>' : '' %>
               <th>Tx Hash</th>
             </tr>
           </thead>
@@ -47,7 +47,7 @@
             <tr>
               <td><%= tx.createdAt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) %></td>
               <td><%= tx.value %></td>
-              <% if (agent.isSuper()) { %>
+              <% if (account.isSuper()) { %>
               <td>
                 <a href="/account/<%= tx.account.publicAddress %>" target="_blank">
                   <%= `${tx.account.publicAddress.slice(0, 4)}...${tx.account.publicAddress.slice(-3)}` %>

@@ -1,29 +1,26 @@
-const sigUtil = require('eth-sig-util');
-const ethUtil = require('ethereumjs-util');
 const ethers = require('ethers');
 const request = require('supertest-session');
 const cheerio = require('cheerio');
 const app = require('../../../app');
 const models = require('../../../models');
+const setupWallet = require('../../support/setupWallet');
+const cardanoMnemonic =  require('cardano-mnemonic');
+const randomHex = require('../../support/randomHex');
+const dataSigner = require('../../../lib/dataSigner');
 
 describe('root transactions', () => {
-
-  jasmine.DEFAULT_TIMEOUT_INTERVAL = 10000;
-
-  // These were provided by ganache-cli
-  const _publicAddress = '0x034F8c5c8381Bf45511d071875333Eba143Bd10e';
-  const _privateAddress = '0xb30b64470fe770bbe8e9ff6478e550ce99e7f38d8e07ec2dbe27e8ff45742cf6';
-
 
   /**
    * Swap out existing public address in `.env`.
    *
    * `root` is whoever is configured there.
    */
-  let _PUBLIC_ADDRESS;
-  beforeAll(() => {
+  let secret, publicHex, signingMessage, publicBech32;
+
+  beforeAll(async () => {
+    ({ secret, publicHex, signingMessage, publicBech32 } = await setupWallet());
     _PUBLIC_ADDRESS = process.env.PUBLIC_ADDRESS;
-    process.env.PUBLIC_ADDRESS = _publicAddress;
+    process.env.PUBLIC_ADDRESS = publicBech32;
   });
 
   afterAll(() => {
@@ -48,7 +45,7 @@ describe('root transactions', () => {
         session = request(app);
         session
           .post('/auth/introduce')
-          .send({ publicAddress: _publicAddress })
+          .send({ publicAddress: publicHex })
           .set('Accept', 'application/json')
           .expect('Content-Type', /json/)
           .expect(201)
@@ -56,11 +53,11 @@ describe('root transactions', () => {
             if (err) return done.fail(err);
             ({ publicAddress, typedData } = res.body);
 
-            const signed = sigUtil.signTypedData(ethUtil.toBuffer(_privateAddress), {privateKey: _privateAddress, data: typedData, version: 'V3' });
+            let signed = dataSigner(`${typedData.message.message} ${typedData.message.nonce}`, secret, publicHex);
 
             session
               .post('/auth/prove')
-              .send({ publicAddress: _publicAddress, signature: signed })
+              .send({ publicAddress: publicHex, signature: signed })
               .set('Content-Type', 'application/json')
               .set('Accept', 'application/json')
               .expect('Content-Type', /json/)
@@ -70,7 +67,7 @@ describe('root transactions', () => {
 
                 expect(res.body.message).toEqual('Welcome!');
 
-                models.Agent.findOne({ where: { publicAddress: _publicAddress } }).then(result => {
+                models.Account.findOne({ where: { publicAddress: publicBech32 } }).then(result => {
                   root = result;
 
                   done();
@@ -124,22 +121,30 @@ describe('root transactions', () => {
 
       describe('transactions exist', () => {
 
+        let regularAccounts;
+
+        beforeAll(async () => {
+            let wallet0 = await setupWallet(cardanoMnemonic.entropyToMnemonic(randomHex()));
+            let wallet1 = await setupWallet(cardanoMnemonic.entropyToMnemonic(randomHex()));
+            let wallet2 = await setupWallet(cardanoMnemonic.entropyToMnemonic(randomHex()));
+
+            regularAccounts = [
+              { publicAddress: wallet0.publicBech32 },
+              { publicAddress: wallet1.publicBech32, name: 'Some Guy' },
+              { publicAddress: wallet2.publicBech32 },
+            ];
+        });
+
         beforeEach(done => {
-          models.Agent.findOne({ where: { publicAddress: _publicAddress } }).then(result => {
+          models.Account.findOne({ where: { publicAddress: publicBech32 } }).then(result => {
             root = result;
 
-            const regularAgents = [
-              { publicAddress: '0x07D740737b08BB0B041C15E94C5f87BC689909d5' },
-              { publicAddress: '0xE40153f2428846Ce1FFB7B4169ce08c9374b1187', name: 'Some Guy' },
-              { publicAddress: '0x07D740737b08BB0B041C15E94C5f87BC689909d5' },
-            ];
-
-            models.Agent.insertMany(regularAgents).then(agents => {
+            models.Account.insertMany(regularAccounts).then(accounts => {
               const txs = [
-                { hash: '0x5f77236022ded48a79ad2f98e646141aedc239db377a2b9a2376eb8a7b0a1014', value: ethers.utils.parseEther('1'), account: agents[0] },
-                { hash: '0x8df25a1b626d2aea8c337ed087493c91d1ee2c0c9c9470e5b87060170c256631', value: ethers.utils.parseEther('1'), account: agents[1] },
-                { hash: '0x204248c1800cfbdf303923a824e53a31c5cdc9678c13c4433dbac1f5576dc9a7', value: ethers.utils.parseEther('1'), account: agents[1] },
-                { hash: '0xe3bca4e0a8f2168d82b4bc9a6a6c4d2beb359df425a7b2d11837688af044f962', value: ethers.utils.parseEther('1'), account: agents[2] },
+                { hash: '0x5f77236022ded48a79ad2f98e646141aedc239db377a2b9a2376eb8a7b0a1014', value: ethers.utils.parseEther('1'), account: accounts[0] },
+                { hash: '0x8df25a1b626d2aea8c337ed087493c91d1ee2c0c9c9470e5b87060170c256631', value: ethers.utils.parseEther('1'), account: accounts[1] },
+                { hash: '0x204248c1800cfbdf303923a824e53a31c5cdc9678c13c4433dbac1f5576dc9a7', value: ethers.utils.parseEther('1'), account: accounts[1] },
+                { hash: '0xe3bca4e0a8f2168d82b4bc9a6a6c4d2beb359df425a7b2d11837688af044f962', value: ethers.utils.parseEther('1'), account: accounts[2] },
               ];
 
               // Doing this one-at-a-time (as opposed to `insertMany`) so that `createdAt` is different for each
@@ -273,7 +278,7 @@ describe('root transactions', () => {
                 expect($('#transaction-table tbody tr:nth-child(3) td:first-child').text())
                   .toEqual(transactions[2].createdAt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }));
                 expect($('#transaction-table tbody tr:nth-child(3) td:nth-child(2)').text()).toEqual('1.0');
-                expect($(`#transaction-table tbody tr:nth-child(3) td:nth-child(3) a[href="/account/${transactions[1].account.publicAddress}"]`).text().trim())
+                expect($(`#transaction-table tbody tr:nth-child(3) td:nth-child(3) a[href="/account/${transactions[2].account.publicAddress}"]`).text().trim())
                   .toEqual(`${transactions[2].account.publicAddress.slice(0, 4)}...${transactions[2].account.publicAddress.slice(-3)}`);
                 expect($(`#transaction-table tbody tr:nth-child(3) td:last-child a[href="https://etherscan.io/tx/${transactions[2].hash}"]`).text().trim())
                   .toEqual(`${transactions[2].hash.slice(0, 4)}...${transactions[2].hash.slice(-3)}`);
@@ -282,7 +287,7 @@ describe('root transactions', () => {
                 expect($('#transaction-table tbody tr:nth-child(4) td:first-child').text())
                   .toEqual(transactions[3].createdAt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }));
                 expect($('#transaction-table tbody tr:nth-child(4) td:nth-child(2)').text()).toEqual('1.0');
-                expect($(`#transaction-table tbody tr:first-child td:nth-child(3) a[href="/account/${transactions[3].account.publicAddress}"]`).text().trim())
+                expect($(`#transaction-table tbody tr:nth-child(4) td:nth-child(3) a[href="/account/${transactions[3].account.publicAddress}"]`).text().trim())
                   .toEqual(`${transactions[3].account.publicAddress.slice(0, 4)}...${transactions[3].account.publicAddress.slice(-3)}`);
                 expect($(`#transaction-table tbody tr:nth-child(4) td:last-child a[href="https://etherscan.io/tx/${transactions[3].hash}"]`).text().trim())
                   .toEqual(`${transactions[3].hash.slice(0, 4)}...${transactions[3].hash.slice(-3)}`);
@@ -299,13 +304,13 @@ describe('root transactions', () => {
 
     describe('authorized', () => {
 
-      let session, agent;
+      let session, account;
 
       beforeEach(done => {
         session = request(app);
         session
           .post('/auth/introduce')
-          .send({ publicAddress: _publicAddress })
+          .send({ publicAddress: publicHex })
           .set('Accept', 'application/json')
           .expect('Content-Type', /json/)
           .expect(201)
@@ -313,11 +318,11 @@ describe('root transactions', () => {
             if (err) return done.fail(err);
             ({ publicAddress, typedData } = res.body);
 
-            const signed = sigUtil.signTypedData(ethUtil.toBuffer(_privateAddress), {privateKey: _privateAddress, data: typedData, version: 'V3' });
+            let signed = dataSigner(`${typedData.message.message} ${typedData.message.nonce}`, secret, publicHex);
 
             session
               .post('/auth/prove')
-              .send({ publicAddress: _publicAddress, signature: signed })
+              .send({ publicAddress: publicHex, signature: signed })
               .set('Content-Type', 'application/json')
               .set('Accept', 'application/json')
               .expect('Content-Type', /json/)
@@ -327,8 +332,8 @@ describe('root transactions', () => {
 
                 expect(res.body.message).toEqual('Welcome!');
 
-                models.Agent.findOne({ where: { publicAddress: _publicAddress } }).then(result => {
-                  agent = result;
+                models.Account.findOne({ where: { publicAddress: publicBech32 } }).then(result => {
+                  account = result;
 
                   done();
                 }).catch(err => {

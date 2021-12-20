@@ -10,10 +10,10 @@ describe('landing page', () => {
 
   let browser, page;
 
-  describe('metamask not installed', () => {
+  describe('nami not installed', () => {
 
     beforeEach(async () => {
-      browser = await puppeteer.launch();
+      browser = await puppeteer.launch(/* { dumpio: true, } */);
       page = await browser.newPage();
       await page.goto(URL);
     });
@@ -30,10 +30,15 @@ describe('landing page', () => {
     });
 
     it('displays a warning in the navbar', async () => {
-      const el = await page.$('header #connect-metamask');
+      const el = await page.$('header #connect-nami');
 
-      const warning = await el.evaluate(e => e.textContent);
-      expect(warning).toEqual('Install the Metamask↗ browser plugin');
+      let warning = await el.evaluate(e => e.textContent);
+      expect(warning).toEqual('');
+
+      await page.click('#introduction-form-top .connect-nami-button');
+
+      warning = await el.evaluate(e => e.textContent);
+      expect(warning).toEqual('Install the Nami↗ browser plugin');
     });
 
     it('does not display a .messages element', async () => {
@@ -73,7 +78,7 @@ describe('landing page', () => {
 //    it('displays a message to authenticate with metamask', async () => {
 //      const el = await page.$('header nav ul li');
 //      const warning = await el.evaluate(e => e.textContent);
-//      expect(warning).toEqual('Authenticate with Metamask');
+//      expect(warning).toEqual('Authenticate with getMetamask');
 //    });
 //  });
 });

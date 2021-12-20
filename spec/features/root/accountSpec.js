@@ -1,18 +1,14 @@
-const sigUtil = require('eth-sig-util');
-const ethUtil = require('ethereumjs-util');
 const ethers = require('ethers');
 const cheerio = require('cheerio');
 const request = require('supertest-session');
 const app = require('../../../app');
 const models = require('../../../models');
+const setupWallet = require('../../support/setupWallet');
+const cardanoMnemonic =  require('cardano-mnemonic');
+const randomHex = require('../../support/randomHex');
+const dataSigner = require('../../../lib/dataSigner');
 
 describe('root account management', () => {
-
-  jasmine.DEFAULT_TIMEOUT_INTERVAL = 10000;
-
-  // These were provided by ganache-cli
-  const _publicAddress = '0x034F8c5c8381Bf45511d071875333Eba143Bd10e';
-  const _privateAddress = '0xb30b64470fe770bbe8e9ff6478e550ce99e7f38d8e07ec2dbe27e8ff45742cf6';
 
   /**
    * Swap out existing public address in `.env`.
@@ -20,9 +16,12 @@ describe('root account management', () => {
    * `root` is whoever is configured there.
    */
   let _PUBLIC_ADDRESS;
+  let secret, publicHex, signingMessage, publicBech32;
+
   beforeAll(() => {
+    ({ secret, publicHex, signingMessage, publicBech32 } = setupWallet());
     _PUBLIC_ADDRESS = process.env.PUBLIC_ADDRESS;
-    process.env.PUBLIC_ADDRESS = _publicAddress;
+    process.env.PUBLIC_ADDRESS = publicBech32;
   });
 
   afterAll(() => {
@@ -47,7 +46,7 @@ describe('root account management', () => {
         session = request(app);
         session
           .post('/auth/introduce')
-          .send({ publicAddress: _publicAddress })
+          .send({ publicAddress: publicHex })
           .set('Accept', 'application/json')
           .expect('Content-Type', /json/)
           .expect(201)
@@ -55,11 +54,11 @@ describe('root account management', () => {
             if (err) return done.fail(err);
             ({ publicAddress, typedData } = res.body);
 
-            const signed = sigUtil.signTypedData(ethUtil.toBuffer(_privateAddress), {privateKey: _privateAddress, data: typedData, version: 'V3' });
+            let signed = dataSigner(`${typedData.message.message} ${typedData.message.nonce}`, secret, publicHex);
 
             session
               .post('/auth/prove')
-              .send({ publicAddress: _publicAddress, signature: signed })
+              .send({ publicAddress: publicHex, signature: signed })
               .set('Content-Type', 'application/json')
               .set('Accept', 'application/json')
               .expect('Content-Type', /json/)
@@ -69,21 +68,25 @@ describe('root account management', () => {
 
                 expect(res.body.message).toEqual('Welcome!');
 
-                models.Agent.findOne({ where: { publicAddress: _publicAddress } }).then(result => {
+                models.Account.findOne({ where: { publicAddress: publicBech32 } }).then(result => {
                   root = result;
 
-                  const regularAgents = [
-                    { publicAddress: '0x07D740737b08BB0B041C15E94C5f87BC689909d5' },
-                    { publicAddress: '0xE40153f2428846Ce1FFB7B4169ce08c9374b1187', name: 'Some Guy' },
-                    { publicAddress: '0x3A267fe13E7d856E129A92b7661666b6078528E5' },
+                  let wallet0 = setupWallet(cardanoMnemonic.entropyToMnemonic(randomHex()));
+                  let wallet1 = setupWallet(cardanoMnemonic.entropyToMnemonic(randomHex()));
+                  let wallet2 = setupWallet(cardanoMnemonic.entropyToMnemonic(randomHex()));
+
+                  const regularAccounts = [
+                    { publicAddress: wallet0.publicBech32 },
+                    { publicAddress: wallet1.publicBech32, name: 'Some Guy' },
+                    { publicAddress: wallet2.publicBech32 },
                   ];
 
                   // Doing this one-at-a-time (as opposed to `insertMany`) so that `updatedAt` is different for each
-                  models.Agent.create(regularAgents[0]).then(result => {
+                  models.Account.create(regularAccounts[0]).then(result => {
 
-                    models.Agent.create(regularAgents[1]).then(result => {
+                    models.Account.create(regularAccounts[1]).then(result => {
 
-                      models.Agent.create(regularAgents[2]).then(result => {
+                      models.Account.create(regularAccounts[2]).then(result => {
 
                         done();
                       }).catch(err => {
@@ -92,7 +95,6 @@ describe('root account management', () => {
                     }).catch(err => {
                       done.fail(err);
                     });
-
                   }).catch(err => {
                     done.fail(err);
                   });
@@ -105,10 +107,10 @@ describe('root account management', () => {
 
       describe('authorized', () => {
 
-        let agents;
+        let accounts;
         beforeEach(done => {
-          models.Agent.find().sort({ updatedAt: -1 }).then(results => {
-            agents = results.filter(a => a.publicAddress !== _publicAddress);
+          models.Account.find().sort({ updatedAt: -1 }).then(results => {
+            accounts = results.filter(a => a.publicAddress !== publicBech32);
 
             done();
           }).catch(err => {
@@ -127,7 +129,7 @@ describe('root account management', () => {
               .end((err, res) => {
                 if (err) return done.fail(err);
 
-                expect(res.body.length).toEqual(agents.length);
+                expect(res.body.length).toEqual(accounts.length);
 
                 for (let account of res.body) {
                   expect(account.publicAddress).not.toEqual(root.publicAddress);
@@ -159,23 +161,23 @@ describe('root account management', () => {
                 // Row 1
                 expect($('#account-table tbody tr:first-child td:first-child').text()).toEqual('');
                 expect($('#account-table tbody tr:first-child td:nth-child(2)').text())
-                  .toEqual(agents[0].updatedAt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }));
-                expect($(`#account-table tbody tr:first-child td:nth-child(3) a[href="/account/${agents[0].publicAddress}"]`).text().trim())
-                  .toEqual(`${agents[0].publicAddress.slice(0, 4)}...${agents[0].publicAddress.slice(-3)}`);
+                  .toEqual(accounts[0].updatedAt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }));
+                expect($(`#account-table tbody tr:first-child td:nth-child(3) a[href="/account/${accounts[0].publicAddress}"]`).text().trim())
+                  .toEqual(`${accounts[0].publicAddress.slice(0, 4)}...${accounts[0].publicAddress.slice(-3)}`);
 
                 // Row 2
                 expect($('#account-table tbody tr:nth-child(2) td:first-child').text()).toEqual('Some Guy');
                 expect($('#account-table tbody tr:nth-child(2) td:nth-child(2)').text())
-                  .toEqual(agents[1].updatedAt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }));
-                expect($(`#account-table tbody tr:nth-child(2) td:nth-child(3) a[href="/account/${agents[1].publicAddress}"]`).text().trim())
-                  .toEqual(`${agents[1].publicAddress.slice(0, 4)}...${agents[1].publicAddress.slice(-3)}`);
+                  .toEqual(accounts[1].updatedAt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }));
+                expect($(`#account-table tbody tr:nth-child(2) td:nth-child(3) a[href="/account/${accounts[1].publicAddress}"]`).text().trim())
+                  .toEqual(`${accounts[1].publicAddress.slice(0, 4)}...${accounts[1].publicAddress.slice(-3)}`);
 
                 // Row 3
                 expect($('#account-table tbody tr:nth-child(3) td:first-child').text()).toEqual('');
                 expect($('#account-table tbody tr:nth-child(3) td:nth-child(2)').text())
-                  .toEqual(agents[2].updatedAt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }));
-                expect($(`#account-table tbody tr:nth-child(3) td:nth-child(3) a[href="/account/${agents[2].publicAddress}"]`).text().trim())
-                  .toEqual(`${agents[2].publicAddress.slice(0, 4)}...${agents[2].publicAddress.slice(-3)}`);
+                  .toEqual(accounts[2].updatedAt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }));
+                expect($(`#account-table tbody tr:nth-child(3) td:nth-child(3) a[href="/account/${accounts[2].publicAddress}"]`).text().trim())
+                  .toEqual(`${accounts[2].publicAddress.slice(0, 4)}...${accounts[2].publicAddress.slice(-3)}`);
 
                 done();
              });
@@ -189,13 +191,13 @@ describe('root account management', () => {
 
     describe('authorized', () => {
 
-      let session, root, transactions, regularAgents;
+      let session, root, transactions, regularAccounts;
 
       beforeEach(done => {
         session = request(app);
         session
           .post('/auth/introduce')
-          .send({ publicAddress: _publicAddress })
+          .send({ publicAddress: publicHex })
           .set('Accept', 'application/json')
           .expect('Content-Type', /json/)
           .expect(201)
@@ -203,11 +205,11 @@ describe('root account management', () => {
             if (err) return done.fail(err);
             ({ publicAddress, typedData } = res.body);
 
-            const signed = sigUtil.signTypedData(ethUtil.toBuffer(_privateAddress), {privateKey: _privateAddress, data: typedData, version: 'V3' });
+            let signed = dataSigner(`${typedData.message.message} ${typedData.message.nonce}`, secret, publicHex);
 
             session
               .post('/auth/prove')
-              .send({ publicAddress: _publicAddress, signature: signed })
+              .send({ publicAddress: publicHex, signature: signed })
               .set('Content-Type', 'application/json')
               .set('Accept', 'application/json')
               .expect('Content-Type', /json/)
@@ -217,21 +219,24 @@ describe('root account management', () => {
 
                 expect(res.body.message).toEqual('Welcome!');
 
-                models.Agent.findOne({ where: { publicAddress: _publicAddress } }).then(result => {
+                models.Account.findOne({ where: { publicAddress: publicBech32 } }).then(result => {
                   root = result;
 
-                  regularAgents = [
-                    { publicAddress: '0x07D740737b08BB0B041C15E94C5f87BC689909d5' },
-                    { publicAddress: '0xE40153f2428846Ce1FFB7B4169ce08c9374b1187', name: 'Some Guy' },
-                    { publicAddress: '0x07D740737b08BB0B041C15E94C5f87BC689909d5' },
+                  let wallet0 = setupWallet(cardanoMnemonic.entropyToMnemonic(randomHex()));
+                  let wallet1 = setupWallet(cardanoMnemonic.entropyToMnemonic(randomHex()));
+                  let wallet2 = setupWallet(cardanoMnemonic.entropyToMnemonic(randomHex()));
+                  regularAccounts = [
+                    { publicAddress: wallet0.publicBech32 },
+                    { publicAddress: wallet1.publicBech32, name: 'Some Guy' },
+                    { publicAddress: wallet2.publicBech32 },
                   ];
 
-                  models.Agent.insertMany(regularAgents).then(agents => {
+                  models.Account.insertMany(regularAccounts).then(accounts => {
                     const txs = [
-                      { hash: '0x5f77236022ded48a79ad2f98e646141aedc239db377a2b9a2376eb8a7b0a1014', value: ethers.utils.parseEther('1'), account: agents[0] },
-                      { hash: '0x8df25a1b626d2aea8c337ed087493c91d1ee2c0c9c9470e5b87060170c256631', value: ethers.utils.parseEther('1'), account: agents[1] },
-                      { hash: '0x204248c1800cfbdf303923a824e53a31c5cdc9678c13c4433dbac1f5576dc9a7', value: ethers.utils.parseEther('1'), account: agents[1] },
-                      { hash: '0xe3bca4e0a8f2168d82b4bc9a6a6c4d2beb359df425a7b2d11837688af044f962', value: ethers.utils.parseEther('1'), account: agents[2] },
+                      { hash: '0x5f77236022ded48a79ad2f98e646141aedc239db377a2b9a2376eb8a7b0a1014', value: ethers.utils.parseEther('1'), account: accounts[0] },
+                      { hash: '0x8df25a1b626d2aea8c337ed087493c91d1ee2c0c9c9470e5b87060170c256631', value: ethers.utils.parseEther('1'), account: accounts[1] },
+                      { hash: '0x204248c1800cfbdf303923a824e53a31c5cdc9678c13c4433dbac1f5576dc9a7', value: ethers.utils.parseEther('1'), account: accounts[1] },
+                      { hash: '0xe3bca4e0a8f2168d82b4bc9a6a6c4d2beb359df425a7b2d11837688af044f962', value: ethers.utils.parseEther('1'), account: accounts[2] },
                     ];
 
                     models.Transaction.insertMany(txs).then(result => {
@@ -255,7 +260,7 @@ describe('root account management', () => {
 
         it('returns successfully with root\'s own info', done => {
           session
-           .get(`/account/${_publicAddress}`)
+           .get(`/account/${publicBech32}`)
            .set('Accept', 'application/json')
            .expect('Content-Type', /json/)
            .expect(200)
@@ -267,16 +272,16 @@ describe('root account management', () => {
         });
 
         it('returns successfully with any account info', done => {
-          expect(regularAgents[1].name).toEqual('Some Guy');
+          expect(regularAccounts[1].name).toEqual('Some Guy');
           session
-           .get(`/account/${regularAgents[1].publicAddress}`)
+           .get(`/account/${regularAccounts[1].publicAddress}`)
            .set('Accept', 'application/json')
            .expect('Content-Type', /json/)
            .expect(200)
            .end((err, res) => {
              if (err) return done.fail(err);
-             expect(res.body.publicAddress).toEqual(regularAgents[1].publicAddress);
-             expect(res.body.name).toEqual(regularAgents[1].name);
+             expect(res.body.publicAddress).toEqual(regularAccounts[1].publicAddress);
+             expect(res.body.name).toEqual(regularAccounts[1].name);
 
              done();
            });
@@ -287,7 +292,7 @@ describe('root account management', () => {
 
         it('returns successfully with root\'s own info', done => {
           session
-           .get(`/account/${_publicAddress}`)
+           .get(`/account/${publicBech32}`)
            .expect('Content-Type', /text/)
            .expect(200)
            .end((err, res) => {
@@ -296,7 +301,7 @@ describe('root account management', () => {
              const $ = cheerio.load(res.text);
              expect($('header a[href="/"] #donate-button').length).toEqual(0);
              expect($('header a[href="/account"] #account-button').length).toEqual(1);
-             expect($(`form#account-details[action="/account/${_publicAddress}?_method=PUT"]`).length).toEqual(1);
+             expect($(`form#account-details[action="/account/${publicBech32}?_method=PUT"]`).length).toEqual(1);
 
              done();
            });
@@ -304,7 +309,7 @@ describe('root account management', () => {
 
         it('returns successfully with any account info superview', done => {
           session
-           .get(`/account/${regularAgents[1].publicAddress}`)
+           .get(`/account/${regularAccounts[1].publicAddress}`)
            .expect('Content-Type', /text/)
            .expect(200)
            .end((err, res) => {
@@ -313,7 +318,7 @@ describe('root account management', () => {
              const $ = cheerio.load(res.text);
              expect($('header a[href="/"] #donate-button').length).toEqual(0);
              expect($('header a[href="/account"] #account-button').length).toEqual(1);
-             expect($(`form#account-details[action="/account/${regularAgents[1].publicAddress}?_method=PUT"]`).length).toEqual(1);
+             expect($(`form#account-details[action="/account/${regularAccounts[1].publicAddress}?_method=PUT"]`).length).toEqual(1);
 
              done();
            });
@@ -326,13 +331,13 @@ describe('root account management', () => {
 
     describe('authorized', () => {
 
-      let session, root, transactions, regularAgents;
+      let session, root, transactions, regularAccounts;
 
       beforeEach(done => {
         session = request(app);
         session
           .post('/auth/introduce')
-          .send({ publicAddress: _publicAddress })
+          .send({ publicAddress: publicHex })
           .set('Accept', 'application/json')
           .expect('Content-Type', /json/)
           .expect(201)
@@ -340,11 +345,11 @@ describe('root account management', () => {
             if (err) return done.fail(err);
             ({ publicAddress, typedData } = res.body);
 
-            const signed = sigUtil.signTypedData(ethUtil.toBuffer(_privateAddress), {privateKey: _privateAddress, data: typedData, version: 'V3' });
+            let signed = dataSigner(`${typedData.message.message} ${typedData.message.nonce}`, secret, publicHex);
 
             session
               .post('/auth/prove')
-              .send({ publicAddress: _publicAddress, signature: signed })
+              .send({ publicAddress: publicHex, signature: signed })
               .set('Content-Type', 'application/json')
               .set('Accept', 'application/json')
               .expect('Content-Type', /json/)
@@ -354,21 +359,24 @@ describe('root account management', () => {
 
                 expect(res.body.message).toEqual('Welcome!');
 
-                models.Agent.findOne({ where: { publicAddress: _publicAddress } }).then(result => {
+                models.Account.findOne({ where: { publicAddress: publicBech32 } }).then(result => {
                   root = result;
 
-                  regularAgents = [
-                    { publicAddress: '0x07D740737b08BB0B041C15E94C5f87BC689909d5' },
-                    { publicAddress: '0xE40153f2428846Ce1FFB7B4169ce08c9374b1187', name: 'Some Guy' },
-                    { publicAddress: '0x07D740737b08BB0B041C15E94C5f87BC689909d5' },
+                  let wallet0 = setupWallet(cardanoMnemonic.entropyToMnemonic(randomHex()));
+                  let wallet1 = setupWallet(cardanoMnemonic.entropyToMnemonic(randomHex()));
+                  let wallet2 = setupWallet(cardanoMnemonic.entropyToMnemonic(randomHex()));
+                  regularAccounts = [
+                    { publicAddress: wallet0.publicBech32 },
+                    { publicAddress: wallet1.publicBech32, name: 'Some Guy' },
+                    { publicAddress: wallet2.publicBech32 },
                   ];
 
-                  models.Agent.insertMany(regularAgents).then(agents => {
+                  models.Account.insertMany(regularAccounts).then(accounts => {
                     const txs = [
-                      { hash: '0x5f77236022ded48a79ad2f98e646141aedc239db377a2b9a2376eb8a7b0a1014', value: ethers.utils.parseEther('1'), account: agents[0] },
-                      { hash: '0x8df25a1b626d2aea8c337ed087493c91d1ee2c0c9c9470e5b87060170c256631', value: ethers.utils.parseEther('1'), account: agents[1] },
-                      { hash: '0x204248c1800cfbdf303923a824e53a31c5cdc9678c13c4433dbac1f5576dc9a7', value: ethers.utils.parseEther('1'), account: agents[1] },
-                      { hash: '0xe3bca4e0a8f2168d82b4bc9a6a6c4d2beb359df425a7b2d11837688af044f962', value: ethers.utils.parseEther('1'), account: agents[2] },
+                      { hash: '0x5f77236022ded48a79ad2f98e646141aedc239db377a2b9a2376eb8a7b0a1014', value: ethers.utils.parseEther('1'), account: accounts[0] },
+                      { hash: '0x8df25a1b626d2aea8c337ed087493c91d1ee2c0c9c9470e5b87060170c256631', value: ethers.utils.parseEther('1'), account: accounts[1] },
+                      { hash: '0x204248c1800cfbdf303923a824e53a31c5cdc9678c13c4433dbac1f5576dc9a7', value: ethers.utils.parseEther('1'), account: accounts[1] },
+                      { hash: '0xe3bca4e0a8f2168d82b4bc9a6a6c4d2beb359df425a7b2d11837688af044f962', value: ethers.utils.parseEther('1'), account: accounts[2] },
                     ];
 
                     models.Transaction.insertMany(txs).then(result => {
@@ -420,9 +428,9 @@ describe('root account management', () => {
                 .end((err, res) => {
                   if (err) return done.fail(err);
 
-                  models.Agent.findOne({ publicAddress: root.publicAddress }).then(agent => {
-                    expect(agent.name).toEqual('Some Guy');
-                    expect(agent.publicAddress).toEqual(root.publicAddress);
+                  models.Account.findOne({ publicAddress: root.publicAddress }).then(account => {
+                    expect(account.name).toEqual('Some Guy');
+                    expect(account.publicAddress).toEqual(root.publicAddress);
 
                     done();
                   }).catch(err => {
@@ -437,7 +445,7 @@ describe('root account management', () => {
             let regularAccount;
 
             beforeEach(done => {
-              models.Agent.findOne({ publicAddress: regularAgents[0].publicAddress }).then(result => {
+              models.Account.findOne({ publicAddress: regularAccounts[0].publicAddress }).then(result => {
                 regularAccount = result;
                 done();
               }).catch(err => {
@@ -471,9 +479,9 @@ describe('root account management', () => {
                 .end((err, res) => {
                   if (err) return done.fail(err);
 
-                  models.Agent.findOne({ publicAddress: regularAccount.publicAddress }).then(agent => {
-                    expect(agent.name).toEqual('Some Other Guy');
-                    expect(agent.publicAddress).toEqual(regularAccount.publicAddress);
+                  models.Account.findOne({ publicAddress: regularAccount.publicAddress }).then(account => {
+                    expect(account.name).toEqual('Some Other Guy');
+                    expect(account.publicAddress).toEqual(regularAccount.publicAddress);
 
                     done();
                   }).catch(err => {
@@ -489,7 +497,7 @@ describe('root account management', () => {
           describe('root\'s own data', () => {
 
             it('does not allow modifying publicAddress', done => {
-              expect(root.publicAddress).toEqual(_publicAddress);
+              expect(root.publicAddress).toEqual(publicBech32);
               session
                 .put('/account')
                 .send({ publicAddress: '0x4D8B94b1358DB655aCAdcCF43768b9AbA00b2e74' })
@@ -501,8 +509,8 @@ describe('root account management', () => {
 
                   expect(res.body.message).toEqual('Forbidden');
 
-                  models.Agent.findOne({ publicAddress: root.publicAddress }).then(agent => {
-                    expect(agent.publicAddress).toEqual(root.publicAddress);
+                  models.Account.findOne({ publicAddress: root.publicAddress }).then(account => {
+                    expect(account.publicAddress).toEqual(root.publicAddress);
 
                     done();
                   }).catch(err => {
@@ -526,8 +534,8 @@ describe('root account management', () => {
 
                   expect(res.body.message).toEqual('Forbidden');
 
-                  models.Agent.findOne({ publicAddress: root.publicAddress }).then(agent => {
-                    expect(agent.nonce).toEqual(currentNonce);
+                  models.Account.findOne({ publicAddress: root.publicAddress }).then(account => {
+                    expect(account.nonce).toEqual(currentNonce);
 
                     done();
                   }).catch(err => {
@@ -542,7 +550,7 @@ describe('root account management', () => {
             let regularAccount;
 
             beforeEach(done => {
-              models.Agent.findOne({ publicAddress: regularAgents[0].publicAddress }).then(result => {
+              models.Account.findOne({ publicAddress: regularAccounts[0].publicAddress }).then(result => {
                 regularAccount = result;
                 done();
               }).catch(err => {
@@ -563,8 +571,8 @@ describe('root account management', () => {
 
                   expect(res.body.message).toEqual('Forbidden');
 
-                  models.Agent.findOne({ publicAddress: regularAccount.publicAddress }).then(agent => {
-                    expect(agent.publicAddress).toEqual(regularAccount.publicAddress);
+                  models.Account.findOne({ publicAddress: regularAccount.publicAddress }).then(account => {
+                    expect(account.publicAddress).toEqual(regularAccount.publicAddress);
 
                     done();
                   }).catch(err => {
@@ -588,8 +596,8 @@ describe('root account management', () => {
 
                   expect(res.body.message).toEqual('Forbidden');
 
-                  models.Agent.findOne({ publicAddress: regularAccount.publicAddress }).then(agent => {
-                    expect(agent.nonce).toEqual(currentNonce);
+                  models.Account.findOne({ publicAddress: regularAccount.publicAddress }).then(account => {
+                    expect(account.nonce).toEqual(currentNonce);
 
                     done();
                   }).catch(err => {
@@ -631,9 +639,9 @@ describe('root account management', () => {
                 .end((err, res) => {
                   if (err) return done.fail(err);
 
-                  models.Agent.findOne({ publicAddress: root.publicAddress }).then(agent => {
-                    expect(agent.name).toEqual('Super Root');
-                    expect(agent.publicAddress).toEqual(root.publicAddress);
+                  models.Account.findOne({ publicAddress: root.publicAddress }).then(account => {
+                    expect(account.name).toEqual('Super Root');
+                    expect(account.publicAddress).toEqual(root.publicAddress);
 
                     done();
                   }).catch(err => {
@@ -648,7 +656,7 @@ describe('root account management', () => {
             let regularAccount;
 
             beforeEach(done => {
-              models.Agent.findOne({ publicAddress: regularAgents[0].publicAddress }).then(result => {
+              models.Account.findOne({ publicAddress: regularAccounts[0].publicAddress }).then(result => {
                 regularAccount = result;
                 done();
               }).catch(err => {
@@ -680,9 +688,9 @@ describe('root account management', () => {
                 .end((err, res) => {
                   if (err) return done.fail(err);
 
-                  models.Agent.findOne({ publicAddress: regularAccount.publicAddress }).then(agent => {
-                    expect(agent.name).toEqual('Some Regular Guy');
-                    expect(agent.publicAddress).toEqual(regularAccount.publicAddress);
+                  models.Account.findOne({ publicAddress: regularAccount.publicAddress }).then(account => {
+                    expect(account.name).toEqual('Some Regular Guy');
+                    expect(account.publicAddress).toEqual(regularAccount.publicAddress);
 
                     done();
                   }).catch(err => {
@@ -698,7 +706,7 @@ describe('root account management', () => {
           describe('root\'s own data', () => {
 
             it('does not allow modifying publicAddress', done => {
-              expect(root.publicAddress).toEqual(_publicAddress);
+              expect(root.publicAddress).toEqual(publicBech32);
               session
                 .put('/account')
                 .send({ publicAddress: '0x4D8B94b1358DB655aCAdcCF43768b9AbA00b2e74' })
@@ -707,8 +715,8 @@ describe('root account management', () => {
                 .end((err, res) => {
                   if (err) return done.fail(err);
 
-                  models.Agent.findOne({ publicAddress: root.publicAddress }).then(agent => {
-                    expect(agent.publicAddress).toEqual(root.publicAddress);
+                  models.Account.findOne({ publicAddress: root.publicAddress }).then(account => {
+                    expect(account.publicAddress).toEqual(root.publicAddress);
 
                     done();
                   }).catch(err => {
@@ -729,8 +737,8 @@ describe('root account management', () => {
                 .end((err, res) => {
                   if (err) return done.fail(err);
 
-                  models.Agent.findOne({ publicAddress: root.publicAddress }).then(agent => {
-                    expect(agent.nonce).toEqual(currentNonce);
+                  models.Account.findOne({ publicAddress: root.publicAddress }).then(account => {
+                    expect(account.nonce).toEqual(currentNonce);
 
                     done();
                   }).catch(err => {
@@ -745,7 +753,7 @@ describe('root account management', () => {
             let regularAccount;
 
             beforeEach(done => {
-              models.Agent.findOne({ publicAddress: regularAgents[0].publicAddress }).then(result => {
+              models.Account.findOne({ publicAddress: regularAccounts[0].publicAddress }).then(result => {
                 regularAccount = result;
                 done();
               }).catch(err => {
@@ -763,8 +771,8 @@ describe('root account management', () => {
                 .end((err, res) => {
                   if (err) return done.fail(err);
 
-                  models.Agent.findOne({ publicAddress: regularAccount.publicAddress }).then(agent => {
-                    expect(agent.publicAddress).toEqual(regularAccount.publicAddress);
+                  models.Account.findOne({ publicAddress: regularAccount.publicAddress }).then(account => {
+                    expect(account.publicAddress).toEqual(regularAccount.publicAddress);
 
                     done();
                   }).catch(err => {
@@ -785,8 +793,8 @@ describe('root account management', () => {
                 .end((err, res) => {
                   if (err) return done.fail(err);
 
-                  models.Agent.findOne({ publicAddress: regularAccount.publicAddress }).then(agent => {
-                    expect(agent.nonce).toEqual(currentNonce);
+                  models.Account.findOne({ publicAddress: regularAccount.publicAddress }).then(account => {
+                    expect(account.nonce).toEqual(currentNonce);
 
                     done();
                   }).catch(err => {

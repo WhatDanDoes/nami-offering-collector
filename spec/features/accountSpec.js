@@ -1,18 +1,19 @@
-const sigUtil = require('eth-sig-util');
-const ethUtil = require('ethereumjs-util');
-const ethers = require('ethers');
 const cheerio = require('cheerio');
 const request = require('supertest-session');
 const app = require('../../app');
 const models = require('../../models');
+const cardanoUtils = require('cardano-crypto.js');
+const setupWallet = require('../support/setupWallet');
+const randomHex = require('../support/randomHex');
+const cardanoMnemonic =  require('cardano-mnemonic');
+const dataSigner = require('../../lib/dataSigner');
 
 describe('account management', () => {
 
-  jasmine.DEFAULT_TIMEOUT_INTERVAL = 10000;
-
-  // These were provided by ganache-cli
-  const _publicAddress = '0x034F8c5c8381Bf45511d071875333Eba143Bd10e';
-  const _privateAddress = '0xb30b64470fe770bbe8e9ff6478e550ce99e7f38d8e07ec2dbe27e8ff45742cf6';
+  let secret, publicHex, signingMessage, publicBech32;
+  beforeAll(() => {
+    ({ secret, publicHex, signingMessage, publicBech32 } = setupWallet());
+  });
 
   afterEach(done => {
     models.mongoose.connection.db.dropDatabase().then((err, result) => {
@@ -26,13 +27,13 @@ describe('account management', () => {
 
     describe('authorized', () => {
 
-      let session, agent;
+      let session, account;
 
       beforeEach(done => {
         session = request(app);
         session
           .post('/auth/introduce')
-          .send({ publicAddress: _publicAddress })
+          .send({ publicAddress: publicHex })
           .set('Accept', 'application/json')
           .expect('Content-Type', /json/)
           .expect(201)
@@ -40,11 +41,11 @@ describe('account management', () => {
             if (err) return done.fail(err);
             ({ publicAddress, typedData } = res.body);
 
-            const signed = sigUtil.signTypedData(ethUtil.toBuffer(_privateAddress), {privateKey: _privateAddress, data: typedData, version: 'V3' });
+            let signed = dataSigner(`${typedData.message.message} ${typedData.message.nonce}`, secret, publicHex);
 
             session
               .post('/auth/prove')
-              .send({ publicAddress: _publicAddress, signature: signed })
+              .send({ publicAddress: publicHex, signature: signed })
               .set('Content-Type', 'application/json')
               .set('Accept', 'application/json')
               .expect('Content-Type', /json/)
@@ -54,8 +55,8 @@ describe('account management', () => {
 
                 expect(res.body.message).toEqual('Welcome!');
 
-                models.Agent.findOne({ where: { publicAddress: _publicAddress } }).then(result => {
-                  agent = result;
+                models.Account.findOne({ publicAddress: publicBech32 }).then(result => {
+                  account = result;
 
                   done();
                 }).catch(err => {
@@ -75,7 +76,7 @@ describe('account management', () => {
            .expect(200)
            .end((err, res) => {
              if (err) return done.fail(err);
-             expect(res.body.publicAddress).toEqual(agent.publicAddress);
+             expect(res.body.publicAddress).toEqual(account.publicAddress);
              done();
            });
         });
@@ -144,13 +145,13 @@ describe('account management', () => {
 
     describe('authorized', () => {
 
-      let session, agent;
+      let session, account;
 
       beforeEach(done => {
         session = request(app);
         session
           .post('/auth/introduce')
-          .send({ publicAddress: _publicAddress })
+          .send({ publicAddress: publicHex })
           .set('Accept', 'application/json')
           .expect('Content-Type', /json/)
           .expect(201)
@@ -158,11 +159,11 @@ describe('account management', () => {
             if (err) return done.fail(err);
             ({ publicAddress, typedData } = res.body);
 
-            const signed = sigUtil.signTypedData(ethUtil.toBuffer(_privateAddress), {privateKey: _privateAddress, data: typedData, version: 'V3' });
+            let signed = dataSigner(`${typedData.message.message} ${typedData.message.nonce}`, secret, publicHex);
 
             session
               .post('/auth/prove')
-              .send({ publicAddress: _publicAddress, signature: signed })
+              .send({ publicAddress: publicHex, signature: signed })
               .set('Content-Type', 'application/json')
               .set('Accept', 'application/json')
               .expect('Content-Type', /json/)
@@ -172,8 +173,8 @@ describe('account management', () => {
 
                 expect(res.body.message).toEqual('Welcome!');
 
-                models.Agent.findOne({ where: { publicAddress: _publicAddress } }).then(result => {
-                  agent = result;
+                models.Account.findOne({ publicAddress: publicBech32 }).then(result => {
+                  account = result;
 
                   done();
                 }).catch(err => {
@@ -187,13 +188,13 @@ describe('account management', () => {
 
         it('returns successfully', done => {
           session
-           .get(`/account/${_publicAddress}`)
+           .get(`/account/${publicBech32}`)
            .set('Accept', 'application/json')
            .expect('Content-Type', /json/)
            .expect(200)
            .end((err, res) => {
              if (err) return done.fail(err);
-             expect(res.body.publicAddress).toEqual(agent.publicAddress);
+             expect(res.body.publicAddress).toEqual(account.publicAddress);
              done();
            });
         });
@@ -203,7 +204,7 @@ describe('account management', () => {
 
         it('returns successfully', done => {
           session
-           .get(`/account/${_publicAddress}`)
+           .get(`/account/${publicBech32}`)
            .expect('Content-Type', /text/)
            .expect(200)
            .end((err, res) => {
@@ -254,13 +255,13 @@ describe('account management', () => {
 
     describe('authorized', () => {
 
-      let session, agent;
+      let session, account;
 
       beforeEach(done => {
         session = request(app);
         session
           .post('/auth/introduce')
-          .send({ publicAddress: _publicAddress })
+          .send({ publicAddress: publicHex })
           .set('Accept', 'application/json')
           .expect('Content-Type', /json/)
           .expect(201)
@@ -268,11 +269,11 @@ describe('account management', () => {
             if (err) return done.fail(err);
             ({ publicAddress, typedData } = res.body);
 
-            const signed = sigUtil.signTypedData(ethUtil.toBuffer(_privateAddress), {privateKey: _privateAddress, data: typedData, version: 'V3' });
+            let signed = dataSigner(`${typedData.message.message} ${typedData.message.nonce}`, secret, publicHex);
 
             session
               .post('/auth/prove')
-              .send({ publicAddress: _publicAddress, signature: signed })
+              .send({ publicAddress: publicHex, signature: signed })
               .set('Content-Type', 'application/json')
               .set('Accept', 'application/json')
               .expect('Content-Type', /json/)
@@ -282,8 +283,8 @@ describe('account management', () => {
 
                 expect(res.body.message).toEqual('Welcome!');
 
-                models.Agent.findOne({ where: { publicAddress: _publicAddress } }).then(result => {
-                  agent = result;
+                models.Account.findOne({ publicAddress: publicBech32 }).then(result => {
+                  account = result;
 
                   done();
                 }).catch(err => {
@@ -313,7 +314,7 @@ describe('account management', () => {
           });
 
           it('updates the database', done => {
-            expect(agent.name).toBeUndefined();
+            expect(account.name).toBeUndefined();
             session
               .put('/account')
               .send({ name: 'Some Guy' })
@@ -323,10 +324,10 @@ describe('account management', () => {
               .end((err, res) => {
                 if (err) return done.fail(err);
 
-                models.Agent.find({}).then(agents => {
-                  expect(agents.length).toEqual(1);
-                  expect(agents[0].name).toEqual('Some Guy');
-                  expect(agents[0].publicAddress).toEqual(_publicAddress);
+                models.Account.find({}).then(accounts => {
+                  expect(accounts.length).toEqual(1);
+                  expect(accounts[0].name).toEqual('Some Guy');
+                  expect(accounts[0].publicAddress).toEqual(publicBech32);
 
                   done();
                 }).catch(err => {
@@ -339,7 +340,7 @@ describe('account management', () => {
         describe('failure', () => {
 
           it('does not allow modifying publicAddress', done => {
-            expect(agent.publicAddress).toEqual(_publicAddress);
+            expect(account.publicAddress).toEqual(publicBech32);
             session
               .put('/account')
               .send({ publicAddress: '0x4D8B94b1358DB655aCAdcCF43768b9AbA00b2e74' })
@@ -351,9 +352,9 @@ describe('account management', () => {
 
                 expect(res.body.message).toEqual('Forbidden');
 
-                models.Agent.find({}).then(agents => {
-                  expect(agents.length).toEqual(1);
-                  expect(agents[0].publicAddress).toEqual(_publicAddress);
+                models.Account.find({}).then(accounts => {
+                  expect(accounts.length).toEqual(1);
+                  expect(accounts[0].publicAddress).toEqual(publicBech32);
 
                   done();
                 }).catch(err => {
@@ -363,7 +364,7 @@ describe('account management', () => {
           });
 
           it('does not allow modifying nonce', done => {
-            const currentNonce = agent.nonce;
+            const currentNonce = account.nonce;
             const newNonce = Math.floor(Math.random() * 1000000).toString();
             expect(currentNonce).not.toEqual(newNonce);
             session
@@ -377,9 +378,9 @@ describe('account management', () => {
 
                 expect(res.body.message).toEqual('Forbidden');
 
-                models.Agent.find({}).then(agents => {
-                  expect(agents.length).toEqual(1);
-                  expect(agents[0].nonce).toEqual(currentNonce);
+                models.Account.find({}).then(accounts => {
+                  expect(accounts.length).toEqual(1);
+                  expect(accounts[0].nonce).toEqual(currentNonce);
 
                   done();
                 }).catch(err => {
@@ -409,7 +410,7 @@ describe('account management', () => {
           });
 
           it('updates the database', done => {
-            expect(agent.name).toBeUndefined();
+            expect(account.name).toBeUndefined();
             session
               .put('/account')
               .send({ name: 'Some Guy' })
@@ -418,10 +419,10 @@ describe('account management', () => {
               .end((err, res) => {
                 if (err) return done.fail(err);
 
-                models.Agent.find({}).then(agents => {
-                  expect(agents.length).toEqual(1);
-                  expect(agents[0].name).toEqual('Some Guy');
-                  expect(agents[0].publicAddress).toEqual(_publicAddress);
+                models.Account.find({}).then(accounts => {
+                  expect(accounts.length).toEqual(1);
+                  expect(accounts[0].name).toEqual('Some Guy');
+                  expect(accounts[0].publicAddress).toEqual(publicBech32);
 
                   done();
                 }).catch(err => {
@@ -434,7 +435,7 @@ describe('account management', () => {
         describe('failure', () => {
 
           it('does not allow modifying publicAddress', done => {
-            expect(agent.publicAddress).toEqual(_publicAddress);
+            expect(account.publicAddress).toEqual(publicBech32);
             session
               .put('/account')
               .send({ publicAddress: '0x4D8B94b1358DB655aCAdcCF43768b9AbA00b2e74' })
@@ -443,9 +444,9 @@ describe('account management', () => {
               .end((err, res) => {
                 if (err) return done.fail(err);
 
-                models.Agent.find({}).then(agents => {
-                  expect(agents.length).toEqual(1);
-                  expect(agents[0].publicAddress).toEqual(_publicAddress);
+                models.Account.find({}).then(accounts => {
+                  expect(accounts.length).toEqual(1);
+                  expect(accounts[0].publicAddress).toEqual(publicBech32);
 
                   done();
                 }).catch(err => {
@@ -455,7 +456,7 @@ describe('account management', () => {
           });
 
           it('does not allow modifying nonce', done => {
-            const currentNonce = agent.nonce;
+            const currentNonce = account.nonce;
             const newNonce = Math.floor(Math.random() * 1000000).toString();
             expect(currentNonce).not.toEqual(newNonce);
             session
@@ -466,9 +467,9 @@ describe('account management', () => {
               .end((err, res) => {
                 if (err) return done.fail(err);
 
-                models.Agent.find({}).then(agents => {
-                  expect(agents.length).toEqual(1);
-                  expect(agents[0].nonce).toEqual(currentNonce);
+                models.Account.find({}).then(accounts => {
+                  expect(accounts.length).toEqual(1);
+                  expect(accounts[0].nonce).toEqual(currentNonce);
 
                   done();
                 }).catch(err => {
@@ -500,8 +501,8 @@ describe('account management', () => {
         });
 
         it('does not modify the database', done => {
-          models.Agent.find({}).then(agents => {
-            expect(agents.length).toEqual(0);
+          models.Account.find({}).then(accounts => {
+            expect(accounts.length).toEqual(0);
 
             request(app)
               .put('/account')
@@ -512,8 +513,8 @@ describe('account management', () => {
               .end((err, res) => {
                 if (err) return done.fail(err);
 
-                models.Agent.find({}).then(agents => {
-                  expect(agents.length).toEqual(0);
+                models.Account.find({}).then(accounts => {
+                  expect(accounts.length).toEqual(0);
 
                   done();
                 }).catch(err => {
@@ -544,8 +545,8 @@ describe('account management', () => {
         });
 
         it('does not modify the database', done => {
-          models.Agent.find({}).then(agents => {
-            expect(agents.length).toEqual(0);
+          models.Account.find({}).then(accounts => {
+            expect(accounts.length).toEqual(0);
 
             request(app)
               .put('/account')
@@ -555,8 +556,8 @@ describe('account management', () => {
               .end((err, res) => {
                 if (err) return done.fail(err);
 
-                models.Agent.find({}).then(agents => {
-                  expect(agents.length).toEqual(0);
+                models.Account.find({}).then(accounts => {
+                  expect(accounts.length).toEqual(0);
 
                   done();
                 }).catch(err => {
@@ -573,13 +574,13 @@ describe('account management', () => {
 
   describe('PUT /account/:publicAddress', () => {
 
-    let session, agent;
+    let session, account;
 
     beforeEach(done => {
       session = request(app);
       session
         .post('/auth/introduce')
-        .send({ publicAddress: _publicAddress })
+        .send({ publicAddress: publicHex })
         .set('Accept', 'application/json')
         .expect('Content-Type', /json/)
         .expect(201)
@@ -587,11 +588,11 @@ describe('account management', () => {
           if (err) return done.fail(err);
           ({ publicAddress, typedData } = res.body);
 
-          const signed = sigUtil.signTypedData(ethUtil.toBuffer(_privateAddress), {privateKey: _privateAddress, data: typedData, version: 'V3' });
+          let signed = dataSigner(`${typedData.message.message} ${typedData.message.nonce}`, secret, publicHex);
 
           session
             .post('/auth/prove')
-            .send({ publicAddress: _publicAddress, signature: signed })
+            .send({ publicAddress: publicHex, signature: signed })
             .set('Content-Type', 'application/json')
             .set('Accept', 'application/json')
             .expect('Content-Type', /json/)
@@ -601,8 +602,8 @@ describe('account management', () => {
 
               expect(res.body.message).toEqual('Welcome!');
 
-              models.Agent.findOne({ where: { publicAddress: _publicAddress } }).then(result => {
-                agent = result;
+              models.Account.findOne({ publicAddress: publicBech32 }).then(result => {
+                account = result;
 
                 done();
               }).catch(err => {
@@ -620,7 +621,7 @@ describe('account management', () => {
 
           it('returns 201 with a friendly message', done => {
              session
-              .put(`/account/${agent.publicAddress}`)
+              .put(`/account/${account.publicAddress}`)
               .send({ name: 'Some Guy' })
               .set('Accept', 'application/json')
               .expect('Content-Type', /json/)
@@ -634,9 +635,9 @@ describe('account management', () => {
           });
 
           it('updates the database', done => {
-            expect(agent.name).toBeUndefined();
+            expect(account.name).toBeUndefined();
             session
-              .put(`/account/${agent.publicAddress}`)
+              .put(`/account/${account.publicAddress}`)
               .send({ name: 'Some Guy' })
               .set('Accept', 'application/json')
               .expect('Content-Type', /json/)
@@ -644,10 +645,10 @@ describe('account management', () => {
               .end((err, res) => {
                 if (err) return done.fail(err);
 
-                models.Agent.find({}).then(agents => {
-                  expect(agents.length).toEqual(1);
-                  expect(agents[0].name).toEqual('Some Guy');
-                  expect(agents[0].publicAddress).toEqual(_publicAddress);
+                models.Account.find({}).then(accounts => {
+                  expect(accounts.length).toEqual(1);
+                  expect(accounts[0].name).toEqual('Some Guy');
+                  expect(accounts[0].publicAddress).toEqual(publicBech32);
 
                   done();
                 }).catch(err => {
@@ -660,9 +661,9 @@ describe('account management', () => {
         describe('failure', () => {
 
           it('does not allow modifying publicAddress', done => {
-            expect(agent.publicAddress).toEqual(_publicAddress);
+            expect(account.publicAddress).toEqual(publicBech32);
             session
-              .put(`/account/${agent.publicAddress}`)
+              .put(`/account/${account.publicAddress}`)
               .send({ publicAddress: '0x4D8B94b1358DB655aCAdcCF43768b9AbA00b2e74' })
               .set('Accept', 'application/json')
               .expect('Content-Type', /json/)
@@ -672,9 +673,9 @@ describe('account management', () => {
 
                 expect(res.body.message).toEqual('Forbidden');
 
-                models.Agent.find({}).then(agents => {
-                  expect(agents.length).toEqual(1);
-                  expect(agents[0].publicAddress).toEqual(_publicAddress);
+                models.Account.find({}).then(accounts => {
+                  expect(accounts.length).toEqual(1);
+                  expect(accounts[0].publicAddress).toEqual(publicBech32);
 
                   done();
                 }).catch(err => {
@@ -684,11 +685,11 @@ describe('account management', () => {
           });
 
           it('does not allow modifying nonce', done => {
-            const currentNonce = agent.nonce;
+            const currentNonce = account.nonce;
             const newNonce = Math.floor(Math.random() * 1000000).toString();
             expect(currentNonce).not.toEqual(newNonce);
             session
-              .put(`/account/${agent.publicAddress}`)
+              .put(`/account/${account.publicAddress}`)
               .send({ nonce: newNonce })
               .set('Accept', 'application/json')
               .expect('Content-Type', /json/)
@@ -698,9 +699,9 @@ describe('account management', () => {
 
                 expect(res.body.message).toEqual('Forbidden');
 
-                models.Agent.find({}).then(agents => {
-                  expect(agents.length).toEqual(1);
-                  expect(agents[0].nonce).toEqual(currentNonce);
+                models.Account.find({}).then(accounts => {
+                  expect(accounts.length).toEqual(1);
+                  expect(accounts[0].nonce).toEqual(currentNonce);
 
                   done();
                 }).catch(err => {
@@ -717,32 +718,32 @@ describe('account management', () => {
 
           it('redirects', done => {
             session
-              .put(`/account/${agent.publicAddress}`)
+              .put(`/account/${account.publicAddress}`)
               .send({ name: 'Some Guy' })
               .expect('Content-Type', /text/)
               .expect(302)
               .end((err, res) => {
                 if (err) return done.fail(err);
 
-                expect(res.headers['location']).toEqual(`/account/${agent.publicAddress}`);
+                expect(res.headers['location']).toEqual(`/account/${account.publicAddress}`);
                 done();
               });
           });
 
           it('updates the database', done => {
-            expect(agent.name).toBeUndefined();
+            expect(account.name).toBeUndefined();
             session
-              .put(`/account/${agent.publicAddress}`)
+              .put(`/account/${account.publicAddress}`)
               .send({ name: 'Some Guy' })
               .expect('Content-Type', /text/)
               .expect(302)
               .end((err, res) => {
                 if (err) return done.fail(err);
 
-                models.Agent.find({}).then(agents => {
-                  expect(agents.length).toEqual(1);
-                  expect(agents[0].name).toEqual('Some Guy');
-                  expect(agents[0].publicAddress).toEqual(_publicAddress);
+                models.Account.find({}).then(accounts => {
+                  expect(accounts.length).toEqual(1);
+                  expect(accounts[0].name).toEqual('Some Guy');
+                  expect(accounts[0].publicAddress).toEqual(publicBech32);
 
                   done();
                 }).catch(err => {
@@ -755,18 +756,18 @@ describe('account management', () => {
         describe('failure', () => {
 
           it('does not allow modifying publicAddress', done => {
-            expect(agent.publicAddress).toEqual(_publicAddress);
+            expect(account.publicAddress).toEqual(publicBech32);
             session
-              .put(`/account/${agent.publicAddress}`)
+              .put(`/account/${account.publicAddress}`)
               .send({ publicAddress: '0x4D8B94b1358DB655aCAdcCF43768b9AbA00b2e74' })
               .expect('Content-Type', /text/)
               .expect(403)
               .end((err, res) => {
                 if (err) return done.fail(err);
 
-                models.Agent.find({}).then(agents => {
-                  expect(agents.length).toEqual(1);
-                  expect(agents[0].publicAddress).toEqual(_publicAddress);
+                models.Account.find({}).then(accounts => {
+                  expect(accounts.length).toEqual(1);
+                  expect(accounts[0].publicAddress).toEqual(publicBech32);
 
                   done();
                 }).catch(err => {
@@ -776,20 +777,20 @@ describe('account management', () => {
           });
 
           it('does not allow modifying nonce', done => {
-            const currentNonce = agent.nonce;
+            const currentNonce = account.nonce;
             const newNonce = Math.floor(Math.random() * 1000000).toString();
             expect(currentNonce).not.toEqual(newNonce);
             session
-              .put(`/account/${agent.publicAddress}`)
+              .put(`/account/${account.publicAddress}`)
               .send({ nonce: newNonce })
               .expect('Content-Type', /html/)
               .expect(403)
               .end((err, res) => {
                 if (err) return done.fail(err);
 
-                models.Agent.find({}).then(agents => {
-                  expect(agents.length).toEqual(1);
-                  expect(agents[0].nonce).toEqual(currentNonce);
+                models.Account.find({}).then(accounts => {
+                  expect(accounts.length).toEqual(1);
+                  expect(accounts[0].nonce).toEqual(currentNonce);
 
                   done();
                 }).catch(err => {
@@ -803,10 +804,12 @@ describe('account management', () => {
 
     describe('unauthorized', () => {
 
-      let anotherAgent;
+      let anotherAccount;
+
       beforeEach(done => {
-        models.Agent.create({ publicAddress: '0xE40153f2428846Ce1FFB7B4169ce08c9374b1187' }).then(result => {
-          anotherAgent = result;
+        let wallet = setupWallet(cardanoMnemonic.entropyToMnemonic(randomHex()));
+        models.Account.create({ publicAddress: wallet.publicBech32 }).then(result => {
+          anotherAccount = result;
           done();
         }).catch(err => {
           done.fail(err);
@@ -817,7 +820,7 @@ describe('account management', () => {
 
         it('returns 401 with a friendly message', done => {
           session
-            .put(`/account/${anotherAgent.publicAddress}`)
+            .put(`/account/${anotherAccount.publicAddress}`)
             .send({ name: 'Some Guy' })
             .set('Accept', 'application/json')
             .expect('Content-Type', /json/)
@@ -831,9 +834,9 @@ describe('account management', () => {
         });
 
         it('does not modify the database', done => {
-          expect(anotherAgent.name).toBeUndefined();
+          expect(anotherAccount.name).toBeUndefined();
           session
-            .put(`/account/${anotherAgent.publicAddress}`)
+            .put(`/account/${anotherAccount.publicAddress}`)
             .send({ name: 'Some Guy' })
             .set('Accept', 'application/json')
             .expect('Content-Type', /json/)
@@ -841,8 +844,8 @@ describe('account management', () => {
             .end((err, res) => {
               if (err) return done.fail(err);
 
-              models.Agent.findOne({ publicAddress: anotherAgent.publicAddress }).then(agent => {
-                expect(agent.name).toBeUndefined();
+              models.Account.findOne({ publicAddress: anotherAccount.publicAddress }).then(account => {
+                expect(account.name).toBeUndefined();
 
                 done();
               }).catch(err => {
@@ -856,7 +859,7 @@ describe('account management', () => {
 
         it('redirects', done => {
           session
-            .put(`/account/${anotherAgent.publicAddress}`)
+            .put(`/account/${anotherAccount.publicAddress}`)
             .send({ name: 'Some Guy' })
             .expect('Content-Type', /text/)
             .expect(302)
@@ -869,19 +872,19 @@ describe('account management', () => {
         });
 
         it('does not modify the database', done => {
-          models.Agent.findOne({ publicAddress: anotherAgent.publicAddress }).then(agent => {
-            expect(agent.name).toBeUndefined();
+          models.Account.findOne({ publicAddress: anotherAccount.publicAddress }).then(account => {
+            expect(account.name).toBeUndefined();
 
             session
-              .put(`/account/${anotherAgent.publicAddress}`)
+              .put(`/account/${anotherAccount.publicAddress}`)
               .send({ name: 'Some Guy' })
               .expect('Content-Type', /text/)
               .expect(302)
               .end((err, res) => {
                 if (err) return done.fail(err);
 
-                models.Agent.findOne({ publicAddress: anotherAgent.publicAddress }).then(agent => {
-                  expect(agent.name).toBeUndefined();
+                models.Account.findOne({ publicAddress: anotherAccount.publicAddress }).then(account => {
+                  expect(account.name).toBeUndefined();
 
                   done();
                 }).catch(err => {

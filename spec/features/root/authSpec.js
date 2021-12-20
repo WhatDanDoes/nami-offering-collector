@@ -1,18 +1,12 @@
 const fs = require('fs');
 const cheerio = require('cheerio');
-const sigUtil = require('eth-sig-util');
-const ethUtil = require('ethereumjs-util');
 const request = require('supertest-session');
 const app = require('../../../app');
 const models = require('../../../models');
+const setupWallet = require('../../support/setupWallet');
+const dataSigner = require('../../../lib/dataSigner');
 
 describe('root auth', () => {
-
-  jasmine.DEFAULT_TIMEOUT_INTERVAL = 10000;
-
-  // These were provided by ganache-cli
-  const _publicAddress = '0x034F8c5c8381Bf45511d071875333Eba143Bd10e';
-  const _privateAddress = '0xb30b64470fe770bbe8e9ff6478e550ce99e7f38d8e07ec2dbe27e8ff45742cf6';
 
   /**
    * Swap out existing public address in `.env`.
@@ -20,15 +14,16 @@ describe('root auth', () => {
    * `root` is whoever is configured there.
    */
   let _PUBLIC_ADDRESS;
+  let secret, publicHex, signingMessage, publicBech32;
   beforeAll(() => {
+    ({ secret, publicHex, signingMessage, publicBech32 } = setupWallet());
     _PUBLIC_ADDRESS = process.env.PUBLIC_ADDRESS;
-    process.env.PUBLIC_ADDRESS = _publicAddress;
+    process.env.PUBLIC_ADDRESS = publicBech32;
   });
 
   afterAll(() => {
     process.env.PUBLIC_ADDRESS = _PUBLIC_ADDRESS;
   });
-
 
   afterEach(done => {
     models.mongoose.connection.db.dropDatabase().then((err, result) => {
@@ -39,6 +34,7 @@ describe('root auth', () => {
   });
 
   describe('authorized', () => {
+
     let session, root, response, $;
 
     describe('browser', () => {
@@ -47,18 +43,18 @@ describe('root auth', () => {
         session = request(app);
         session
           .post('/auth/introduce')
-          .send({ publicAddress: _publicAddress })
+          .send({ publicAddress: publicHex })
           .set('Accept', 'application/json')
           .expect('Content-Type', /json/)
           .end((err, res) => {
             if (err) return done.fail(err);
             ({ publicAddress, typedData } = res.body);
 
-            const signed = sigUtil.signTypedData(ethUtil.toBuffer(_privateAddress), { privateKey: _privateAddress, data: typedData, version: 'V3' });
+            let signed = dataSigner(`${typedData.message.message} ${typedData.message.nonce}`, secret, publicHex);
 
             session
               .post('/auth/prove')
-              .send({ publicAddress: _publicAddress, signature: signed })
+              .send({ publicAddress: publicHex, signature: signed })
               .expect('Content-Type', /text/)
               .expect(302)
               .end((err, res) => {
@@ -66,7 +62,7 @@ describe('root auth', () => {
 
                 response = res;
 
-                models.Agent.findOne({ where: { publicAddress: _publicAddress } }).then(result => {
+                models.Account.findOne({ where: { publicAddress: publicBech32 } }).then(result => {
                   root = result;
 
                   done();
