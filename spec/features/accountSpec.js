@@ -41,11 +41,11 @@ describe('account management', () => {
             if (err) return done.fail(err);
             ({ publicAddress, typedData } = res.body);
 
-            let signedMessage = dataSigner(`${typedData.message.message} ${typedData.message.nonce}`, parentWalletSecret, parentWalletPublic);
+            let signed = dataSigner(`${typedData.message.message} ${typedData.message.nonce}`, parentWalletSecret, parentWalletPublic);
 
             session
               .post('/auth/prove')
-              .send({ publicAddress: parentWalletPublicBech32, signature: signedMessage })
+              .send({ publicAddress: parentWalletPublicBech32, signature: signed })
               .set('Content-Type', 'application/json')
               .set('Accept', 'application/json')
               .expect('Content-Type', /json/)
@@ -55,7 +55,7 @@ describe('account management', () => {
 
                 expect(res.body.message).toEqual('Welcome!');
 
-                models.Account.findOne({ where: { publicAddress: parentWalletPublicBech32 } }).then(result => {
+                models.Account.findOne({ publicAddress: parentWalletPublicBech32 }).then(result => {
                   account = result;
 
                   done();
@@ -173,7 +173,7 @@ describe('account management', () => {
 
                 expect(res.body.message).toEqual('Welcome!');
 
-                models.Account.findOne({ where: { publicAddress: parentWalletPublic } }).then(result => {
+                models.Account.findOne({ publicAddress: parentWalletPublicBech32 }).then(result => {
                   account = result;
 
                   done();
@@ -204,7 +204,7 @@ describe('account management', () => {
 
         it('returns successfully', done => {
           session
-           .get(`/account/${parentWalletPublic}`)
+           .get(`/account/${parentWalletPublicBech32}`)
            .expect('Content-Type', /text/)
            .expect(200)
            .end((err, res) => {
@@ -283,7 +283,7 @@ describe('account management', () => {
 
                 expect(res.body.message).toEqual('Welcome!');
 
-                models.Account.findOne({ where: { publicAddress: parentWalletPublicBech32 } }).then(result => {
+                models.Account.findOne({ publicAddress: parentWalletPublicBech32 }).then(result => {
                   account = result;
 
                   done();
@@ -602,7 +602,7 @@ describe('account management', () => {
 
               expect(res.body.message).toEqual('Welcome!');
 
-              models.Account.findOne({ where: { publicAddress: parentWalletPublicBech32 } }).then(result => {
+              models.Account.findOne({ publicAddress: parentWalletPublicBech32 }).then(result => {
                 account = result;
 
                 done();
