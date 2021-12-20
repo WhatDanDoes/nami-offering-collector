@@ -14,10 +14,19 @@ cp .env.example .env
 
 This project depends on [Emurgo/message-signing](https://github.com/Emurgo/message-signing), which is written in [Rust](https://www.rust-lang.org/tools/install).
 
+Rust can be installed like this:
+
+```
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+source $HOME/.cargo/env
+```
+
+Install the dependency like this:
+
 ```
 git clone git@github.com:Emurgo/message-signing.git
-cd message-signing
-npm run rust:build-nodejs
+cd message-signing/rust/
+npx wasm-pack build --target nodejs
 ```
 
 The app looks in the `message-signing/rust/` directory for the required module.
