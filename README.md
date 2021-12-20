@@ -15,7 +15,7 @@ cp .env.example .env
 This project depends on [Emurgo/message-signing](https://github.com/Emurgo/message-signing), which is written in [Rust](https://www.rust-lang.org/tools/install).
 
 ```
-git@github.com:Emurgo/message-signing.git
+git clone git@github.com:Emurgo/message-signing.git
 cd message-signing
 npm run rust:build-nodejs
 ```
