@@ -101,46 +101,43 @@
       </section>
     </main>
     <script>
-      /**
-       * 2021-9-27 Adapted from https://docs.metamask.io/guide/create-dapp.html
-       */
       document.addEventListener('DOMContentLoaded', function(event) {
-          handleIdentification = async (e) => {
-            e.preventDefault();
+        handleIdentification = async (e) => {
+          e.preventDefault();
 
-            const { cardano } = window;
+          const { cardano } = window;
 
-            for (let button of document.querySelectorAll("connect-nami-button")) {
-              button.disabled = true;
+          for (let button of document.querySelectorAll("connect-nami-button")) {
+            button.disabled = true;
+          }
+
+          if (cardano) {
+            await cardano.enable();
+
+            /**
+             * 2021-12-20
+             *
+             * `getUsedAddresses`, `getChangeAddress`, and `getUnusedAddresses`
+             * all return the same address.
+             *
+             * `getRewardAddress` is the exception.
+             */
+            try {
+              const address = await cardano.getChangeAddress();
+
+              e.target.querySelector('input[name="publicAddress"]').value = address;
+
+              e.target.submit();
             }
-
-            if (cardano) {
-              await cardano.enable();
-
-              /**
-               * 2021-12-20
-               *
-               * `getUsedAddresses`, `getChangeAddress`, and `getUnusedAddresses`
-               * all return the same address.
-               *
-               * `getRewardAddress` is the exception.
-               */
-              try {
-                const address = await cardano.getChangeAddress();
-
-                e.target.querySelector('input[name="publicAddress"]').value = address;
-
-                e.target.submit();
-              }
-              catch(err) {
-                console.error('Something dreadful happened when accessing your account');
-                console.error(err);
-              };
-            }
-            else {
-              document.getElementById('connect-nami').innerHTML = '<br><mark>Install the <a href="https://namiwallet.io/" target="_blank">Nami↗</a> browser plugin</mark>';
-            }
-          };
+            catch(err) {
+              console.error('Something dreadful happened when accessing your account');
+              console.error(err);
+            };
+          }
+          else {
+            document.getElementById('connect-nami').innerHTML = '<br><mark>Install the <a href="https://namiwallet.io/" target="_blank">Nami↗</a> browser plugin</mark>';
+          }
+        };
       });
     </script>
   </body>

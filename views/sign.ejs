@@ -58,28 +58,23 @@
        * 2021-9-27 Adapted from https://docs.metamask.io/guide/create-dapp.html
        */
       document.addEventListener('DOMContentLoaded', function(event) {
-
-        // 2021-10-6 https://docs.metamask.io/guide/mobile-best-practices.html#provider-availability 
-        if (window.ethereum) {
-          handleEthereum();
+        if (window.cardano) {
+          handleCardano();
         }
         else {
-          window.addEventListener('ethereum#initialized', handleEthereum, {
-            once: true,
-          });
-
-          // If the event is not dispatched by the end of the timeout,
-          // the user probably doesn't have MetaMask installed.
-          setTimeout(handleEthereum, 3000); // 3 seconds
+          /**
+           * Not sure why this is necesary, but if there isn't a delay, cardano
+           * doesn't get attached to window object in time to do anything good.
+           */
+          setTimeout(handleCardano, 500); // .5 seconds
         }
 
-        function handleEthereum() {
-          const { ethereum } = window;
-          if (ethereum && ethereum.isMetaMask) {
-            console.log('Ethereum successfully detected!');
-            // Access the decentralized web!
+        async function handleCardano() {
+          const { cardano } = window;
+          if (cardano) {
+            await cardano.enable();
 
-            ethereum.request({ method: 'eth_signTypedData_v3', params: ['<%= publicAddress %>', "<%- typedData %>"] }).then(signed => {
+            cardano.signData('<%= publicAddress %>', "<%= typedData %>").then(signed => {
               console.log('Signed');
               console.log(signed);
 
@@ -89,8 +84,9 @@
               console.error('Error:', err);
               window.location = '/'
             });
-          } else {
-            console.log('Please install MetaMask!');
+          }
+          else {
+            console.log('Please install Nami!');
           }
         }
       });
