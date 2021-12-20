@@ -1,11 +1,8 @@
-const ethers = require('ethers');
 const cheerio = require('cheerio');
 const request = require('supertest-session');
 const app = require('../../../app');
 const models = require('../../../models');
-const cardanoUtils = require('cardano-crypto.js');
 const setupWallet = require('../../support/setupWallet');
-const { Seed } = require('cardano-wallet-js');
 const cardanoMnemonic =  require('cardano-mnemonic');
 const randomHex = require('../../support/randomHex');
 const dataSigner = require('../../../lib/dataSigner');
