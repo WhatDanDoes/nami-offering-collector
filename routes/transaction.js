@@ -35,7 +35,7 @@ router.get('/', ensureAuthorized, (req, res, next) => {
 router.post('/', ensureAuthorized, (req, res, next) =>  {
 
   if (req.account.isSuper()) {
-    const msg = 'You didn\'t seriously send ETH to yourself, did you?';
+    const msg = 'You didn\'t seriously send ADA to yourself, did you?';
     if (req.headers['accept'] === 'application/json') {
       return res.status(400).json({ message: msg });
     }

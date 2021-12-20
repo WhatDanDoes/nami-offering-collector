@@ -1,7 +1,7 @@
 nami-offering-collector
 =======================
 
-A proof-of-concept web application that allows accepting ETH for ministry and fundraising purposes via [Nami](https://namiwallet.io/) wallet.
+A proof-of-concept web application that allows accepting ADA for ministry and fundraising purposes via [Nami](https://namiwallet.io/) wallet.
 
 # Setup
 

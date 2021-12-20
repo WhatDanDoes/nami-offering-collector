@@ -112,7 +112,7 @@ describe('root auth', () => {
 
                 $ = cheerio.load(res.text);
 
-                expect($('.alert.alert-info').text().trim()).toEqual('I cannot allow you to send ETH to your own wallet, Dave');
+                expect($('.alert.alert-info').text().trim()).toEqual('I cannot allow you to send ADA to your own wallet, Dave');
 
                 done();
               });

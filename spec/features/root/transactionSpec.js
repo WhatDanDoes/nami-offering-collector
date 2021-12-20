@@ -358,7 +358,7 @@ describe('root transactions', () => {
             .end((err, res) => {
               if (err) return done.fail(err);
 
-              expect(res.body.message).toEqual('You didn\'t seriously send ETH to yourself, did you?');
+              expect(res.body.message).toEqual('You didn\'t seriously send ADA to yourself, did you?');
               done();
             });
         });
