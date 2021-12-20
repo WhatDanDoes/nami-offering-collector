@@ -66,6 +66,8 @@ cp .env.example .env # <- don't forget to configure
 npm install --production
 ```
 
+Don't forget the _Rust dependencies_ described above...
+
 The _Dockerized_ production is meant to be deployed behind an `nginx-proxy`/`lets-encrypt` combo. Change the _Let's Encrypt_ fields as appropriate and execute:
 
 ```
