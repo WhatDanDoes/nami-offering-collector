@@ -8,21 +8,17 @@
     "test": "npx jasmine"
   },
   "dependencies": {
-    "@abx/multicoin-address-validator": "github:krgizdov/multicoin-address-validator",
     "@emurgo/cardano-serialization-lib-nodejs": "^9.1.2",
     "bip39": "^3.0.4",
     "cardano-addresses": "^3.6.0",
     "cardano-crypto.js": "^6.1.0",
     "cardano-mnemonic": "^1.0.0",
-    "cardano-wallet-js": "^1.2.3",
     "connect-flash": "^0.1.1",
     "connect-mongo": "^4.6.0",
     "cookie-parser": "~1.4.4",
     "debug": "~2.6.9",
     "dotenv-flow": "^3.2.0",
     "ejs": "~2.6.1",
-    "eth-sig-util": "^3.0.1",
-    "ethereum-address": "^0.0.4",
     "ethers": "^5.4.7",
     "express": "~4.16.1",
     "express-session": "^1.17.2",
@@ -33,9 +29,7 @@
     "validator": "^13.6.0"
   },
   "devDependencies": {
-    "@synthetixio/synpress": "^0.9.25-beta.12",
     "cheerio": "*",
-    "ganache-cli": "^6.12.2",
     "jasmine": "^3.9.0",
     "nodemon": "^2.0.12",
     "puppeteer": "^10.4.0",
