@@ -12,16 +12,16 @@ services:
       - .:/home/node
       - /home/node/node_modules
     depends_on:
-      - mongo
-  mongo:
+      - mongo_nami
+  mongo_nami:
     image: mongo
     restart: unless-stopped
     volumes:
-      - metamask_offering_collector_data:/data/db
+      - nami_offering_collector_data:/data/db
 networks:
   default:
     external:
       name: nginx-proxy
 volumes:
-  metamask_offering_collector_data:
+  nami_offering_collector_data:
 

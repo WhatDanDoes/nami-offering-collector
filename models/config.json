@@ -1,27 +1,27 @@
 {
   "development": {
-    "username": "metamask_offering_collector",
+    "username": "nami_offering_collector",
     "password": "secret",
-    "database": "metamask_offering_collector_development",
+    "database": "nami_offering_collector_development",
     "host": "localhost"
   },
   "test": {
-    "username": "metamask_offering_collector",
+    "username": "nami_offering_collector",
     "password": "secret",
-    "database": "metamask_offering_collector_test",
+    "database": "nami_offering_collector_test",
     "host": "localhost"
   },
   "staging": {
-    "username": "metamask_offering_collector",
+    "username": "nami_offering_collector",
     "password": "secret",
-    "database": "metamask_offering_collector_staging",
+    "database": "nami_offering_collector_staging",
     "host": "mongo",
     "dialect": "mongodb"
   },
   "production": {
-    "username": "metamask_offering_collector",
+    "username": "nami_offering_collector",
     "password": "secret",
-    "database": "metamask_offering_collector_production",
+    "database": "nami_offering_collector_production",
     "host": "mongo",
     "dialect": "mongodb"
   }
