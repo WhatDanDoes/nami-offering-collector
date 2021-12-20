@@ -50,7 +50,24 @@ function getSigningMessage(nonce, done) {
  * The account has introduced himself, create and return nonce message for signing
  */
 router.post('/introduce', (req, res) => {
-  models.Account.findOne({ publicAddress: req.body.publicAddress }).then(account => {
+  /**
+   * `req.body.publicAddress` comes in hex format. Server-side, this is all
+   * converted to Bech32 for readability, mostly.
+   */
+  let publicAddress;
+  try {
+    publicAddress = Address.from_bytes(Buffer.from(req.body.publicAddress, 'hex')).to_bech32();
+  }
+  catch (err) {
+    console.error(err.message);
+    if (req.headers['accept'] === 'application/json') {
+      return res.status(400).json({ message: 'Invalid public address' });
+    }
+    req.flash('error', 'Invalid public address');
+    return res.redirect('/');
+  }
+
+  models.Account.findOne({ publicAddress: publicAddress }).then(account => {
 
     if (account) {
       const nonce = Math.floor(Math.random() * 1000000).toString();
@@ -67,7 +84,7 @@ router.post('/introduce', (req, res) => {
           let typedData = Buffer.from(`${message.message.message} ${nonce}`, 'utf8');
 
           res.status(201).render('sign', {
-            publicAddress: account.publicAddress,
+            publicAddress: req.body.publicAddress, // Nami likes hex
             typedData: typedData.toString('hex'),
             messages: req.flash(),
             messageText: message.message.message,
@@ -79,7 +96,7 @@ router.post('/introduce', (req, res) => {
       });
     }
     else {
-      models.Account.create({ publicAddress: req.body.publicAddress }).then(account => {
+      models.Account.create({ publicAddress: publicAddress }).then(account => {
         getSigningMessage(account.nonce, (err, message) => {
           if (err) return res.status(500).json({ message: err.message });
 
@@ -89,7 +106,7 @@ router.post('/introduce', (req, res) => {
             return res.status(201).json({ typedData: message, publicAddress: account.publicAddress });
           }
           res.status(201).render('sign', {
-            publicAddress: req.body.publicAddress,
+            publicAddress: req.body.publicAddress, // Nami likes hex
             typedData: typedData.toString('hex'),
             messages: req.flash(),
             messageText: message.message.message,
@@ -126,22 +143,28 @@ router.post('/introduce', (req, res) => {
  *
  */
 router.post('/prove', (req, res) => {
-  models.Account.findOne({ publicAddress: req.body.publicAddress }).then(account => {
+
+  /**
+   * `req.body.publicAddress` comes in hex format. Server-side, this is all
+   * converted to Bech32 for readability, mostly.
+   */
+  let publicAddress;
+  try {
+    publicAddress = Address.from_bytes(Buffer.from(req.body.publicAddress, 'hex'));
+  }
+  catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+
+  models.Account.findOne({ publicAddress: publicAddress.to_bech32() }).then(account => {
     getSigningMessage(account.nonce, (err, message) => {
       if (err) return res.status(500).json({ message: err.message });
 
       let typedData = Buffer.from(`${message.message.message} ${message.message.nonce}`, 'utf8');
       let signedData = new SignedData(req.body.signature);
 
-      /**
-       * `req.body.publicAddress` comes in Bech32 format. The verification
-       * function requires hex encoding
-       */
-      let publicAddress = Address.from_bech32(req.body.publicAddress);
-      publicAddress = Buffer.from(publicAddress.to_bytes()).toString('hex');
-
       try {
-        if (signedData.verify(publicAddress, `${message.message.message} ${message.message.nonce}`)) {
+        if (signedData.verify(req.body.publicAddress, `${message.message.message} ${message.message.nonce}`)) {
           req.session.account_id = account._id;
           req.session.save(err => {
             if (err) return res.status(500).json({ message: 'Could not establish session' });
