@@ -3,12 +3,10 @@ const request = require('supertest-session');
 const cheerio = require('cheerio');
 const app = require('../../../app');
 const models = require('../../../models');
-const cardanoUtils = require('cardano-crypto.js');
 const setupWallet = require('../../support/setupWallet');
-const { Seed } = require('cardano-wallet-js');
 const cardanoMnemonic =  require('cardano-mnemonic');
 const randomHex = require('../../support/randomHex');
-
+const dataSigner = require('../../../lib/dataSigner');
 
 describe('root transactions', () => {
 
@@ -17,12 +15,12 @@ describe('root transactions', () => {
    *
    * `root` is whoever is configured there.
    */
-  let parentWalletSecret, parentWalletPublicExt, parentWalletPublic, signingMessage;
+  let parentWalletSecret, parentWalletPublic, signingMessage, parentWalletPublicBech32;
 
   beforeAll(async () => {
-    ({ parentWalletSecret, parentWalletPublic, parentWalletPublicExt, signingMessage } = await setupWallet());
+    ({ parentWalletSecret, parentWalletPublic, signingMessage, parentWalletPublicBech32 } = setupWallet());
     _PUBLIC_ADDRESS = process.env.PUBLIC_ADDRESS;
-    process.env.PUBLIC_ADDRESS = parentWalletPublic;
+    process.env.PUBLIC_ADDRESS = parentWalletPublicBech32;
   });
 
   afterAll(() => {
@@ -47,7 +45,7 @@ describe('root transactions', () => {
         session = request(app);
         session
           .post('/auth/introduce')
-          .send({ publicAddress: parentWalletPublic })
+          .send({ publicAddress: parentWalletPublicBech32 })
           .set('Accept', 'application/json')
           .expect('Content-Type', /json/)
           .expect(201)
@@ -55,12 +53,11 @@ describe('root transactions', () => {
             if (err) return done.fail(err);
             ({ publicAddress, typedData } = res.body);
 
-            let signature = cardanoUtils.sign(Buffer.from(typedData.message.nonce, 'utf8'), parentWalletSecret);
-            const signed = cardanoUtils.sign(Buffer.from(typedData.message.nonce, 'utf8'), parentWalletSecret).toString('hex');
+            let signed = dataSigner(`${typedData.message.message} ${typedData.message.nonce}`, parentWalletSecret, parentWalletPublic);
 
             session
               .post('/auth/prove')
-              .send({ publicAddress: parentWalletPublic, signature: signed })
+              .send({ publicAddress: parentWalletPublicBech32, signature: signed })
               .set('Content-Type', 'application/json')
               .set('Accept', 'application/json')
               .expect('Content-Type', /json/)
@@ -70,7 +67,7 @@ describe('root transactions', () => {
 
                 expect(res.body.message).toEqual('Welcome!');
 
-                models.Account.findOne({ where: { publicAddress: parentWalletPublic } }).then(result => {
+                models.Account.findOne({ where: { publicAddress: parentWalletPublicBech32 } }).then(result => {
                   root = result;
 
                   done();
@@ -132,14 +129,14 @@ describe('root transactions', () => {
             let wallet2 = await setupWallet(cardanoMnemonic.entropyToMnemonic(randomHex()));
 
             regularAccounts = [
-              { publicAddress: wallet0.parentWalletPublic },
-              { publicAddress: wallet1.parentWalletPublic, name: 'Some Guy' },
-              { publicAddress: wallet2.parentWalletPublic },
+              { publicAddress: wallet0.parentWalletPublicBech32 },
+              { publicAddress: wallet1.parentWalletPublicBech32, name: 'Some Guy' },
+              { publicAddress: wallet2.parentWalletPublicBech32 },
             ];
         });
 
         beforeEach(done => {
-          models.Account.findOne({ where: { publicAddress: parentWalletPublic } }).then(result => {
+          models.Account.findOne({ where: { publicAddress: parentWalletPublicBech32 } }).then(result => {
             root = result;
 
             models.Account.insertMany(regularAccounts).then(accounts => {
@@ -313,7 +310,7 @@ describe('root transactions', () => {
         session = request(app);
         session
           .post('/auth/introduce')
-          .send({ publicAddress: parentWalletPublic })
+          .send({ publicAddress: parentWalletPublicBech32 })
           .set('Accept', 'application/json')
           .expect('Content-Type', /json/)
           .expect(201)
@@ -321,12 +318,11 @@ describe('root transactions', () => {
             if (err) return done.fail(err);
             ({ publicAddress, typedData } = res.body);
 
-            let signature = cardanoUtils.sign(Buffer.from(typedData.message.nonce, 'utf8'), parentWalletSecret);
-            const signed = cardanoUtils.sign(Buffer.from(typedData.message.nonce, 'utf8'), parentWalletSecret).toString('hex');
+            let signed = dataSigner(`${typedData.message.message} ${typedData.message.nonce}`, parentWalletSecret, parentWalletPublic);
 
             session
               .post('/auth/prove')
-              .send({ publicAddress: parentWalletPublic, signature: signed })
+              .send({ publicAddress: parentWalletPublicBech32, signature: signed })
               .set('Content-Type', 'application/json')
               .set('Accept', 'application/json')
               .expect('Content-Type', /json/)
@@ -336,7 +332,7 @@ describe('root transactions', () => {
 
                 expect(res.body.message).toEqual('Welcome!');
 
-                models.Account.findOne({ where: { publicAddress: parentWalletPublic } }).then(result => {
+                models.Account.findOne({ where: { publicAddress: parentWalletPublicBech32 } }).then(result => {
                   account = result;
 
                   done();
