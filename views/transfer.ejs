@@ -64,130 +64,130 @@
        * 2021-9-27 Adapted from https://docs.metamask.io/guide/create-dapp.html
        */
       document.addEventListener('DOMContentLoaded', function(event) {
-
-        // 2021-10-6 https://docs.metamask.io/guide/mobile-best-practices.html#provider-availability
-        if (window.ethereum) {
-          handleEthereum();
-        }
-        else {
-          window.addEventListener('ethereum#initialized', handleEthereum, {
-            once: true,
-          });
-
-          // If the event is not dispatched by the end of the timeout,
-          // the user probably doesn't have MetaMask installed.
-          setTimeout(handleEthereum, 3000); // 3 seconds
-        }
-
-        let balance, gasPrice;
-
-        const provider = ethers.getDefaultProvider('<%= process.env.NETWORK %>');
-
-        function handleEthereum() {
-          const { ethereum } = window;
-          if (ethereum && ethereum.isMetaMask) {
-            console.log('Ethereum successfully detected!');
-            // Access the decentralized web!
-
-            ethereum.request({ method: 'eth_getBalance', params: ['<%= account.publicAddress %>', 'latest'] }).then(result => {
-              balance = result;
-              console.log('Balance');
-              console.log(ethers.utils.formatEther(balance));
-
-              document.getElementById('wallet-balance').innerText = 'Max: ' + ethers.utils.formatEther(balance);
-              if (ethers.BigNumber.from(balance).isZero()) {
-                document.getElementById('wallet-balance').innerText = 'You have 0 ETH in your account';
-              }
-
-              provider.getGasPrice().then(price => {
-                gasPrice = price * 21000;
-                console.log('gasPrice', ethers.utils.formatEther(gasPrice));
-              }).catch(err => {
-                console.error('Error getting gas price:', err);
-              });
-            }).catch(err => {
-              console.error('Error getting balance:', err);
-              window.location = '/'
-            });
-          }
-          else {
-            console.log('Please install MetaMask!');
-          }
-        }
-
-        /**
-         * send-eth form
-         */
-        document.getElementById('send-eth').addEventListener('submit', e => {
-          e.preventDefault();
-          console.log('Submitting transaction');
-          console.log(ethers.utils.parseEther(document.getElementById('eth-value-input').value));
-
-          const value = ethers.utils.parseEther(document.getElementById('eth-value-input').value);
-
-          const transactionParams = {
-            to: '<%= process.env.PUBLIC_ADDRESS %>',
-            from: '<%= account.publicAddress %>',
-            value: value.toHexString(),
-          };
-
-          ethereum.request({ method: 'eth_sendTransaction', params: [transactionParams] }).then(txHash => {
-            console.log('Transaction hash');
-            console.log(txHash);
-
-            // Record the transaction
-            document.getElementById('transaction-value-input').value = value.toHexString();
-            document.getElementById('transaction-hash-input').value = txHash;
-            document.getElementById('record-transaction-form').submit();
-          }).catch(err => {
-            console.error('Error sending transaction:', err);
-            window.location = '/'
-          });
-        });
-
-        /**
-         * eth-value-input
-         */
-        document.getElementById('eth-value-input').addEventListener('input', e => {
-          let [first, ...rest] = e.target.value.split('.');
-          first = first.replace(/[^\d]/g, '');
-
-          if (rest.length) {
-            let last = rest.join('').slice(0, 9);
-
-            first = first + '.' + last.replace(/[^\d]/g, '');
-          }
-
-          if (first === '.') {
-            first = '0.'
-          }
-
-          if (first) {
-            document.getElementById('estimated-gas-price').innerText = 'Estimated gas fee: ' + ethers.utils.formatEther(gasPrice);
-            let firstBigNum = ethers.utils.parseEther(first);
-            let gasPriceBigNum = ethers.utils.parseEther(ethers.utils.formatEther(gasPrice));
-
-            if (firstBigNum.add(gasPriceBigNum).gt(balance)) {
-              document.getElementById('send-eth-button').disabled = true;
-              document.getElementById('send-eth-button').innerText = 'Insufficient funds';
-            }
-            else if (firstBigNum.isZero()) {
-              document.getElementById('send-eth-button').disabled = true;
-              document.getElementById('estimated-gas-price').innerText = '';
-            }
-            else {
-              document.getElementById('send-eth-button').disabled = false;
-              document.getElementById('send-eth-button').innerText = 'Send';
-            }
-          }
-          else {
-            document.getElementById('send-eth-button').disabled = true;
-            document.getElementById('send-eth-button').innerText = 'Send';
-            document.getElementById('estimated-gas-price').innerText = '';
-          }
-
-          e.target.value = first;
-        });
+//
+//        // 2021-10-6 https://docs.metamask.io/guide/mobile-best-practices.html#provider-availability
+//        if (window.ethereum) {
+//          handleEthereum();
+//        }
+//        else {
+//          window.addEventListener('ethereum#initialized', handleEthereum, {
+//            once: true,
+//          });
+//
+//          // If the event is not dispatched by the end of the timeout,
+//          // the user probably doesn't have MetaMask installed.
+//          setTimeout(handleEthereum, 3000); // 3 seconds
+//        }
+//
+//        let balance, gasPrice;
+//
+//        const provider = ethers.getDefaultProvider('<%= process.env.NETWORK %>');
+//
+//        function handleEthereum() {
+//          const { ethereum } = window;
+//          if (ethereum && ethereum.isMetaMask) {
+//            console.log('Ethereum successfully detected!');
+//            // Access the decentralized web!
+//
+//            ethereum.request({ method: 'eth_getBalance', params: ['<%= account.publicAddress %>', 'latest'] }).then(result => {
+//              balance = result;
+//              console.log('Balance');
+//              console.log(ethers.utils.formatEther(balance));
+//
+//              document.getElementById('wallet-balance').innerText = 'Max: ' + ethers.utils.formatEther(balance);
+//              if (ethers.BigNumber.from(balance).isZero()) {
+//                document.getElementById('wallet-balance').innerText = 'You have 0 ETH in your account';
+//              }
+//
+//              provider.getGasPrice().then(price => {
+//                gasPrice = price * 21000;
+//                console.log('gasPrice', ethers.utils.formatEther(gasPrice));
+//              }).catch(err => {
+//                console.error('Error getting gas price:', err);
+//              });
+//            }).catch(err => {
+//              console.error('Error getting balance:', err);
+//              window.location = '/'
+//            });
+//          }
+//          else {
+//            console.log('Please install MetaMask!');
+//          }
+//        }
+//
+//        /**
+//         * send-eth form
+//         */
+//        document.getElementById('send-eth').addEventListener('submit', e => {
+//          e.preventDefault();
+//          console.log('Submitting transaction');
+//          console.log(ethers.utils.parseEther(document.getElementById('eth-value-input').value));
+//
+//          const value = ethers.utils.parseEther(document.getElementById('eth-value-input').value);
+//
+//          const transactionParams = {
+//            to: '<%= process.env.PUBLIC_ADDRESS %>',
+//            from: '<%= account.publicAddress %>',
+//            value: value.toHexString(),
+//          };
+//
+//          ethereum.request({ method: 'eth_sendTransaction', params: [transactionParams] }).then(txHash => {
+//            console.log('Transaction hash');
+//            console.log(txHash);
+//
+//            // Record the transaction
+//            document.getElementById('transaction-value-input').value = value.toHexString();
+//            document.getElementById('transaction-hash-input').value = txHash;
+//            document.getElementById('record-transaction-form').submit();
+//          }).catch(err => {
+//            console.error('Error sending transaction:', err);
+//            window.location = '/'
+//          });
+//        });
+//
+//        /**
+//         * eth-value-input
+//         */
+//        document.getElementById('eth-value-input').addEventListener('input', e => {
+//          let [first, ...rest] = e.target.value.split('.');
+//          first = first.replace(/[^\d]/g, '');
+//
+//          if (rest.length) {
+//            let last = rest.join('').slice(0, 9);
+//
+//            first = first + '.' + last.replace(/[^\d]/g, '');
+//          }
+//
+//          if (first === '.') {
+//            first = '0.'
+//          }
+//
+//          if (first) {
+//            document.getElementById('estimated-gas-price').innerText = 'Estimated gas fee: ' + ethers.utils.formatEther(gasPrice);
+//            let firstBigNum = ethers.utils.parseEther(first);
+//            let gasPriceBigNum = ethers.utils.parseEther(ethers.utils.formatEther(gasPrice));
+//
+//            if (firstBigNum.add(gasPriceBigNum).gt(balance)) {
+//              document.getElementById('send-eth-button').disabled = true;
+//              document.getElementById('send-eth-button').innerText = 'Insufficient funds';
+//            }
+//            else if (firstBigNum.isZero()) {
+//              document.getElementById('send-eth-button').disabled = true;
+//              document.getElementById('estimated-gas-price').innerText = '';
+//            }
+//            else {
+//              document.getElementById('send-eth-button').disabled = false;
+//              document.getElementById('send-eth-button').innerText = 'Send';
+//            }
+//          }
+//          else {
+//            document.getElementById('send-eth-button').disabled = true;
+//            document.getElementById('send-eth-button').innerText = 'Send';
+//            document.getElementById('estimated-gas-price').innerText = '';
+//          }
+//
+//          e.target.value = first;
+//        });
       });
     </script>
   </body>
