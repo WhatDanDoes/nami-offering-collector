@@ -1,4 +1,4 @@
 *.sw*
 node_modules
 .env
-message_signing
+message-signing
