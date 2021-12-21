@@ -31,6 +31,8 @@ npx wasm-pack build --target nodejs
 
 The app looks in the `message-signing/rust/` directory for the required module.
 
+All credit to those on [StackOverflow](https://cardano.stackexchange.com/questions/4793/limitations-of-wallet-login-for-application-with-off-chain-user-data) for figuring out all this crazy stuff.
+
 # Testing
 
 Start a MongoDB development server:
